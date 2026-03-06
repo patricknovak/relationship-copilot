@@ -7,6 +7,11 @@ import HomePage from './pages/Home/HomePage';
 import RelationshipsPage from './pages/Relationships/RelationshipsPage';
 import ChatPage from './pages/Chat/ChatPage';
 import ProfilePage from './pages/Profile/ProfilePage';
+import DiscoverPage from './pages/Discover/DiscoverPage';
+import HealthCenterPage from './pages/Health/HealthCenterPage';
+import WikiPage from './pages/Wiki/WikiPage';
+import CoachingPage from './pages/Coaching/CoachingPage';
+import LifeStagesPage from './pages/LifeStages/LifeStagesPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -28,8 +33,11 @@ export default function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/relationships" element={<RelationshipsPage />} />
                 <Route path="/chat/:relationshipId" element={<ChatPage />} />
-                <Route path="/discover" element={<div className="p-4">Discover - Coming in Phase 2</div>} />
-                <Route path="/wiki" element={<div className="p-4">Wiki - Coming in Phase 3</div>} />
+                <Route path="/discover" element={<DiscoverPage />} />
+                <Route path="/health" element={<HealthCenterPage />} />
+                <Route path="/wiki" element={<WikiPage />} />
+                <Route path="/coaching" element={<CoachingPage />} />
+                <Route path="/life-stages" element={<LifeStagesPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Routes>
             </Layout>
