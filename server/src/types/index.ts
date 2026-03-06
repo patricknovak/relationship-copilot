@@ -1,0 +1,23 @@
+// Re-export shared types
+export type {
+  User,
+  AgentProfile,
+  Relationship,
+  Message,
+  DailyQuestion,
+  HealthSnapshot,
+  AgentEvent,
+  WSEvent,
+  ApiResponse,
+  PaginatedResponse,
+  UserType,
+  LifeStage,
+  AgentType,
+  AgentFramework,
+  RelationshipType,
+  RelationshipCategory,
+  RelationshipStatus,
+  MessageType,
+  AgentEventType,
+  WSEventType,
+} from '@relationship-copilot/shared';
