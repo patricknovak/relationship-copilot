@@ -12,6 +12,9 @@ import HealthCenterPage from './pages/Health/HealthCenterPage';
 import WikiPage from './pages/Wiki/WikiPage';
 import CoachingPage from './pages/Coaching/CoachingPage';
 import LifeStagesPage from './pages/LifeStages/LifeStagesPage';
+import InsightsPage from './pages/Insights/InsightsPage';
+import CheckInPage from './pages/CheckIn/CheckInPage';
+import AgentDetailPage from './pages/AgentDetail/AgentDetailPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -38,6 +41,9 @@ export default function App() {
                 <Route path="/wiki" element={<WikiPage />} />
                 <Route path="/coaching" element={<CoachingPage />} />
                 <Route path="/life-stages" element={<LifeStagesPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+                <Route path="/check-ins" element={<CheckInPage />} />
+                <Route path="/agents/:agentId" element={<AgentDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Routes>
             </Layout>

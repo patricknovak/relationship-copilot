@@ -25,6 +25,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <NavLink to="/health" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
             Health
           </NavLink>
+          <NavLink to="/insights" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+            Insights
+          </NavLink>
+          <NavLink to="/check-ins" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+            Check-In
+          </NavLink>
           <NotificationBell />
         </div>
       </div>

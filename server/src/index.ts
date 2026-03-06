@@ -25,6 +25,9 @@ import coachingRoutes from './routes/coaching';
 import lifeStagesRoutes from './routes/lifeStages';
 import notificationsRoutes from './routes/notifications';
 import exitRoutes from './routes/exit';
+import insightsRoutes from './routes/insights';
+import checkInsRoutes from './routes/checkIns';
+import agentCollaborationRoutes from './routes/agentCollaboration';
 
 const app = express();
 
@@ -51,9 +54,12 @@ app.use('/api/coaching', coachingRoutes);
 app.use('/api/life-stages', lifeStagesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/exit', exitRoutes);
+app.use('/api/insights', insightsRoutes);
+app.use('/api/check-ins', checkInsRoutes);
 
 // Agent-facing API
 app.use('/api/agent', agentApiRoutes);
+app.use('/api/agent', agentCollaborationRoutes);
 
 // Health check
 app.get('/api/ping', (_req, res) => {
