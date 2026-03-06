@@ -47,7 +47,7 @@ export default function AgentDetailPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewStats, setReviewStats] = useState({ total: 0, avg_rating: 0 });
   const [tools, setTools] = useState<Tool[]>([]);
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [skills, _setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'tools' | 'skills'>('overview');
 

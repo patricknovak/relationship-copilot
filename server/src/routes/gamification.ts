@@ -17,7 +17,7 @@ router.get('/streaks', requireAuth, async (req: AuthRequest, res: Response, next
 // POST /api/gamification/streaks/:relationshipId/check-in
 router.post('/streaks/:relationshipId/check-in', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const result = await gamification.checkInStreak(req.userId!, req.params.relationshipId);
+    const result = await gamification.checkInStreak(req.userId!, req.params.relationshipId as string);
     if (!result) {
       return res.status(404).json({ error: 'Relationship not found' });
     }

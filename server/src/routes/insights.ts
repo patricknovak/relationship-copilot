@@ -1,12 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 import { generateInsightsForUser } from '../services/insights.service';
 
 const router = Router();
 
 // Generate and get insights
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     // Trigger insight generation
     await generateInsightsForUser(req.userId!);
@@ -33,7 +33,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get insights for specific relationship
-router.get('/relationship/:relationshipId', requireAuth, async (req: Request, res: Response) => {
+router.get('/relationship/:relationshipId', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT * FROM insights
@@ -48,7 +48,7 @@ router.get('/relationship/:relationshipId', requireAuth, async (req: Request, re
 });
 
 // Dismiss insight
-router.put('/:id/dismiss', requireAuth, async (req: Request, res: Response) => {
+router.put('/:id/dismiss', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     await db.query(
       `UPDATE insights SET status = 'dismissed', dismissed_at = NOW()
@@ -62,7 +62,7 @@ router.put('/:id/dismiss', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Relationship timeline
-router.get('/timeline/:relationshipId', requireAuth, async (req: Request, res: Response) => {
+router.get('/timeline/:relationshipId', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT * FROM relationship_timeline
@@ -78,7 +78,7 @@ router.get('/timeline/:relationshipId', requireAuth, async (req: Request, res: R
 });
 
 // Add timeline event
-router.post('/timeline/:relationshipId', requireAuth, async (req: Request, res: Response) => {
+router.post('/timeline/:relationshipId', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { event_type, title, description, event_date } = req.body;
 

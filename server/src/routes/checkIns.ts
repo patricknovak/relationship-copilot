@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // List available check-in templates
-router.get('/templates', requireAuth, async (req: Request, res: Response) => {
+router.get('/templates', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { relationship_type, frequency } = req.query;
 
@@ -31,7 +31,7 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get a specific template
-router.get('/templates/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/templates/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(`SELECT * FROM check_in_templates WHERE id = $1`, [req.params.id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Template not found' });
@@ -42,7 +42,7 @@ router.get('/templates/:id', requireAuth, async (req: Request, res: Response) =>
 });
 
 // Submit check-in response
-router.post('/respond', requireAuth, async (req: Request, res: Response) => {
+router.post('/respond', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { template_id, relationship_id, answers, mood_score, notes } = req.body;
 
@@ -98,7 +98,7 @@ router.post('/respond', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get check-in history
-router.get('/history', requireAuth, async (req: Request, res: Response) => {
+router.get('/history', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { relationship_id, limit = '20' } = req.query;
 
@@ -127,7 +127,7 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get mood trends
-router.get('/trends', requireAuth, async (req: Request, res: Response) => {
+router.get('/trends', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { relationship_id, days = '30' } = req.query;
 

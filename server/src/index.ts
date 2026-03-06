@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import http from 'http';
 import { config } from './config';
 import { errorHandler } from './middleware/error';
+import { createRateLimiter } from './middleware/rateLimit';
+import { requestLogger } from './middleware/logger';
 import { setupWebSocket } from './websocket';
 
 // Route imports
@@ -28,6 +30,7 @@ import exitRoutes from './routes/exit';
 import insightsRoutes from './routes/insights';
 import checkInsRoutes from './routes/checkIns';
 import agentCollaborationRoutes from './routes/agentCollaboration';
+import privacyRoutes from './routes/privacy';
 
 const app = express();
 
@@ -35,9 +38,15 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
+
+// Rate limiting
+const globalLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 100 });
+const authLimiter = createRateLimiter({ windowMs: 60_000, maxRequests: 5 });
+app.use('/api', globalLimiter);
 
 // API routes (human-facing)
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/relationships', relationshipRoutes);
 app.use('/api/messages', messageRoutes);
@@ -56,6 +65,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/exit', exitRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/check-ins', checkInsRoutes);
+app.use('/api/privacy', privacyRoutes);
 
 // Agent-facing API
 app.use('/api/agent', agentApiRoutes);

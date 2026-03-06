@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // Get current user's life stage info and relevant guides
-router.get('/current', requireAuth, async (req: Request, res: Response) => {
+router.get('/current', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await db.query(`SELECT life_stage FROM users WHERE id = $1`, [req.userId]);
     const lifeStage = user.rows[0]?.life_stage;
@@ -38,7 +38,7 @@ router.get('/current', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Record life stage transition
-router.post('/events', requireAuth, async (req: Request, res: Response) => {
+router.post('/events', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { to_stage, event_type, notes, date } = req.body;
 
@@ -76,7 +76,7 @@ router.post('/events', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get guides for a specific life stage
-router.get('/guides', requireAuth, async (req: Request, res: Response) => {
+router.get('/guides', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { life_stage, event_type } = req.query;
 
@@ -102,7 +102,7 @@ router.get('/guides', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get guide for a specific event type
-router.get('/guides/:eventType', requireAuth, async (req: Request, res: Response) => {
+router.get('/guides/:eventType', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await db.query(`SELECT life_stage FROM users WHERE id = $1`, [req.userId]);
     const lifeStage = user.rows[0]?.life_stage;

@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { query } from '../db';
 import { requireAgentAuth, AgentAuthRequest } from '../middleware/agentAuth';
 import { AppError } from '../middleware/error';
+import { sendToUser } from '../websocket';
 
 const router = Router();
 
@@ -132,7 +133,7 @@ router.post('/messages/:relationshipId', async (req: AgentAuthRequest, res: Resp
 
     // Verify agent is part of this relationship
     const rel = await query(
-      'SELECT id FROM relationships WHERE id = $1 AND (user_id = $2 OR partner_id = $2)',
+      'SELECT id, user_id, partner_id FROM relationships WHERE id = $1 AND (user_id = $2 OR partner_id = $2)',
       [req.params.relationshipId, req.agentId]
     );
     if (rel.rows.length === 0) {
@@ -152,7 +153,16 @@ router.post('/messages/:relationshipId', async (req: AgentAuthRequest, res: Resp
       [req.params.relationshipId]
     );
 
-    // TODO: Broadcast via WebSocket to the human partner
+    // Broadcast via WebSocket to the human partner
+    const relationship = rel.rows[0];
+    const partnerId = relationship.user_id === req.agentId ? relationship.partner_id : relationship.user_id;
+    sendToUser(partnerId, {
+      type: 'message:new',
+      payload: {
+        message: rows[0],
+        relationshipId: req.params.relationshipId,
+      },
+    });
 
     res.status(201).json({ data: rows[0] });
   } catch (err) {

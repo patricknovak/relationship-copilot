@@ -59,7 +59,6 @@ router.put('/:id', requireAuth, async (req: AuthRequest, res: Response, next: Ne
   try {
     const { title, description, status, progress } = req.body;
 
-    const completedAt = status === 'completed' ? 'NOW()' : 'completed_at';
 
     const { rows } = await query(
       `UPDATE goals SET

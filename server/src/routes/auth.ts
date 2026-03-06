@@ -43,7 +43,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const token = jwt.sign(
       { userId: user.id, userType: user.user_type },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn as any }
     );
 
     // Store session
@@ -91,7 +91,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     const token = jwt.sign(
       { userId: user.id, userType: user.user_type },
       config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
+      { expiresIn: config.jwt.expiresIn as any }
     );
 
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
