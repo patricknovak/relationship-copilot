@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
-import { useAuthStore } from '../../context/authStore';
 
 interface Article {
   id: string;
@@ -36,7 +35,6 @@ interface Quiz {
 }
 
 export default function WikiPage() {
-  const user = useAuthStore((s) => s.user);
   const [articles, setArticles] = useState<Article[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,7 +271,7 @@ export default function WikiPage() {
             <p className="text-gray-400 text-sm text-center py-8">No assessments available yet.</p>
           ) : (
             quizzes.map((quiz) => (
-              <QuizCard key={quiz.id} quiz={quiz} userId={user?.id} />
+              <QuizCard key={quiz.id} quiz={quiz} />
             ))
           )}
         </div>
@@ -316,7 +314,7 @@ export default function WikiPage() {
   );
 }
 
-function QuizCard({ quiz, userId }: { quiz: Quiz; userId?: string }) {
+function QuizCard({ quiz }: { quiz: Quiz }) {
   const [taking, setTaking] = useState(false);
   const [questions, setQuestions] = useState<{ q: string; options: string[]; categories: string[] }[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);

@@ -9,4 +9,29 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  nav.fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth scrolling */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Better input styling on mobile */
+input, textarea, select {
+  font-size: 16px; /* Prevents iOS zoom on focus */
 }

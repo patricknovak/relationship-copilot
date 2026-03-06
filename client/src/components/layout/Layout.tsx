@@ -13,17 +13,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       {/* Top bar with notifications */}
-      <div className="bg-white border-b px-4 py-2 flex justify-between items-center max-w-lg mx-auto">
-        <NavLink to="/" className="font-bold text-primary-500 text-sm">RC</NavLink>
-        <div className="flex items-center gap-3">
-          <NavLink to="/coaching" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+      <div className="bg-white border-b px-3 py-2 flex justify-between items-center max-w-lg mx-auto">
+        <NavLink to="/" className="font-bold text-primary-500 text-sm flex-shrink-0">RC</NavLink>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <NavLink to="/coaching" className={({ isActive }) => `text-xs whitespace-nowrap ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
             Coaching
           </NavLink>
-          <NavLink to="/life-stages" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+          <NavLink to="/life-stages" className={({ isActive }) => `text-xs whitespace-nowrap ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
             Life
           </NavLink>
-          <NavLink to="/health" className={({ isActive }) => `text-xs ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+          <NavLink to="/health" className={({ isActive }) => `text-xs whitespace-nowrap ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
             Health
+          </NavLink>
+          <NavLink to="/insights" className={({ isActive }) => `text-xs whitespace-nowrap ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+            Insights
+          </NavLink>
+          <NavLink to="/check-ins" className={({ isActive }) => `text-xs whitespace-nowrap ${isActive ? 'text-primary-500 font-semibold' : 'text-gray-500'}`}>
+            Check-In
           </NavLink>
           <NotificationBell />
         </div>

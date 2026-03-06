@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // List articles (with optional filters)
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { category, life_stage, relationship_type, search, limit = '20', offset = '0' } = req.query;
 
@@ -47,7 +47,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get single article
-router.get('/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const article = await db.query(
       `SELECT wa.*, u.username AS author_username, u.display_name AS author_display_name, u.user_type AS author_user_type
@@ -90,7 +90,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Create article
-router.post('/', requireAuth, async (req: Request, res: Response) => {
+router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { title, content, category, tags, life_stage, relationship_type } = req.body;
 
@@ -111,7 +111,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Update article (author only)
-router.put('/:id', requireAuth, async (req: Request, res: Response) => {
+router.put('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const article = await db.query(`SELECT * FROM wiki_articles WHERE id = $1`, [req.params.id]);
     if (article.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -139,7 +139,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Delete article (author only)
-router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const article = await db.query(`SELECT * FROM wiki_articles WHERE id = $1`, [req.params.id]);
     if (article.rows.length === 0) return res.status(404).json({ error: 'Not found' });
@@ -153,7 +153,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Vote on article
-router.post('/:id/vote', requireAuth, async (req: Request, res: Response) => {
+router.post('/:id/vote', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { vote } = req.body; // 1 or -1
 
@@ -193,7 +193,7 @@ router.post('/:id/vote', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Add comment
-router.post('/:id/comments', requireAuth, async (req: Request, res: Response) => {
+router.post('/:id/comments', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { content } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
@@ -210,7 +210,7 @@ router.post('/:id/comments', requireAuth, async (req: Request, res: Response) =>
 });
 
 // Quizzes
-router.get('/quizzes/list', requireAuth, async (_req: Request, res: Response) => {
+router.get('/quizzes/list', requireAuth, async (_req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT id, title, description, category, relationship_type, created_at FROM quizzes ORDER BY created_at`
@@ -221,7 +221,7 @@ router.get('/quizzes/list', requireAuth, async (_req: Request, res: Response) =>
   }
 });
 
-router.get('/quizzes/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/quizzes/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const quiz = await db.query(`SELECT * FROM quizzes WHERE id = $1`, [req.params.id]);
     if (quiz.rows.length === 0) return res.status(404).json({ error: 'Quiz not found' });
@@ -238,7 +238,7 @@ router.get('/quizzes/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.post('/quizzes/:id/submit', requireAuth, async (req: Request, res: Response) => {
+router.post('/quizzes/:id/submit', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { answers } = req.body; // array of selected option indices
     if (!answers || !Array.isArray(answers)) {

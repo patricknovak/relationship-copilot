@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // Get notifications
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { unread_only, limit = '20', offset = '0' } = req.query;
 
@@ -38,7 +38,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', requireAuth, async (req: Request, res: Response) => {
+router.put('/:id/read', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     await db.query(
       `UPDATE notifications SET read = true WHERE id = $1 AND user_id = $2`,
@@ -51,7 +51,7 @@ router.put('/:id/read', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Mark all as read
-router.put('/read-all', requireAuth, async (req: Request, res: Response) => {
+router.put('/read-all', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     await db.query(
       `UPDATE notifications SET read = true WHERE user_id = $1 AND read = false`,

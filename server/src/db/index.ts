@@ -16,3 +16,6 @@ pool.on('error', (err) => {
 export async function query(text: string, params?: unknown[]) {
   return pool.query(text, params);
 }
+
+// Alias for routes that import { db }
+export const db = { query: (text: string, params?: unknown[]) => pool.query(text, params) };

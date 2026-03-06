@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { query } from '../db';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/error';
+import { sendToUser } from '../websocket';
 
 const router = Router();
 
@@ -78,8 +79,16 @@ router.post('/:relationshipId', requireAuth, async (req: AuthRequest, res: Respo
       [req.params.relationshipId]
     );
 
-    // TODO: Broadcast via WebSocket
-    // TODO: If partner is agent, deliver event via webhook/WS/poll
+    // Broadcast via WebSocket to the partner
+    const relationship = rel.rows[0];
+    const partnerId = relationship.user_id === req.userId ? relationship.partner_id : relationship.user_id;
+    sendToUser(partnerId, {
+      type: 'message:new',
+      payload: {
+        message: rows[0],
+        relationshipId: req.params.relationshipId,
+      },
+    });
 
     res.status(201).json({ data: rows[0] });
   } catch (err) {

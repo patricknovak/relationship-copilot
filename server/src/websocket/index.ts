@@ -136,6 +136,26 @@ function handleWSEvent(ws: AuthenticatedWS, event: { type: string; payload: Reco
         sendToRoom(event.payload.relationshipId as string, event, ws.userId);
       }
       break;
+    case 'subscribe:room':
+      if (event.payload.relationshipId && ws.userId) {
+        subscribeToRoom(event.payload.relationshipId as string, ws.userId);
+        ws.send(JSON.stringify({
+          type: 'subscribed:room',
+          payload: { relationshipId: event.payload.relationshipId },
+        }));
+      }
+      break;
+    case 'unsubscribe:room':
+      if (event.payload.relationshipId && ws.userId) {
+        const members = roomSubscriptions.get(event.payload.relationshipId as string);
+        if (members) {
+          members.delete(ws.userId);
+          if (members.size === 0) {
+            roomSubscriptions.delete(event.payload.relationshipId as string);
+          }
+        }
+      }
+      break;
   }
 }
 

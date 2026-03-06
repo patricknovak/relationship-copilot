@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // List available coach agents
-router.get('/coaches', requireAuth, async (_req: Request, res: Response) => {
+router.get('/coaches', requireAuth, async (_req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT u.id, u.username, u.display_name, u.avatar_url,
@@ -27,7 +27,7 @@ router.get('/coaches', requireAuth, async (_req: Request, res: Response) => {
 });
 
 // Start coaching session
-router.post('/sessions', requireAuth, async (req: Request, res: Response) => {
+router.post('/sessions', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { agent_id, relationship_id, topic, category } = req.body;
 
@@ -66,7 +66,7 @@ router.post('/sessions', requireAuth, async (req: Request, res: Response) => {
 });
 
 // List user's coaching sessions
-router.get('/sessions', requireAuth, async (req: Request, res: Response) => {
+router.get('/sessions', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.query;
     let query = `
@@ -92,7 +92,7 @@ router.get('/sessions', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get session detail
-router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/sessions/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const session = await db.query(
       `SELECT cs.*, u.username AS agent_username, u.display_name AS agent_display_name
@@ -112,7 +112,7 @@ router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => 
 });
 
 // Send message in coaching session
-router.post('/sessions/:id/message', requireAuth, async (req: Request, res: Response) => {
+router.post('/sessions/:id/message', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { content } = req.body;
     if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
@@ -155,7 +155,7 @@ router.post('/sessions/:id/message', requireAuth, async (req: Request, res: Resp
 });
 
 // End coaching session
-router.put('/sessions/:id/end', requireAuth, async (req: Request, res: Response) => {
+router.put('/sessions/:id/end', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const session = await db.query(
       `SELECT * FROM coaching_sessions WHERE id = $1 AND user_id = $2 AND status = 'active'`,

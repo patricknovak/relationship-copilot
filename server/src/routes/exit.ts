@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
-import { requireAuth } from '../middleware/auth';
+import { Router, Response } from 'express';
+import { requireAuth, AuthRequest } from '../middleware/auth';
 import { db } from '../db';
 
 const router = Router();
 
 // Create exit plan
-router.post('/plans', requireAuth, async (req: Request, res: Response) => {
+router.post('/plans', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { relationship_id, reason } = req.body;
 
@@ -37,7 +37,7 @@ router.post('/plans', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get user's exit plans
-router.get('/plans', requireAuth, async (req: Request, res: Response) => {
+router.get('/plans', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT ep.*, r.type AS relationship_type, u.username AS partner_username, u.display_name AS partner_display_name
@@ -55,7 +55,7 @@ router.get('/plans', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get specific exit plan
-router.get('/plans/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/plans/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(
       `SELECT ep.*, r.type AS relationship_type, u.username AS partner_username, u.display_name AS partner_display_name
@@ -73,7 +73,7 @@ router.get('/plans/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Update exit plan (progress, steps, status)
-router.put('/plans/:id', requireAuth, async (req: Request, res: Response) => {
+router.put('/plans/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { steps, status, coaching_session_id } = req.body;
 
@@ -100,9 +100,9 @@ router.put('/plans/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get resources for relationship type
-router.get('/resources/:relationshipType', requireAuth, async (_req: Request, res: Response) => {
+router.get('/resources/:relationshipType', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const relType = _req.params.relationshipType;
+    const relType = req.params.relationshipType as string;
     const resources = generateExitResources(relType);
     res.json({ data: resources });
   } catch (err) {
