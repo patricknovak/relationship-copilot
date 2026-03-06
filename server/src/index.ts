@@ -20,6 +20,11 @@ import discoverRoutes from './routes/discover';
 import goalsRoutes from './routes/goals';
 import patternsRoutes from './routes/patterns';
 import milestonesRoutes from './routes/milestones';
+import wikiRoutes from './routes/wiki';
+import coachingRoutes from './routes/coaching';
+import lifeStagesRoutes from './routes/lifeStages';
+import notificationsRoutes from './routes/notifications';
+import exitRoutes from './routes/exit';
 
 const app = express();
 
@@ -41,6 +46,11 @@ app.use('/api/discover', discoverRoutes);
 app.use('/api/goals', goalsRoutes);
 app.use('/api/patterns', patternsRoutes);
 app.use('/api/milestones', milestonesRoutes);
+app.use('/api/wiki', wikiRoutes);
+app.use('/api/coaching', coachingRoutes);
+app.use('/api/life-stages', lifeStagesRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/exit', exitRoutes);
 
 // Agent-facing API
 app.use('/api/agent', agentApiRoutes);
