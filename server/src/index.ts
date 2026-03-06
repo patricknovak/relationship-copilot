@@ -14,6 +14,12 @@ import messageRoutes from './routes/messages';
 import agentRoutes from './routes/agents';
 import agentApiRoutes from './routes/agentApi';
 import healthRoutes from './routes/health';
+import gamificationRoutes from './routes/gamification';
+import zodiacRoutes from './routes/zodiac';
+import discoverRoutes from './routes/discover';
+import goalsRoutes from './routes/goals';
+import patternsRoutes from './routes/patterns';
+import milestonesRoutes from './routes/milestones';
 
 const app = express();
 
@@ -29,6 +35,12 @@ app.use('/api/relationships', relationshipRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/gamification', gamificationRoutes);
+app.use('/api/zodiac', zodiacRoutes);
+app.use('/api/discover', discoverRoutes);
+app.use('/api/goals', goalsRoutes);
+app.use('/api/patterns', patternsRoutes);
+app.use('/api/milestones', milestonesRoutes);
 
 // Agent-facing API
 app.use('/api/agent', agentApiRoutes);
