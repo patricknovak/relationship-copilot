@@ -12,6 +12,20 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Send users with an incomplete profile to set it up first.
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!profile?.display_name) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
