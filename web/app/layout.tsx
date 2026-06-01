@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,28 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col">
-        <header className="border-b border-gray-100">
-          <nav className="mx-auto max-w-5xl px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="font-semibold text-brand-700">
-              Relationship&nbsp;Copilot
-            </Link>
-            <div className="flex items-center gap-4 text-sm">
-              {/* Safety must be reachable from every screen. */}
-              <Link
-                href="/safety"
-                className="text-rose-700 hover:text-rose-800 font-medium"
-              >
-                Safety
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-md bg-brand-600 px-3 py-1.5 text-white hover:bg-brand-700"
-              >
-                Sign in
-              </Link>
-            </div>
-          </nav>
-        </header>
+        <SiteHeader />
 
         <main className="flex-1">{children}</main>
 

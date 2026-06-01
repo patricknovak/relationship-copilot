@@ -1,7 +1,7 @@
 // Hand-maintained subset of the Supabase schema (migrations 0001–0003).
 // Replace with `supabase gen types typescript` output once a project exists.
-// Only the tables used by the app so far are fully typed; more are added as
-// features land.
+// Shape matches what supabase-js expects (Tables with Relationships, plus
+// Views/Functions/Enums/CompositeTypes) so query results type correctly.
 
 export type ConnectionType =
   | "romantic" | "friend" | "family" | "coworker"
@@ -14,7 +14,20 @@ export type Json =
   | string | number | boolean | null
   | { [key: string]: Json | undefined } | Json[];
 
+// Shape of a single question inside a template/instance `questions` array.
+export interface PromptQuestion {
+  id: string;
+  text: string;
+  format?: "free_text" | "scale" | "choice";
+  options?: string[];
+  min?: number;
+  max?: number;
+  dimension?: string;
+}
+
 export interface Database {
+  // postgrest-js (2.106+) reads this to pick result-typing behavior.
+  __InternalSupabase: { PostgrestVersion: "12" };
   public: {
     Tables: {
       profiles: {
@@ -40,6 +53,7 @@ export interface Database {
           preferences?: Json;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
       };
       connections: {
         Row: {
@@ -64,7 +78,14 @@ export interface Database {
           invite_code?: string | null;
           invite_expires_at?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["connections"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["connections"]["Insert"]
+        > & {
+          status?: ConnectionStatus;
+          onboarding_done?: boolean;
+          invite_code?: string | null;
+        };
+        Relationships: [];
       };
       connection_members: {
         Row: {
@@ -80,7 +101,82 @@ export interface Database {
           role?: string;
           joined_at?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["connection_members"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["connection_members"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      prompt_templates: {
+        Row: {
+          id: string;
+          kind: PromptKind;
+          relationship_type: ConnectionType | null;
+          framework: string | null;
+          title: string | null;
+          description: string | null;
+          questions: PromptQuestion[];
+          source: "seed" | "grok" | "user";
+          config: Json;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      prompt_instances: {
+        Row: {
+          id: string;
+          connection_id: string;
+          template_id: string | null;
+          kind: PromptKind;
+          questions: PromptQuestion[];
+          scheduled_for: string | null;
+          status: "open" | "revealed" | "completed" | "skipped";
+          revealed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          kind: PromptKind;
+          questions: PromptQuestion[];
+          template_id?: string | null;
+          scheduled_for?: string | null;
+          status?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["prompt_instances"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      prompt_responses: {
+        Row: {
+          id: string;
+          instance_id: string;
+          user_id: string;
+          answers: Json;
+          submitted_at: string;
+          edited_at: string | null;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          answers: Json;
+        };
+        Update: { answers: Json; edited_at?: string | null };
+        Relationships: [];
+      };
+      prompt_discussions: {
+        Row: {
+          id: string;
+          instance_id: string;
+          user_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: { instance_id: string; user_id: string; body: string };
+        Update: never;
+        Relationships: [];
       };
       education_articles: {
         Row: {
@@ -100,6 +196,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       subscriptions: {
         Row: {
@@ -112,12 +209,23 @@ export interface Database {
           updated_at: string;
         };
         Insert: { user_id: string; plan?: string; status?: string };
-        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["subscriptions"]["Insert"]
+        >;
+        Relationships: [];
       };
     };
+    Views: { [_ in never]: never };
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
     };
+    Enums: {
+      connection_type: ConnectionType;
+      connection_status: ConnectionStatus;
+      prompt_kind: PromptKind;
+      prompt_source: "seed" | "grok" | "user";
+    };
+    CompositeTypes: { [_ in never]: never };
   };
 }

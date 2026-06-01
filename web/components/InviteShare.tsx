@@ -1,0 +1,34 @@
+"use client";
+
+import { useState } from "react";
+
+export default function InviteShare({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — the input is still selectable */
+    }
+  }
+
+  return (
+    <div className="mt-3 flex gap-2">
+      <input
+        readOnly
+        value={url}
+        onFocus={(e) => e.currentTarget.select()}
+        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+      />
+      <button
+        onClick={copy}
+        className="rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
