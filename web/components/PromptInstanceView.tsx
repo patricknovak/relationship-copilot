@@ -25,7 +25,7 @@ export default async function PromptInstanceView({
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("id, questions, status")
+    .select("id, questions, status, template_id")
     .eq("id", instanceId)
     .maybeSingle();
 
@@ -38,6 +38,17 @@ export default async function PromptInstanceView({
         </Link>
       </div>
     );
+  }
+
+  // Prefer the template's own title (e.g. a specific quiz/challenge name).
+  let heading = title;
+  if (instance.template_id) {
+    const { data: tmpl } = await supabase
+      .from("prompt_templates")
+      .select("title")
+      .eq("id", instance.template_id)
+      .maybeSingle();
+    if (tmpl?.title) heading = tmpl.title;
   }
 
   const questions = instance.questions as PromptQuestion[];
@@ -77,7 +88,7 @@ export default async function PromptInstanceView({
         <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
           ← Back
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">{title}</h1>
+        <h1 className="mt-2 text-2xl font-bold">{heading}</h1>
 
         <ol className="mt-6 space-y-6">
           {questions.map((q, i) => (
@@ -146,7 +157,7 @@ export default async function PromptInstanceView({
       <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
         ← Back
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">{title}</h1>
+      <h1 className="mt-2 text-2xl font-bold">{heading}</h1>
       <p className="mt-1 text-gray-600">
         {answered
           ? "You've answered. You can still tweak it until the other person finishes — then it locks and reveals."
