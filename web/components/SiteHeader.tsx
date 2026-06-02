@@ -27,6 +27,9 @@ export default async function SiteHeader() {
               <Link href="/connections" className="text-gray-700 hover:text-gray-900">
                 Connections
               </Link>
+              <Link href="/account" className="text-gray-700 hover:text-gray-900">
+                Account
+              </Link>
               <form action={signOut}>
                 <button className="text-gray-500 hover:text-gray-700">
                   Sign out
