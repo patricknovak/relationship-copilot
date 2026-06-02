@@ -3,8 +3,28 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ONBOARDING_DATE } from "@/lib/relationships";
-import type { PromptQuestion } from "@/lib/database.types";
+import { detectSafetySignals } from "@/lib/safety";
+import type { PromptQuestion, Json } from "@/lib/database.types";
+
+// Always-free, plan-independent: log a safety event when free-text content
+// raises a high-severity signal, so support can be surfaced regardless of tier.
+async function logSafety(userId: string, text: string) {
+  const signal = detectSafetySignals(text);
+  if (signal.severity !== "high") return;
+  try {
+    await createAdminClient()
+      .from("safety_events")
+      .insert({
+        user_id: userId,
+        category: signal.categories[0] ?? "abuse",
+        surfaced_resources: { categories: signal.categories } as Json,
+      });
+  } catch {
+    /* never block the user's action on safety logging */
+  }
+}
 
 // Ensure the connection's onboarding instance exists (idempotent via the
 // sentinel-date unique constraint), then go to the onboarding flow. Requires
@@ -99,6 +119,8 @@ export async function submitResponse(formData: FormData) {
     { onConflict: "instance_id,user_id" },
   );
   if (error) throw new Error(error.message);
+
+  await logSafety(user.id, Object.values(answers).join(" "));
 
   // If onboarding just fully revealed, mark the connection active.
   if (instance.kind === "onboarding") {

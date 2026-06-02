@@ -132,14 +132,20 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Blueprint placeholder (premium, future increment) */}
+      {/* Relationship Blueprint (AI; premium) */}
       {conn.status === "active" && (
-        <section className="mt-6 rounded-lg border border-gray-100 p-5 opacity-80">
+        <section className="mt-6 rounded-lg border border-gray-100 p-5">
           <h2 className="font-semibold">Relationship Blueprint</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Your AI-generated strengths, focus areas, and reflection — coming
-            soon with Premium.
+          <p className="mt-1 text-sm text-gray-600">
+            An AI reflection on your strengths, shared goals, and areas to
+            nurture.
           </p>
+          <Link
+            href={`/connections/${id}/blueprint`}
+            className="mt-2 inline-block text-sm text-brand-700 underline"
+          >
+            View Blueprint →
+          </Link>
         </section>
       )}
     </div>

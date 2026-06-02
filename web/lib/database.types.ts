@@ -198,6 +198,48 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      relationship_insights: {
+        Row: {
+          id: string;
+          connection_id: string;
+          kind: string;
+          audience: string;
+          for_user: string | null;
+          summary: string | null;
+          payload: Json;
+          model: string | null;
+          safety_flags: Json;
+          generated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          kind: string;
+          audience?: string;
+          for_user?: string | null;
+          summary?: string | null;
+          payload?: Json;
+          model?: string | null;
+          safety_flags?: Json;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      safety_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: string;
+          surfaced_resources: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          category: string;
+          surfaced_resources?: Json | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;
@@ -208,7 +250,14 @@ export interface Database {
           current_period_end: string | null;
           updated_at: string;
         };
-        Insert: { user_id: string; plan?: string; status?: string };
+        Insert: {
+          user_id: string;
+          plan?: string;
+          status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          current_period_end?: string | null;
+        };
         Update: Partial<
           Database["public"]["Tables"]["subscriptions"]["Insert"]
         >;

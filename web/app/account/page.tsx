@@ -49,9 +49,9 @@ export default async function AccountPage() {
           <dd className="mt-1 text-sm text-gray-700">
             {isPremium ? "Premium" : "Free"}
             {!isPremium && (
-              <span className="ml-2 text-gray-400">
-                (AI Blueprint &amp; digests unlock with Premium)
-              </span>
+              <Link href="/pricing" className="ml-2 text-brand-700 underline">
+                Unlock AI Blueprint &amp; digests with Premium →
+              </Link>
             )}
           </dd>
         </div>
