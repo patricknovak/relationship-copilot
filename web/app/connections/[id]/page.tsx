@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
+import { leaveConnection } from "@/app/actions/connections";
+import { computeStreak } from "@/lib/streak";
+import { zodiacCompatibility } from "@/lib/compat";
+import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InviteShare from "@/components/InviteShare";
 
 export default async function ConnectionPage({
@@ -47,7 +51,38 @@ export default async function ConnectionPage({
     myResponse = data;
   }
 
+  // Daily streak (gamification) from revealed daily instances.
+  let streak = 0;
+  {
+    const { data: dailies } = await supabase
+      .from("prompt_instances")
+      .select("scheduled_for")
+      .eq("connection_id", id)
+      .eq("kind", "daily")
+      .eq("status", "revealed");
+    const dates = (dailies ?? [])
+      .map((d) => d.scheduled_for)
+      .filter((x): x is string => !!x);
+    streak = computeStreak(dates);
+  }
+
+  // Zodiac compatibility (entertainment only).
+  const memberIds = (members ?? []).map((m) => m.user_id);
+  let compat: ReturnType<typeof zodiacCompatibility> = null;
+  if (memberIds.length >= 2) {
+    const { data: profs } = await supabase
+      .from("profiles")
+      .select("id, birthday")
+      .in("id", memberIds);
+    const birthdays = memberIds.map(
+      (uid) => profs?.find((p) => p.id === uid)?.birthday ?? null,
+    );
+    compat = zodiacCompatibility(birthdays[0], birthdays[1]);
+  }
+
   const begin = startOnboarding.bind(null, id);
+  const leave = leaveConnection.bind(null, id);
+  const isParentTeen = conn.type === "parent_child";
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const inviteUrl = conn.invite_code ? `${base}/invite/${conn.invite_code}` : null;
 
@@ -57,6 +92,22 @@ export default async function ConnectionPage({
         ← All connections
       </Link>
       <h1 className="mt-2 text-2xl font-bold">{connectionLabel(conn.type)}</h1>
+      {streak > 0 && (
+        <p className="mt-1 text-sm text-amber-600">🔥 {streak}-day streak</p>
+      )}
+
+      {/* Parent & teen: trust-first, teen-revocable. Not surveillance. */}
+      {isParentTeen && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">A space for connection, not monitoring.</p>
+          <p className="mt-1">
+            Both people choose to be here and can leave anytime. Answers follow
+            the same private-until-you-both-share rule as everywhere else. For
+            children under 13, verifiable parental consent is required and isn&apos;t
+            yet supported here.
+          </p>
+        </div>
+      )}
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && (
@@ -163,6 +214,24 @@ export default async function ConnectionPage({
             View Blueprint →
           </Link>
         </section>
+      )}
+
+      {/* Zodiac compatibility — just for fun */}
+      {conn.status === "active" && compat && (
+        <section className="mt-6 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
+          <h2 className="font-semibold text-brand-700">Star match ✨</h2>
+          <p className="mt-1 text-sm text-gray-700">{compat.blurb}</p>
+          <p className="mt-2 text-xs text-gray-400">{ZODIAC_DISCLAIMER}</p>
+        </section>
+      )}
+
+      {/* Leave — anyone can step away (teen-revocable). */}
+      {conn.status !== "archived" && (
+        <form action={leave} className="mt-10 border-t border-gray-100 pt-6">
+          <button className="text-sm text-gray-500 hover:text-rose-600">
+            Leave this connection
+          </button>
+        </form>
       )}
     </div>
   );

@@ -68,6 +68,25 @@ export async function createConnection(formData: FormData) {
   redirect(`/connections/${conn.id}`);
 }
 
+// Leave a connection — archives it (reversible-friendly, and required for the
+// teen-revocable parent–teen track). RLS allows members to update.
+export async function leaveConnection(connectionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("connections")
+    .update({ status: "archived" })
+    .eq("id", connectionId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/connections");
+  redirect("/connections");
+}
+
 // Accept an invite via the SECURITY DEFINER RPC, then land on the connection.
 export async function acceptInvite(code: string) {
   const supabase = await createClient();

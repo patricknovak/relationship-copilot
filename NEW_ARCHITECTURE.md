@@ -64,18 +64,40 @@ PGHOST=/tmp PGPORT=55432 PGUSER=postgres ./supabase/tests/run.sh
 On real Supabase, apply the files in `supabase/migrations/` (the stubs file is
 local-only and must **not** be applied).
 
-## Next steps (subsequent PRs)
+## Implemented (Phases 0–6)
 
-- **Next.js app** under `web/` — Supabase auth (`@supabase/ssr`), the
-  signup/intake/zodiac flow, connection create + `/invite/[code]` accept,
-  the 20-question onboarding + reveal + discussion UI.
-- **Grok engine** — server actions / Edge Functions for the Blueprint + digests,
-  with PII redaction and the safety guardrails (balanced framing, abuse/self-harm
-  resource routing, human-in-the-loop).
-- **Daily loop** — pg_cron + Edge Function assigning daily prompts idempotently
-  from a Grok-generated pool; Supabase Realtime for live reveal.
-- **Billing** — Stripe checkout + webhook syncing `subscriptions`; entitlement
-  gating on AI surfaces (safety always free).
-- **Parent–teen track** — after COPPA/GDPR-K compliance work.
+The full MVP is built across `supabase/migrations/` (0001–0006) and the Next.js
+app in `web/`:
+
+- **Auth & shell** — Supabase Auth (magic link + Google), session middleware,
+  always-free `/safety`, landing.
+- **Identity** — `/onboarding` intake + short attachment reflection; `/account`;
+  zodiac (entertainment-framed, never used in guidance).
+- **Connections & mutual reveal** — create + `/invite/[code]` accept, the
+  20-question onboarding, and the side-by-side reveal + discussion, all gated by
+  the reveal RLS/trigger.
+- **Daily loop** — `ensure_daily_prompt` / `assign_daily_prompts` (+ pg_cron),
+  Supabase Realtime live reveal (`RevealWatcher`).
+- **Elective content** — quizzes & challenges on the engine (`/explore`),
+  type-specific packs incl. the romantic dating-decision reflection, and the
+  education `/library`.
+- **AI Blueprint (Grok)** — server-side only, **PII redaction**, balanced/
+  non-diagnostic prompt, **abuse/self-harm detection** that withholds output and
+  surfaces help; **premium-gated** generation. Safety detection is free for all.
+- **Billing** — Stripe checkout + signature-verified webhook syncing
+  `subscriptions`; `has_premium()` is the entitlement source of truth.
+- **Parent–teen track** — emotion-coaching content; trust-first, teen-revocable
+  (`leaveConnection`), with an honest COPPA/consent notice.
+- **Legacy ports** — daily **streaks** and **zodiac compatibility** (fun).
+
+Safety-critical pure logic (redaction, safety detection, blueprint parsing,
+streak, compatibility) is unit-tested with vitest.
+
+## Before a real launch (not code)
+
+- Safety sign-off + legal/privacy review; an **enterprise xAI DPA**.
+- Full **COPPA / GDPR-K** verifiable-consent flow before enabling under-13 use.
+- Provision the Supabase project + xAI/Stripe keys (`web/.env.example`) and run
+  end-to-end.
 
 See `web/.env.example` for required configuration.
