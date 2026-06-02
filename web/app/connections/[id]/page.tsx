@@ -132,6 +132,22 @@ export default async function ConnectionPage({
         </section>
       )}
 
+      {/* Quizzes & challenges */}
+      {conn.status === "active" && (
+        <section className="mt-6 rounded-lg border border-gray-100 p-5">
+          <h2 className="font-semibold">Quizzes &amp; challenges</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Playful activities and reflections to do together.
+          </p>
+          <Link
+            href={`/connections/${id}/explore`}
+            className="mt-2 inline-block text-sm text-brand-700 underline"
+          >
+            Explore activities →
+          </Link>
+        </section>
+      )}
+
       {/* Relationship Blueprint (AI; premium) */}
       {conn.status === "active" && (
         <section className="mt-6 rounded-lg border border-gray-100 p-5">

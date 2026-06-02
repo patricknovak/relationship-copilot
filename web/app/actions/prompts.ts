@@ -88,6 +88,41 @@ export async function startOnboarding(connectionId: string) {
   redirect(`/connections/${connectionId}/onboarding`);
 }
 
+// Start an elective quiz or challenge for a connection from a template,
+// snapshotting its questions into a new instance. Multiple are allowed.
+export async function startElective(connectionId: string, templateId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: tmpl } = await supabase
+    .from("prompt_templates")
+    .select("id, kind, questions")
+    .eq("id", templateId)
+    .eq("active", true)
+    .maybeSingle();
+  if (!tmpl || (tmpl.kind !== "quiz" && tmpl.kind !== "challenge")) {
+    throw new Error("That activity isn't available.");
+  }
+
+  const { data: created, error } = await supabase
+    .from("prompt_instances")
+    .insert({
+      connection_id: connectionId,
+      template_id: tmpl.id,
+      kind: tmpl.kind,
+      questions: tmpl.questions,
+      status: "open",
+    })
+    .select("id")
+    .single();
+  if (error || !created) throw new Error(error?.message ?? "Could not start.");
+
+  redirect(`/connections/${connectionId}/prompts/${created.id}`);
+}
+
 // Submit (or, while still open, re-submit) the current user's answers to an
 // instance. The reveal trigger flips the instance once everyone has answered.
 export async function submitResponse(formData: FormData) {
