@@ -219,6 +219,10 @@ export interface Database {
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
+      ensure_daily_prompt: {
+        Args: { p_conn: string; p_date?: string };
+        Returns: string;
+      };
     };
     Enums: {
       connection_type: ConnectionType;

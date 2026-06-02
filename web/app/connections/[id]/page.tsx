@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
-import { startOnboarding } from "@/app/actions/prompts";
+import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
 import InviteShare from "@/components/InviteShare";
 
 export default async function ConnectionPage({
@@ -114,6 +114,21 @@ export default async function ConnectionPage({
               </Link>
             </p>
           )}
+        </section>
+      )}
+
+      {/* Daily question */}
+      {conn.status === "active" && (
+        <section className="mt-6 rounded-lg border border-gray-100 p-5">
+          <h2 className="font-semibold">Today&apos;s question</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            A fresh prompt each day to keep learning about each other.
+          </p>
+          <form action={ensureDaily.bind(null, id)} className="mt-3">
+            <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+              Open today&apos;s question
+            </button>
+          </form>
         </section>
       )}
 

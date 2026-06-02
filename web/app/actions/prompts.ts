@@ -119,6 +119,23 @@ export async function submitResponse(formData: FormData) {
   revalidatePath(`/connections/${connectionId}`);
 }
 
+// Pull (or create) today's daily question for a connection, then open it.
+export async function ensureDaily(connectionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data, error } = await supabase.rpc("ensure_daily_prompt", {
+    p_conn: connectionId,
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("No daily question is available yet.");
+
+  redirect(`/connections/${connectionId}/prompts/${data}`);
+}
+
 export async function postDiscussion(formData: FormData) {
   const instanceId = String(formData.get("instance_id") || "");
   const connectionId = String(formData.get("connection_id") || "");
