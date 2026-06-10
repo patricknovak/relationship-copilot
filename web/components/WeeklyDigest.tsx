@@ -114,6 +114,11 @@ export default async function WeeklyDigest({
             <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
             </button>
+            <p className="mt-2 text-xs text-gray-400">
+              Your week&apos;s revealed answers are sent to our AI provider
+              (xAI&apos;s Grok) with names and contact details removed, used
+              only to write this digest.
+            </p>
           </form>
         )
       ) : (
