@@ -8,6 +8,7 @@ import { computeStreak } from "@/lib/streak";
 import { zodiacCompatibility } from "@/lib/compat";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InviteShare from "@/components/InviteShare";
+import WeeklyDigest from "@/components/WeeklyDigest";
 
 export default async function ConnectionPage({
   params,
@@ -215,6 +216,9 @@ export default async function ConnectionPage({
           </Link>
         </section>
       )}
+
+      {/* Weekly digest (AI; premium generates, both can read) */}
+      {conn.status === "active" && <WeeklyDigest connectionId={id} />}
 
       {/* Zodiac compatibility — just for fun */}
       {conn.status === "active" && compat && (

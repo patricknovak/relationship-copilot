@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import QuickExit from "@/components/QuickExit";
 
 export const metadata: Metadata = {
   title: "Safety & Support — Relationship Copilot",
@@ -56,10 +57,18 @@ const RESOURCES: Resource[] = [
 export default function SafetyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
+      <QuickExit />
+
       <div className="rounded-lg bg-rose-50 border border-rose-200 p-4">
         <p className="font-semibold text-rose-800">
           If you are in immediate danger, call your local emergency number
           (911 in the US).
+        </p>
+        <p className="mt-2 text-sm text-rose-900">
+          The <span className="font-medium">Quick exit</span> button (or the
+          Escape key) instantly replaces this page with an unrelated site. If
+          someone may check your device, consider using a private/incognito
+          window or a safer device, such as a library or work computer.
         </p>
       </div>
 
