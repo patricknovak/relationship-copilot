@@ -5,8 +5,10 @@ makes the **mutual-reveal question loop** and the **AI Relationship Blueprint**
 the spine of the product, for *all* relationship types (romantic, friend,
 family, coworker, parent–teen). Full design lives in the approved plan.
 
-> The legacy Express/React monorepo (`server/`, `client/`, `shared/`) is kept
-> for reference and content porting, and will be removed once superseded.
+> The legacy Express/React monorepo (`server/`, `client/`, `shared/`) has been
+> removed from `main` (preserved in git history at commit `f5704eb`, tag
+> `legacy-monorepo`); its agent integration spec is kept as a design reference
+> in `docs/agent-sdk.md`.
 
 ## Stack
 
@@ -89,6 +91,10 @@ app in `web/`:
 - **Parent–teen track** — emotion-coaching content; trust-first, teen-revocable
   (`leaveConnection`), with an honest COPPA/consent notice.
 - **Legacy ports** — daily **streaks** and **zodiac compatibility** (fun).
+- **Account lifecycle & hardening** — JSON **data export** and **account
+  deletion** ("redact, partner keeps theirs"; migration 0007), audit log,
+  Stripe webhook idempotency, validated post-login redirects, model-backed
+  safety classification (regex fast path + escalate-only LLM pass).
 
 Safety-critical pure logic (redaction, safety detection, blueprint parsing,
 streak, compatibility) is unit-tested with vitest.

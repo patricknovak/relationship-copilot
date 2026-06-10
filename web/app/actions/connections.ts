@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import {
   CONNECTION_TYPES,
   FREE_CONNECTION_CAP,
@@ -64,6 +65,7 @@ export async function createConnection(formData: FormData) {
   });
   if (memErr) throw new Error(memErr.message);
 
+  await logAudit(user.id, "connection.create", conn.id);
   revalidatePath("/connections");
   redirect(`/connections/${conn.id}`);
 }
@@ -83,6 +85,7 @@ export async function leaveConnection(connectionId: string) {
     .eq("id", connectionId);
   if (error) throw new Error(error.message);
 
+  await logAudit(user.id, "connection.archive", connectionId);
   revalidatePath("/connections");
   redirect("/connections");
 }
@@ -100,6 +103,7 @@ export async function acceptInvite(code: string) {
   });
   if (error) throw new Error(error.message);
 
+  await logAudit(user.id, "connection.join", data);
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
 }

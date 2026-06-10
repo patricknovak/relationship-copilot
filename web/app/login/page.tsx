@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { safeNextPath } from "@/lib/redirect";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -9,9 +10,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Carry the post-login destination (set by the auth middleware) through the
+  // magic link / OAuth round-trip. Validated here and again in the callback.
   const redirectTo =
     typeof window !== "undefined"
-      ? `${window.location.origin}/auth/callback`
+      ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+          safeNextPath(new URLSearchParams(window.location.search).get("next")),
+        )}`
       : undefined;
 
   async function sendMagicLink(e: React.FormEvent) {

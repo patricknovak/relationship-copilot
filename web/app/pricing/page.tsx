@@ -11,10 +11,10 @@ const FREE = [
 ];
 const PREMIUM = [
   "AI Relationship Blueprint",
-  "Weekly AI digests & ongoing analysis",
-  "AI discussion helpers",
   "Unlimited connections",
   "Full quiz & challenge catalog",
+  "Premium education library",
+  "Weekly AI digests (coming soon)",
 ];
 
 export default async function PricingPage() {

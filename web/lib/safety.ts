@@ -17,22 +17,22 @@ const PATTERNS: { category: SafetyCategory; severity: SafetySeverity; rx: RegExp
   {
     category: "self_harm",
     severity: "high",
-    rx: /\b(kill myself|killing myself|end my life|suicid(?:e|al)|want to die|don'?t want to (?:live|be here)|hurt myself|self[-\s]?harm)\b/i,
+    rx: /\b(kill myself|killing myself|end my life|suicid(?:e|al)|want to die|don'?t want to (?:live|be here)|hurt myself|self[-\s]?harm|cut(?:ting)? myself|better off without me|no reason to (?:live|go on))\b/i,
   },
   {
     category: "violence",
     severity: "high",
-    rx: /\b(hit me|hits me|beat me|beats me|threaten(?:ed|s)? me|hurt me|strangl|choked me|punch(?:ed|es)? me)\b/i,
+    rx: /\b(hit me|hits me|beat me|beats me|threaten(?:ed|s)? me|hurt me|strangl|choked me|punch(?:ed|es)? me|slap(?:ped|s)? me|push(?:ed|es)? me|shov(?:ed|es)? me|grab(?:bed|s)? me|thr(?:ew|ows) things at me)\b/i,
   },
   {
     category: "abuse",
     severity: "high",
-    rx: /\b(afraid of (?:him|her|them|my partner)|scared of (?:him|her|them)|controls? (?:me|everything|who i)|won'?t let me (?:see|leave|have)|isolat(?:e|ing) me)\b/i,
+    rx: /\b(afraid of (?:him|her|them|my partner)|scared of (?:him|her|them)|controls? (?:me|everything|who i)|won'?t let me (?:see|leave|have)|isolat(?:e|ing) me|threatens? to (?:kill|hurt|leave me|take (?:the|my) kids)|stalk(?:s|ing|ed) me)\b/i,
   },
   {
     category: "abuse",
     severity: "elevated",
-    rx: /\b(yell(?:s|ed)? at me|calls me (?:stupid|worthless|names)|puts me down|jealous (?:and|,)? controlling)\b/i,
+    rx: /\b(yell(?:s|ed)? at me|calls me (?:stupid|worthless|names)|puts me down|jealous (?:and|,)? controlling|gaslight(?:s|ing|ed)?|walking on eggshells|checks my (?:phone|messages)|tracks? (?:my location|where i (?:am|go))|forc(?:es|ed|ing) me to)\b/i,
   },
 ];
 

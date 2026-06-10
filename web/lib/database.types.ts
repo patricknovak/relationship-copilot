@@ -61,7 +61,7 @@ export interface Database {
           type: ConnectionType;
           sub_type: string | null;
           status: ConnectionStatus;
-          created_by: string;
+          created_by: string | null;
           invite_code: string | null;
           invite_expires_at: string | null;
           onboarding_done: boolean;
@@ -236,6 +236,34 @@ export interface Database {
           user_id: string;
           category: string;
           surfaced_resources?: Json | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      stripe_events: {
+        Row: {
+          id: string;
+          type: string;
+          received_at: string;
+        };
+        Insert: { id: string; type: string };
+        Update: never;
+        Relationships: [];
+      };
+      audit_log: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          action: string;
+          target: string | null;
+          meta: Json;
+          created_at: string;
+        };
+        Insert: {
+          user_id?: string | null;
+          action: string;
+          target?: string | null;
+          meta?: Json;
         };
         Update: never;
         Relationships: [];

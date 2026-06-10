@@ -27,6 +27,16 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Idempotency: Stripe retries deliveries. Claim the event id first; if it
+  // was already processed, acknowledge without re-applying.
+  const { error: claimErr } = await admin
+    .from("stripe_events")
+    .insert({ id: event.id, type: event.type });
+  if (claimErr?.code === "23505") {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   const str = (v: unknown) => (typeof v === "string" ? v : null);
 
   switch (event.type) {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { sunSign, ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import { ATTACHMENT_BLURB } from "@/lib/attachment";
+import DeleteAccount from "@/components/DeleteAccount";
 
 type Intake = {
   goals?: string;
@@ -50,7 +51,7 @@ export default async function AccountPage() {
             {isPremium ? "Premium" : "Free"}
             {!isPremium && (
               <Link href="/pricing" className="ml-2 text-brand-700 underline">
-                Unlock AI Blueprint &amp; digests with Premium →
+                Unlock the AI Blueprint with Premium →
               </Link>
             )}
           </dd>
@@ -92,6 +93,27 @@ export default async function AccountPage() {
         <Link href="/connections" className="text-sm text-brand-700 underline">
           Go to your connections →
         </Link>
+      </div>
+
+      <div className="mt-10 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          Your data
+        </h2>
+        <div className="rounded-lg border border-gray-100 p-4">
+          <dt className="text-sm font-medium">Download your data</dt>
+          <dd className="mt-1 text-sm text-gray-700">
+            Everything your account contains — profile, answers, discussions,
+            insights — as a JSON file.{" "}
+            <a
+              href="/api/account/export"
+              className="text-brand-700 underline"
+              download
+            >
+              Export now
+            </a>
+          </dd>
+        </div>
+        <DeleteAccount />
       </div>
     </div>
   );

@@ -28,9 +28,10 @@ export function buildRedactor(names: (string | null | undefined)[]): Redactor {
     for (const { name, placeholder } of ordered) {
       out = out.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`, "gi"), placeholder);
     }
-    // Emails, then long digit runs (phone numbers).
+    // Emails, then long digit runs (phone numbers — with or without
+    // separators, including "(555) 123-4567" style grouping).
     out = out.replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email]");
-    out = out.replace(/(?:\+?\d[\s.-]?){7,}\d/g, "[phone]");
+    out = out.replace(/(?:\+|\(?\d)(?:[\s.()-]*\d){7,}/g, "[phone]");
     return out;
   }
 
