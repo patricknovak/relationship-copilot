@@ -1,81 +1,60 @@
-# Relationship Copilot - Development Guide
+# Relationship Copilot — Development Guide
 
 ## Architecture
 
-Monorepo with npm workspaces:
-- `server/` — Express + TypeScript API (port 3001)
-- `client/` — React + Vite + Tailwind frontend (port 5173)
-- `shared/` — Shared TypeScript types
-
-## Quick Start
-
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d
-
-# Install dependencies
-npm install
-
-# Run database migrations
-npm run migrate
-
-# Start dev servers (both server and client)
-npm run dev
-```
+- `web/` — Next.js (App Router) + TypeScript + Tailwind. The product.
+- `supabase/migrations/` — Postgres schema, RLS policies, seed content. Applied in filename order.
+- `supabase/tests/` — SQL tests runnable against plain Postgres via `supabase/tests/run.sh` (stubs fake `auth.uid()` etc.).
+- `docs/agent-sdk.md` — design reference from the removed legacy platform (tag `legacy-monorepo`).
 
 ## Commands
 
 ```bash
-# Root commands
-npm run dev              # Start both server and client
-npm run dev:server       # Start server only
-npm run dev:client       # Start client only
-npm run test             # Run all tests
-npm run lint             # Lint all packages
-npm run build            # Build all packages
-npm run migrate          # Run database migrations
+cd web
+npm run dev          # Next.js dev server (port 3000)
+npm test             # vitest unit tests
+npm run typecheck    # tsc --noEmit
+npm run lint         # next lint
+npm run build        # production build
 
-# Server-specific
-cd server
-npm run dev              # Start with hot reload (tsx watch)
-npm test                 # Run server tests (vitest)
-npm run lint             # Lint server code
-
-# Client-specific
-cd client
-npm run dev              # Start Vite dev server
-npm test                 # Run client tests (vitest)
-npm run lint             # Lint client code
+# Database tests (needs a local Postgres, e.g. `docker compose up -d`)
+PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres ./supabase/tests/run.sh
 ```
 
-## Tech Stack
+Environment template: `web/.env.example` (Supabase, Stripe, xAI keys).
 
-- **Backend:** Express, TypeScript, PostgreSQL, Redis, WebSocket (ws)
-- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS, Zustand, React Router
-- **AI:** Claude API (Anthropic) for platform-level features
-- **Testing:** Vitest, React Testing Library, Supertest
+## Tech stack
 
-## Database
+- **Frontend/backend:** Next.js App Router, server actions in `web/app/actions/`, route handlers in `web/app/api/`
+- **Database/auth:** Supabase (Postgres + RLS + Realtime + Auth)
+- **AI:** Grok (xAI) via `web/lib/grok.ts` — server-side only
+- **Billing:** Stripe (checkout server action + signature-verified webhook)
+- **Testing:** vitest for `web/lib/*`, SQL tests for migrations/RLS
 
-PostgreSQL with raw SQL migrations in `server/src/db/migrations/`. Migrations run in order by filename.
+## Key invariants — do not break these
 
-## API Architecture
+1. **The mutual-reveal gate lives in RLS** (`supabase/migrations/0001_core_schema.sql`,
+   `prompt_responses` policies + reveal trigger). Never re-implement or bypass it
+   in app code; never read responses through the admin client for display.
+2. **Redact before text leaves our boundary.** Anything sent to the AI provider
+   goes through `buildRedactor` (`web/lib/redact.ts`) first.
+3. **Safety is free and runs first.** `assessSafety` (`web/lib/safetyClassifier.ts`,
+   regex fast path + model escalation) gates AI output; high severity withholds
+   the output and surfaces resources. Never paywall safety features.
+4. **The service-role client (`web/lib/supabase/admin.ts`) bypasses RLS.** Use it
+   only after explicit authorization checks, only in server code, and audit-log
+   sensitive actions via `logAudit` (`web/lib/audit.ts`).
+5. **Entitlements come from `has_premium()`** (RPC / RLS), synced by the Stripe
+   webhook — never trust client-side plan state.
+6. **Account deletion = "redact, partner keeps theirs"** (`web/app/actions/account.ts`
+   + migration `0007`): the user's content cascades away, shared connections are
+   archived for the remaining member, shared AI insights are removed.
 
-Two separate API surfaces:
-1. **Human-facing** (`/api/auth`, `/api/users`, `/api/relationships`, `/api/messages`, `/api/agents`, `/api/health`) — JWT auth
-2. **Agent-facing** (`/api/agent/*`) — API key auth via `Authorization: Bearer <api_key>`
+## Patterns
 
-Agents connect via:
-- **Webhook** — Platform POSTs events to agent's URL
-- **WebSocket** — `/ws/agent` with API key
-- **Poll** — `GET /api/agent/events`
-
-## Key Patterns
-
-- Express routes in `server/src/routes/`
-- Business logic in `server/src/services/`
-- Auth middleware: `requireAuth` (humans), `requireAgentAuth` (agents)
-- Error handling via `AppError` class and central error handler
-- React pages in `client/src/pages/`
-- State management via Zustand stores in `client/src/context/`
-- API calls via `client/src/api/client.ts`
+- Server actions own mutations; pages are server components reading through the
+  user's session client (RLS scopes everything).
+- New schema changes = a new numbered migration in `supabase/migrations/`; keep
+  `web/lib/database.types.ts` (hand-maintained) in sync.
+- Pure, safety-critical logic (redaction, safety, parsing, streaks) lives in
+  `web/lib/` with vitest coverage — keep it framework-free and tested.

@@ -27,6 +27,10 @@ for m in "$ROOT"/supabase/migrations/*.sql; do
 done
 echo "running reveal-gate test"
 run -f "$ROOT/supabase/tests/01_reveal_gate_test.sql"
+echo "running daily-loop test"
+run -f "$ROOT/supabase/tests/02_daily_test.sql"
+echo "running account-lifecycle test"
+run -f "$ROOT/supabase/tests/03_account_lifecycle_test.sql"
 
 psql -h "$HOST" -p "$PORT" -U "$USER" -d postgres -q -c "drop database if exists $DB;"
 echo "OK"

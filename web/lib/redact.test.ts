@@ -21,6 +21,18 @@ describe("buildRedactor", () => {
     );
   });
 
+  it("redacts phone numbers without separators and with parentheses", () => {
+    const { redact } = buildRedactor([]);
+    expect(redact("call 5551234567 ok")).toBe("call [phone] ok");
+    expect(redact("call (555) 123-4567 ok")).toBe("call [phone] ok");
+    expect(redact("intl +1 555 123 4567 ok")).toBe("intl [phone] ok");
+  });
+
+  it("redacts possessive forms of names", () => {
+    const { redact } = buildRedactor(["Anna"]);
+    expect(redact("Anna's mom met Anna")).toBe("P1's mom met P1");
+  });
+
   it("ignores empty/too-short names", () => {
     const { map } = buildRedactor(["", "A", null, undefined, "Sam"]);
     expect(map).toEqual([{ name: "Sam", placeholder: "P1" }]);

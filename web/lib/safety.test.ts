@@ -31,4 +31,27 @@ describe("detectSafetySignals", () => {
     expect(s.severity).toBe("elevated");
     expect(s.categories).toContain("abuse");
   });
+
+  it("flags threats involving children or leaving as high abuse", () => {
+    const s = detectSafetySignals("He threatens to take the kids if I bring it up.");
+    expect(s.severity).toBe("high");
+    expect(s.categories).toContain("abuse");
+  });
+
+  it("flags physical violence variants as high", () => {
+    const s = detectSafetySignals("Last month she slapped me during an argument.");
+    expect(s.severity).toBe("high");
+    expect(s.categories).toContain("violence");
+  });
+
+  it("treats coercive-control language as elevated", () => {
+    expect(detectSafetySignals("I feel like I'm walking on eggshells.").severity).toBe("elevated");
+    expect(detectSafetySignals("He checks my phone every night.").severity).toBe("elevated");
+    expect(detectSafetySignals("It feels like gaslighting sometimes.").severity).toBe("elevated");
+  });
+
+  it("does not flag the word controller or benign mentions", () => {
+    const s = detectSafetySignals("We argued about the game controller and made up.");
+    expect(s.severity).toBe("none");
+  });
 });

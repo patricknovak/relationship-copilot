@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
-import { detectSafetySignals } from "@/lib/safety";
+import { assessSafety } from "@/lib/safetyClassifier";
+import { logAudit } from "@/lib/audit";
 import { grokChat } from "@/lib/grok";
 import {
   blueprintSystemPrompt,
@@ -34,6 +35,25 @@ export async function generateBlueprint(connectionId: string) {
   // --- entitlement gate (premium only). No Grok call fires for free users. ---
   const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
   if (!isPremium) throw new Error("PREMIUM_REQUIRED");
+
+  // Rate limit: one generation per connection per 10 minutes (cost control —
+  // each run is a model call). DB-backed so it holds across serverless instances.
+  const { data: recent } = await supabase
+    .from("relationship_insights")
+    .select("generated_at")
+    .eq("connection_id", connectionId)
+    .eq("kind", "blueprint")
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (
+    recent &&
+    Date.now() - new Date(recent.generated_at).getTime() < 10 * 60 * 1000
+  ) {
+    throw new Error(
+      "A Blueprint was generated for this connection just now. Please wait a few minutes before regenerating.",
+    );
+  }
 
   // Need a revealed onboarding instance so both answers are readable.
   const { data: instance } = await supabase
@@ -68,9 +88,11 @@ export async function generateBlueprint(connectionId: string) {
   const a1 = (responses.find((r) => r.user_id === m1)?.answers ?? {}) as Record<string, string>;
   const a2 = (responses.find((r) => r.user_id === m2)?.answers ?? {}) as Record<string, string>;
 
-  // Safety detection on the RAW (pre-redaction) text.
+  // Safety assessment: regex fast path runs on the RAW text; the model-backed
+  // classifier (which catches paraphrase) sees only redacted text and can
+  // raise severity but never lower it. Model failure degrades to regex-only.
   const rawAll = questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`).join("\n");
-  const signal = detectSafetySignals(rawAll);
+  const signal = await assessSafety(rawAll, redactor.redact);
 
   const admin = createAdminClient();
 
@@ -89,6 +111,7 @@ export async function generateBlueprint(connectionId: string) {
       payload: { safety: true, categories: signal.categories } as Json,
       safety_flags: { severity: "high", categories: signal.categories, reviewed: false } as Json,
     });
+    await logAudit(user.id, "blueprint.withheld_safety", connectionId);
     revalidatePath(`/connections/${connectionId}/blueprint`);
     return;
   }
@@ -114,6 +137,7 @@ export async function generateBlueprint(connectionId: string) {
     model: process.env.XAI_MODEL ?? "grok-4",
     safety_flags: { severity: signal.severity, categories: signal.categories } as Json,
   });
+  await logAudit(user.id, "blueprint.generate", connectionId);
 
   revalidatePath(`/connections/${connectionId}/blueprint`);
   revalidatePath(`/connections/${connectionId}`);

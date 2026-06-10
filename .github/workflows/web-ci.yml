@@ -1,15 +1,13 @@
-name: Web CI
+name: CI
 
 on:
   push:
     branches: [main]
-    paths: ["web/**", ".github/workflows/web-ci.yml"]
   pull_request:
     branches: [main]
-    paths: ["web/**", ".github/workflows/web-ci.yml"]
 
 jobs:
-  build:
+  web:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,3 +26,28 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations + RLS tests
+        run: ./supabase/tests/run.sh
