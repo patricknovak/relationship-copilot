@@ -14,7 +14,7 @@ const PREMIUM = [
   "Unlimited connections",
   "Full quiz & challenge catalog",
   "Premium education library",
-  "Weekly AI digests (coming soon)",
+  "Weekly AI digests",
 ];
 
 export default async function PricingPage() {
