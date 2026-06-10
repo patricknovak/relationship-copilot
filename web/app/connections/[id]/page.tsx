@@ -9,6 +9,7 @@ import { zodiacCompatibility } from "@/lib/compat";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InviteShare from "@/components/InviteShare";
 import WeeklyDigest from "@/components/WeeklyDigest";
+import LookingBack from "@/components/LookingBack";
 
 export default async function ConnectionPage({
   params,
@@ -216,6 +217,9 @@ export default async function ConnectionPage({
           </Link>
         </section>
       )}
+
+      {/* Looking back — free retrospectives once there's history */}
+      {conn.status === "active" && <LookingBack connectionId={id} />}
 
       {/* Weekly digest (AI; premium generates, both can read) */}
       {conn.status === "active" && <WeeklyDigest connectionId={id} />}

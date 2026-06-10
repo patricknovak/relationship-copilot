@@ -125,6 +125,12 @@ export default async function BlueprintPage({
         </Link>{" "}
         are always free.
       </p>
+      <p className="mt-2 text-xs text-gray-400">
+        How this works: to generate a Blueprint, your written answers are sent
+        to our AI provider (xAI&apos;s Grok) with names, email addresses, and
+        phone numbers removed first. They are used only to produce this
+        reflection and are not used to train models.
+      </p>
     </div>
   );
 }
