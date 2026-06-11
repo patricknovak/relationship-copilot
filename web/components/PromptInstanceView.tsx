@@ -88,11 +88,11 @@ export default async function PromptInstanceView({
         <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
           ← Back
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">{heading}</h1>
+        <h1 className="mt-2 text-3xl">{heading}</h1>
 
         <ol className="mt-6 space-y-6">
           {questions.map((q, i) => (
-            <li key={q.id} className="rounded-lg border border-gray-100 p-4">
+            <li key={q.id} className="card !p-4">
               <p className="font-medium">
                 {i + 1}. {q.text}
               </p>
@@ -140,7 +140,7 @@ export default async function PromptInstanceView({
               placeholder="Share a thought…"
               className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
-            <button className="rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            <button className="btn-primary">
               Send
             </button>
           </form>
@@ -157,7 +157,7 @@ export default async function PromptInstanceView({
       <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
         ← Back
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">{heading}</h1>
+      <h1 className="mt-2 text-3xl">{heading}</h1>
       <p className="mt-1 text-gray-600">
         {answered
           ? "You've answered. You can still tweak it until the other person finishes — then it locks and reveals."
@@ -169,7 +169,7 @@ export default async function PromptInstanceView({
         <input type="hidden" name="connection_id" value={connectionId} />
 
         {questions.map((q, i) => (
-          <div key={q.id} className="rounded-lg border border-gray-100 p-4">
+          <div key={q.id} className="card !p-4">
             <label className="block font-medium" htmlFor={`q_${q.id}`}>
               {i + 1}. {q.text}
             </label>
@@ -179,7 +179,7 @@ export default async function PromptInstanceView({
 
         <button
           type="submit"
-          className="w-full rounded-md bg-brand-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="w-full btn-primary"
         >
           {answered ? "Update my answer" : "Submit my answer"}
         </button>

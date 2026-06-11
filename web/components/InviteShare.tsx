@@ -25,7 +25,7 @@ export default function InviteShare({ url }: { url: string }) {
       />
       <button
         onClick={copy}
-        className="rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+        className="btn-primary"
       >
         {copied ? "Copied" : "Copy"}
       </button>

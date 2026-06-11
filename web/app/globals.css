@@ -6,6 +6,79 @@
   color-scheme: light;
 }
 
-body {
-  @apply bg-white text-gray-900 antialiased;
+@layer base {
+  body {
+    @apply bg-paper text-ink antialiased;
+  }
+
+  /* Editorial headings everywhere — every page gets the voice for free. */
+  h1,
+  h2 {
+    @apply font-display tracking-tight text-ink;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-ink;
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  [tabindex] {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-sm;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-brand-800 hover:shadow-lift active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-brand-200 bg-white/70 px-5 py-2.5 text-sm font-medium text-brand-800 transition hover:border-brand-300 hover:bg-brand-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-brand-100/60 hover:text-ink;
+  }
+
+  .card {
+    @apply rounded-2xl border border-brand-100/80 bg-white/80 p-5 shadow-soft;
+  }
+
+  .card-hover {
+    @apply transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-brand-200/70 bg-white/70 px-3 py-1 text-sm text-brand-800;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-brand-200/70 bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600;
+  }
+
+  /* Soft radial glow behind heroes and feature moments. */
+  .hero-glow {
+    background:
+      radial-gradient(46rem 24rem at 50% -4rem, rgb(212 173 209 / 0.45), transparent 70%),
+      radial-gradient(30rem 18rem at 85% 8rem, rgb(250 224 200 / 0.5), transparent 70%),
+      radial-gradient(26rem 16rem at 12% 12rem, rgb(244 233 243 / 0.9), transparent 70%);
+  }
 }

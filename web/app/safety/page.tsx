@@ -72,8 +72,8 @@ export default function SafetyPage() {
         </p>
       </div>
 
-      <h1 className="mt-8 text-2xl font-bold">Safety &amp; Support</h1>
-      <p className="mt-2 text-gray-600">
+      <h1 className="mt-8 text-3xl">Safety &amp; Support</h1>
+      <p className="mt-2 text-ink-soft">
         These resources are free and confidential. Relationship Copilot is not a
         crisis service and does not provide therapy — please reach out to the
         people below for real-time help.
@@ -81,13 +81,12 @@ export default function SafetyPage() {
 
       <ul className="mt-6 space-y-4">
         {RESOURCES.map((r) => (
-          <li
-            key={r.name}
-            className="rounded-lg border border-gray-100 p-4"
-          >
-            <h2 className="font-semibold">{r.name}</h2>
-            <p className="mt-1 text-brand-700 font-medium">{r.contact}</p>
-            <p className="mt-1 text-sm text-gray-600">{r.detail}</p>
+          <li key={r.name} className="card !p-4">
+            <h2 className="text-base font-sans font-semibold tracking-normal">
+              {r.name}
+            </h2>
+            <p className="mt-1 font-medium text-brand-700">{r.contact}</p>
+            <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
             {r.href && (
               <a
                 href={r.href}

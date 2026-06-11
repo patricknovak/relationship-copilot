@@ -47,8 +47,8 @@ export default async function WeeklyDigest({
   const generate = generateWeeklyDigest.bind(null, connectionId);
 
   return (
-    <section className="mt-6 rounded-lg border border-gray-100 p-5">
-      <h2 className="font-semibold">Weekly digest</h2>
+    <section className="card mt-6">
+      <h2 className="text-lg">Weekly digest</h2>
 
       {payload?.safety ? (
         <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-4">
@@ -111,7 +111,7 @@ export default async function WeeklyDigest({
       {isPremium ? (
         canRegenerate && (
           <form action={generate} className="mt-3">
-            <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            <button className="btn-primary">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
             </button>
             <p className="mt-2 text-xs text-gray-400">

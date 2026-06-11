@@ -19,7 +19,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
-      <h1 className="text-2xl font-bold">Set up your profile</h1>
+      <h1 className="text-3xl">Set up your profile</h1>
       <p className="mt-1 text-gray-600">
         A few quick things so your connections feel more personal. You can
         change these anytime.
@@ -79,7 +79,7 @@ export default async function OnboardingPage() {
           />
         </div>
 
-        <fieldset className="rounded-lg border border-gray-100 p-4">
+        <fieldset className="card !p-4">
           <legend className="px-1 text-sm font-medium">
             A quick reflection
           </legend>
@@ -111,7 +111,7 @@ export default async function OnboardingPage() {
 
         <button
           type="submit"
-          className="w-full rounded-md bg-brand-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-brand-700"
+          className="w-full btn-primary"
         >
           Save and continue
         </button>

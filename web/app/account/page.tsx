@@ -35,7 +35,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-3xl">
           {profile?.display_name || "Your account"}
         </h1>
         <Link href="/onboarding" className="text-sm text-brand-700 underline">
@@ -45,7 +45,7 @@ export default async function AccountPage() {
       <p className="mt-1 text-sm text-gray-500">{user?.email}</p>
 
       <dl className="mt-6 space-y-4">
-        <div className="rounded-lg border border-gray-100 p-4">
+        <div className="card !p-4">
           <dt className="text-sm font-medium">Plan</dt>
           <dd className="mt-1 text-sm text-gray-700">
             {isPremium ? "Premium" : "Free"}
@@ -58,7 +58,7 @@ export default async function AccountPage() {
         </div>
 
         {intake.attachment?.style && (
-          <div className="rounded-lg border border-gray-100 p-4">
+          <div className="card !p-4">
             <dt className="text-sm font-medium">Your relating style</dt>
             <dd className="mt-1 text-sm text-gray-700">
               <span className="font-medium">{intake.attachment.style}</span> —{" "}
@@ -68,7 +68,7 @@ export default async function AccountPage() {
         )}
 
         {sign && (
-          <div className="rounded-lg border border-brand-100 bg-brand-50/40 p-4">
+          <div className="card !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-paper-warm !p-4">
             <dt className="text-sm font-medium text-brand-700">
               Your sign <span aria-hidden>{sign.symbol}</span>
             </dt>
@@ -80,7 +80,7 @@ export default async function AccountPage() {
         )}
 
         {intake.goals && (
-          <div className="rounded-lg border border-gray-100 p-4">
+          <div className="card !p-4">
             <dt className="text-sm font-medium">What you want right now</dt>
             <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
               {intake.goals}
@@ -99,7 +99,7 @@ export default async function AccountPage() {
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
           Your data
         </h2>
-        <div className="rounded-lg border border-gray-100 p-4">
+        <div className="card !p-4">
           <dt className="text-sm font-medium">Download your data</dt>
           <dd className="mt-1 text-sm text-gray-700">
             Everything your account contains — profile, answers, discussions,
