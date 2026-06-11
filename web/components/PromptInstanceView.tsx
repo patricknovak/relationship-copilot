@@ -32,7 +32,7 @@ export default async function PromptInstanceView({
   if (!instance) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <p className="text-gray-600">This question is no longer available.</p>
+        <p className="text-ink-soft">This question is no longer available.</p>
         <Link href={`/connections/${connectionId}`} className="text-brand-700 underline">
           ← Back
         </Link>
@@ -75,6 +75,7 @@ export default async function PromptInstanceView({
       const p = profiles?.find((x) => x.id === uid);
       return p?.display_name || p?.username || "Them";
     };
+    const initialOf = (uid: string) => nameOf(uid).slice(0, 1).toUpperCase();
 
     const { data: discussion } = await supabase
       .from("prompt_discussions")
@@ -82,67 +83,112 @@ export default async function PromptInstanceView({
       .eq("instance_id", instance.id)
       .order("created_at", { ascending: true });
 
+    // Stable answer order: you first, then the other person.
+    const ordered = [...(responses ?? [])].sort((a) =>
+      a.user_id === user?.id ? -1 : 1,
+    );
+
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <RevealWatcher instanceId={instance.id} />
-        <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
+        <Link
+          href={`/connections/${connectionId}`}
+          className="text-sm text-ink-soft/70 hover:text-ink"
+        >
           ← Back
         </Link>
-        <h1 className="mt-2 text-3xl">{heading}</h1>
+        <div className="mt-3 flex items-center gap-3">
+          <h1 className="text-3xl">{heading}</h1>
+          <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-800">
+            ✨ Revealed together
+          </span>
+        </div>
 
-        <ol className="mt-6 space-y-6">
+        <ol className="mt-8 space-y-6">
           {questions.map((q, i) => (
-            <li key={q.id} className="card !p-4">
-              <p className="font-medium">
-                {i + 1}. {q.text}
+            <li key={q.id} className="card animate-fade-up !p-5">
+              <p className="eyebrow">Question {i + 1}</p>
+              <p className="mt-1.5 font-display text-lg leading-snug text-ink">
+                {q.text}
               </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                {(responses ?? []).map((r) => (
-                  <div key={r.user_id} className="rounded-md bg-gray-50 p-3">
-                    <p className="text-xs font-semibold text-brand-700">
-                      {nameOf(r.user_id)}
-                    </p>
-                    <p className="mt-1 text-sm whitespace-pre-wrap">
-                      {(r.answers as AnswerMap)[q.id] || (
-                        <span className="text-gray-400">No answer</span>
-                      )}
-                    </p>
-                  </div>
-                ))}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {ordered.map((r) => {
+                  const mine = r.user_id === user?.id;
+                  return (
+                    <div
+                      key={r.user_id}
+                      className={`rounded-2xl border p-3.5 ${
+                        mine
+                          ? "border-brand-100 bg-brand-50/70"
+                          : "border-amber-100 bg-amber-50/60"
+                      }`}
+                    >
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
+                        <span
+                          className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white ${
+                            mine ? "bg-brand-600" : "bg-amber-600"
+                          }`}
+                        >
+                          {initialOf(r.user_id)}
+                        </span>
+                        {nameOf(r.user_id)}
+                      </p>
+                      <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+                        {(r.answers as AnswerMap)[q.id] || (
+                          <span className="text-ink-soft/50">No answer</span>
+                        )}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </li>
           ))}
         </ol>
 
-        <section className="mt-10">
-          <h2 className="font-semibold">Talk about it</h2>
-          <ul className="mt-3 space-y-2">
-            {(discussion ?? []).map((d) => (
-              <li key={d.id} className="rounded-md bg-gray-50 p-3 text-sm">
-                <span className="font-semibold text-brand-700">
-                  {nameOf(d.user_id)}:
-                </span>{" "}
-                <span className="whitespace-pre-wrap">{d.body}</span>
-              </li>
-            ))}
+        <section className="card mt-10 !p-5">
+          <h2 className="text-lg">Talk about it</h2>
+          <ul className="mt-4 space-y-2.5">
+            {(discussion ?? []).map((d) => {
+              const mine = d.user_id === user?.id;
+              return (
+                <li
+                  key={d.id}
+                  className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                      mine
+                        ? "rounded-br-md bg-brand-700 text-white"
+                        : "rounded-bl-md bg-paper-warm text-ink"
+                    }`}
+                  >
+                    {!mine && (
+                      <p className="text-xs font-semibold text-brand-700">
+                        {nameOf(d.user_id)}
+                      </p>
+                    )}
+                    <p className="whitespace-pre-wrap">{d.body}</p>
+                  </div>
+                </li>
+              );
+            })}
             {(!discussion || discussion.length === 0) && (
-              <li className="text-sm text-gray-400">
+              <li className="text-sm text-ink-soft/60">
                 No messages yet — start the conversation.
               </li>
             )}
           </ul>
-          <form action={postDiscussion} className="mt-3 flex gap-2">
+          <form action={postDiscussion} className="mt-4 flex gap-2">
             <input type="hidden" name="instance_id" value={instance.id} />
             <input type="hidden" name="connection_id" value={connectionId} />
             <input
               name="body"
               required
               placeholder="Share a thought…"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="input flex-1"
             />
-            <button className="btn-primary">
-              Send
-            </button>
+            <button className="btn-primary shrink-0">Send</button>
           </form>
         </section>
       </div>
@@ -154,37 +200,60 @@ export default async function PromptInstanceView({
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <RevealWatcher instanceId={instance.id} />
-      <Link href={`/connections/${connectionId}`} className="text-sm text-gray-500 hover:text-gray-700">
+      <Link
+        href={`/connections/${connectionId}`}
+        className="text-sm text-ink-soft/70 hover:text-ink"
+      >
         ← Back
       </Link>
-      <h1 className="mt-2 text-3xl">{heading}</h1>
-      <p className="mt-1 text-gray-600">
+      <h1 className="mt-3 text-3xl">{heading}</h1>
+      <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
+        <LockIcon />
         {answered
-          ? "You've answered. You can still tweak it until the other person finishes — then it locks and reveals."
+          ? "You've answered — you can tweak it until the other person finishes, then it locks and reveals."
           : "Your answer stays private until you've both finished."}
       </p>
 
-      <form action={submitResponse} className="mt-6 space-y-5">
+      <form action={submitResponse} className="mt-7 space-y-5">
         <input type="hidden" name="instance_id" value={instance.id} />
         <input type="hidden" name="connection_id" value={connectionId} />
 
         {questions.map((q, i) => (
-          <div key={q.id} className="card !p-4">
-            <label className="block font-medium" htmlFor={`q_${q.id}`}>
-              {i + 1}. {q.text}
+          <div key={q.id} className="card !p-5">
+            <p className="eyebrow">
+              Question {i + 1} of {questions.length}
+            </p>
+            <label
+              className="mt-1.5 block font-display text-lg leading-snug text-ink"
+              htmlFor={`q_${q.id}`}
+            >
+              {q.text}
             </label>
             <Field question={q} defaultValue={myAnswers[q.id]} />
           </div>
         ))}
 
-        <button
-          type="submit"
-          className="w-full btn-primary"
-        >
+        <button type="submit" className="btn-primary w-full !py-3">
           {answered ? "Update my answer" : "Submit my answer"}
         </button>
       </form>
     </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-3.5 w-3.5 text-brand-600"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
   );
 }
 
@@ -197,28 +266,45 @@ function Field({
 }) {
   const name = `q_${question.id}`;
   if (question.format === "scale") {
+    const min = question.min ?? 1;
+    const max = question.max ?? 10;
+    const values = Array.from({ length: max - min + 1 }, (_, i) => min + i);
     return (
-      <input
-        id={name}
-        name={name}
-        type="number"
-        min={question.min ?? 1}
-        max={question.max ?? 10}
-        defaultValue={defaultValue}
-        className="mt-2 w-24 rounded-md border border-gray-300 px-3 py-2 text-sm"
-      />
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {values.map((n) => (
+          <label
+            key={n}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+          >
+            <input
+              type="radio"
+              name={name}
+              value={n}
+              defaultChecked={
+                defaultValue != null && String(n) === String(defaultValue)
+              }
+              className="sr-only"
+            />
+            {n}
+          </label>
+        ))}
+      </div>
     );
   }
   if (question.format === "choice" && question.options) {
     return (
-      <div className="mt-2 space-y-1">
+      <div className="mt-3 flex flex-wrap gap-2">
         {question.options.map((opt) => (
-          <label key={opt} className="flex items-center gap-2 text-sm">
+          <label
+            key={opt}
+            className="cursor-pointer rounded-full border border-brand-200 bg-white px-4 py-2 text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+          >
             <input
               type="radio"
               name={name}
               value={opt}
               defaultChecked={defaultValue === opt}
+              className="sr-only"
             />
             {opt}
           </label>
@@ -232,7 +318,8 @@ function Field({
       name={name}
       rows={3}
       defaultValue={defaultValue}
-      className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+      placeholder="Write what's true for you…"
+      className="input mt-3"
     />
   );
 }

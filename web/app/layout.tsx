@@ -16,9 +16,25 @@ const sans = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Relationship Copilot",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://relationshipcopilot.com",
+  ),
+  title: {
+    default: "Relationship Copilot — Closer, on purpose.",
+    template: "%s — Relationship Copilot",
+  },
   description:
-    "Build deeper, healthier connections with the people who matter — across the whole arc of a relationship.",
+    "Answer thoughtful questions together and see each other's answers only when you've both shared — for partners, friends, family, and coworkers, across the whole arc of a relationship.",
+  openGraph: {
+    type: "website",
+    siteName: "Relationship Copilot",
+    title: "Relationship Copilot — Closer, on purpose.",
+    description:
+      "Answer together. Reveal together. Grow together — for every relationship that matters.",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({
