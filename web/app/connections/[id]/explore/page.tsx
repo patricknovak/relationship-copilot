@@ -46,7 +46,7 @@ export default async function ExplorePage({
       <Link href={`/connections/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
         ← Back
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Quizzes &amp; challenges</h1>
+      <h1 className="mt-2 text-3xl">Quizzes &amp; challenges</h1>
       <p className="mt-1 text-gray-600">
         Pick one to do together — you&apos;ll each answer, then reveal.
       </p>
@@ -95,7 +95,7 @@ function Group({
         {items.map((t) => {
           const start = startElective.bind(null, connectionId, t.id);
           return (
-            <li key={t.id} className="rounded-lg border border-gray-100 p-4">
+            <li key={t.id} className="card !p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{t.title}</p>
@@ -104,7 +104,7 @@ function Group({
                   )}
                 </div>
                 <form action={start}>
-                  <button className="shrink-0 rounded-md bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700">
+                  <button className="shrink-0 btn-primary !px-4 !py-1.5">
                     Start
                   </button>
                 </form>

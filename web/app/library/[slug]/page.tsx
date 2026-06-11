@@ -23,7 +23,7 @@ export default async function ArticlePage({
       <Link href="/library" className="text-sm text-gray-500 hover:text-gray-700">
         ← Library
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">{article.title}</h1>
+      <h1 className="mt-2 text-3xl">{article.title}</h1>
       {article.summary && (
         <p className="mt-1 text-gray-600">{article.summary}</p>
       )}

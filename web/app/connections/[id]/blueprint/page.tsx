@@ -60,7 +60,7 @@ export default async function BlueprintPage({
       <Link href={`/connections/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
         ← Back
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Relationship Blueprint</h1>
+      <h1 className="mt-2 text-3xl">Relationship Blueprint</h1>
 
       {/* Safety-first: a high-severity signal withholds AI and shows support. */}
       {payload?.safety ? (
@@ -71,7 +71,7 @@ export default async function BlueprintPage({
           <Section title="Shared goals" items={payload.shared_goals} />
           <Section title="Areas to nurture" items={payload.focus_areas} />
           {payload.reflection && (
-            <div className="rounded-lg border border-gray-100 p-4">
+            <div className="card !p-4">
               <h2 className="font-semibold">A gentle reflection</h2>
               <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
                 {payload.reflection}
@@ -80,7 +80,7 @@ export default async function BlueprintPage({
           )}
         </div>
       ) : isPremium ? (
-        <div className="mt-6 rounded-lg border border-gray-100 p-5">
+        <div className="mt-6 card">
           {revealed ? (
             <>
               <p className="text-sm text-gray-600">
@@ -88,7 +88,7 @@ export default async function BlueprintPage({
                 areas to nurture — based on your 20 answers.
               </p>
               <form action={generate} className="mt-3">
-                <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                <button className="btn-primary">
                   Generate Blueprint
                 </button>
               </form>
@@ -101,7 +101,7 @@ export default async function BlueprintPage({
           )}
         </div>
       ) : (
-        <div className="mt-6 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
+        <div className="mt-6 card !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-white">
           <h2 className="font-semibold text-brand-700">A Premium feature</h2>
           <p className="mt-1 text-sm text-gray-600">
             The AI Relationship Blueprint and weekly digests are part of Premium.
@@ -110,7 +110,7 @@ export default async function BlueprintPage({
           </p>
           <Link
             href="/pricing"
-            className="mt-3 inline-block rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            className="mt-3 inline-block btn-primary"
           >
             See Premium
           </Link>
@@ -138,7 +138,7 @@ export default async function BlueprintPage({
 function Section({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="rounded-lg border border-gray-100 p-4">
+    <div className="card !p-4">
       <h2 className="font-semibold">{title}</h2>
       <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 space-y-1">
         {items.map((it, i) => (

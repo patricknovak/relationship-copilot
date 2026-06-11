@@ -27,19 +27,17 @@ export default async function PricingPage() {
     : false;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-2xl font-bold text-center">Simple pricing</h1>
-      <p className="mt-2 text-center text-gray-600">
+    <div className="mx-auto max-w-3xl px-4 py-14">
+      <p className="eyebrow text-center">Pricing</p>
+      <h1 className="mt-3 text-center text-4xl">Simple, honest pricing</h1>
+      <p className="mt-3 text-center text-ink-soft">
         Most of Relationship Copilot is free. Premium adds the AI layer.
       </p>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2">
+      <div className="mt-10 grid gap-6 sm:grid-cols-2">
         <Plan title="Free" price="$0" features={FREE} highlight={false}>
           {!user && (
-            <Link
-              href="/login"
-              className="block rounded-md border border-gray-300 px-4 py-2 text-center text-sm font-medium hover:bg-gray-50"
-            >
+            <Link href="/login" className="btn-secondary w-full">
               Get started
             </Link>
           )}
@@ -47,12 +45,12 @@ export default async function PricingPage() {
 
         <Plan title="Premium" price="$18/mo" features={PREMIUM} highlight>
           {isPremium ? (
-            <span className="block rounded-md bg-brand-50 px-4 py-2 text-center text-sm font-medium text-brand-700">
-              You&apos;re on Premium
+            <span className="block rounded-full bg-brand-100 px-4 py-2.5 text-center text-sm font-medium text-brand-800">
+              You&apos;re on Premium ✨
             </span>
           ) : (
             <form action={createCheckout}>
-              <button className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+              <button className="btn-primary w-full">
                 Upgrade to Premium
               </button>
             </form>
@@ -60,7 +58,7 @@ export default async function PricingPage() {
         </Plan>
       </div>
 
-      <p className="mt-6 text-center text-xs text-gray-400">
+      <p className="mt-8 text-center text-xs text-ink-soft/70">
         Safety detection and crisis resources are free for everyone and never
         behind the paywall.
       </p>
@@ -83,21 +81,23 @@ function Plan({
 }) {
   return (
     <div
-      className={`rounded-lg border p-6 ${
-        highlight ? "border-brand-300 bg-brand-50/30" : "border-gray-200"
+      className={`card !p-7 ${
+        highlight
+          ? "!rounded-3xl !border-brand-300 !bg-gradient-to-b !from-brand-50 !to-white shadow-lift"
+          : "!rounded-3xl"
       }`}
     >
-      <h2 className="font-semibold">{title}</h2>
-      <p className="mt-1 text-2xl font-bold">{price}</p>
-      <ul className="mt-4 space-y-2 text-sm text-gray-700">
+      <h2 className="font-display text-xl text-ink">{title}</h2>
+      <p className="mt-1 font-display text-4xl text-ink">{price}</p>
+      <ul className="mt-5 space-y-2.5 text-sm text-ink-soft">
         {features.map((f) => (
-          <li key={f} className="flex gap-2">
-            <span className="text-brand-600">✓</span>
+          <li key={f} className="flex gap-2.5">
+            <span className="mt-0.5 text-brand-600">✓</span>
             {f}
           </li>
         ))}
       </ul>
-      <div className="mt-6">{children}</div>
+      <div className="mt-7">{children}</div>
     </div>
   );
 }

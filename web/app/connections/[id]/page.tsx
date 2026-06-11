@@ -93,9 +93,11 @@ export default async function ConnectionPage({
       <Link href="/connections" className="text-sm text-gray-500 hover:text-gray-700">
         ← All connections
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">{connectionLabel(conn.type)}</h1>
+      <h1 className="mt-2 text-3xl">{connectionLabel(conn.type)}</h1>
       {streak > 0 && (
-        <p className="mt-1 text-sm text-amber-600">🔥 {streak}-day streak</p>
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 px-3 py-1 text-sm font-medium text-amber-800">
+          🔥 {streak}-day streak
+        </p>
       )}
 
       {/* Parent & teen: trust-first, teen-revocable. Not surveillance. */}
@@ -113,8 +115,8 @@ export default async function ConnectionPage({
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && (
-        <section className="mt-6 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
-          <h2 className="font-semibold text-brand-700">Invite your person</h2>
+        <section className="card mt-6 !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-white">
+          <h2 className="text-lg text-brand-800">Invite your person</h2>
           <p className="mt-1 text-sm text-gray-600">
             Share this link. Once they join, you can both start the 20 questions.
           </p>
@@ -124,8 +126,8 @@ export default async function ConnectionPage({
 
       {/* Both joined — onboarding entry */}
       {joinedCount >= 2 && (
-        <section className="mt-6 rounded-lg border border-gray-100 p-5">
-          <h2 className="font-semibold">The first 20 questions</h2>
+        <section className="card mt-6">
+          <h2 className="text-lg">The first 20 questions</h2>
           {!instance ? (
             <>
               <p className="mt-1 text-sm text-gray-600">
@@ -133,7 +135,7 @@ export default async function ConnectionPage({
                 answers only after you&apos;ve both finished.
               </p>
               <form action={begin} className="mt-3">
-                <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+                <button className="btn-primary">
                   Begin the 20 questions
                 </button>
               </form>
@@ -172,13 +174,13 @@ export default async function ConnectionPage({
 
       {/* Daily question */}
       {conn.status === "active" && (
-        <section className="mt-6 rounded-lg border border-gray-100 p-5">
-          <h2 className="font-semibold">Today&apos;s question</h2>
+        <section className="card mt-6">
+          <h2 className="text-lg">Today&apos;s question</h2>
           <p className="mt-1 text-sm text-gray-600">
             A fresh prompt each day to keep learning about each other.
           </p>
           <form action={ensureDaily.bind(null, id)} className="mt-3">
-            <button className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+            <button className="btn-primary">
               Open today&apos;s question
             </button>
           </form>
@@ -187,8 +189,8 @@ export default async function ConnectionPage({
 
       {/* Quizzes & challenges */}
       {conn.status === "active" && (
-        <section className="mt-6 rounded-lg border border-gray-100 p-5">
-          <h2 className="font-semibold">Quizzes &amp; challenges</h2>
+        <section className="card mt-6">
+          <h2 className="text-lg">Quizzes &amp; challenges</h2>
           <p className="mt-1 text-sm text-gray-600">
             Playful activities and reflections to do together.
           </p>
@@ -203,8 +205,8 @@ export default async function ConnectionPage({
 
       {/* Relationship Blueprint (AI; premium) */}
       {conn.status === "active" && (
-        <section className="mt-6 rounded-lg border border-gray-100 p-5">
-          <h2 className="font-semibold">Relationship Blueprint</h2>
+        <section className="card mt-6">
+          <h2 className="text-lg">Relationship Blueprint</h2>
           <p className="mt-1 text-sm text-gray-600">
             An AI reflection on your strengths, shared goals, and areas to
             nurture.
@@ -226,10 +228,10 @@ export default async function ConnectionPage({
 
       {/* Zodiac compatibility — just for fun */}
       {conn.status === "active" && compat && (
-        <section className="mt-6 rounded-lg border border-brand-100 bg-brand-50/40 p-5">
-          <h2 className="font-semibold text-brand-700">Star match ✨</h2>
-          <p className="mt-1 text-sm text-gray-700">{compat.blurb}</p>
-          <p className="mt-2 text-xs text-gray-400">{ZODIAC_DISCLAIMER}</p>
+        <section className="card mt-6 !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-paper-warm">
+          <h2 className="text-lg text-brand-800">Star match ✨</h2>
+          <p className="mt-1 text-sm text-ink-soft">{compat.blurb}</p>
+          <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
         </section>
       )}
 
