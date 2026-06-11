@@ -21,7 +21,7 @@ export default function InviteShare({ url }: { url: string }) {
         readOnly
         value={url}
         onFocus={(e) => e.currentTarget.select()}
-        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+        className="input flex-1 !font-mono"
       />
       <button
         onClick={copy}

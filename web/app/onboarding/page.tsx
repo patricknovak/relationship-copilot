@@ -19,8 +19,9 @@ export default async function OnboardingPage() {
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
-      <h1 className="text-3xl">Set up your profile</h1>
-      <p className="mt-1 text-gray-600">
+      <p className="eyebrow">Welcome</p>
+      <h1 className="mt-2 text-3xl">Set up your profile</h1>
+      <p className="mt-2 text-ink-soft">
         A few quick things so your connections feel more personal. You can
         change these anytime.
       </p>
@@ -35,7 +36,7 @@ export default async function OnboardingPage() {
             name="display_name"
             required
             defaultValue={profile?.display_name ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="input mt-1.5"
           />
         </div>
 
@@ -48,7 +49,7 @@ export default async function OnboardingPage() {
             name="birthday"
             type="date"
             defaultValue={profile?.birthday ?? ""}
-            className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="input mt-1.5 !w-auto"
           />
           <p className="mt-1 text-xs text-gray-400">{ZODIAC_DISCLAIMER}</p>
         </div>
@@ -62,7 +63,7 @@ export default async function OnboardingPage() {
             name="goals"
             rows={2}
             defaultValue={intake.goals ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="input mt-1.5"
           />
         </div>
 
@@ -75,7 +76,7 @@ export default async function OnboardingPage() {
             name="values"
             rows={2}
             defaultValue={intake.values ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="input mt-1.5"
           />
         </div>
 
@@ -87,18 +88,22 @@ export default async function OnboardingPage() {
             How much do you agree? (1 = not at all, 5 = very much) — educational,
             not a diagnosis.
           </p>
-          <div className="mt-3 space-y-3">
+          <div className="mt-4 space-y-4">
             {ATTACHMENT_ITEMS.map((item) => (
               <div key={item.id}>
-                <p className="text-sm">{item.text}</p>
-                <div className="mt-1 flex gap-3 text-sm">
+                <p className="text-sm text-ink">{item.text}</p>
+                <div className="mt-2 flex gap-1.5">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <label key={n} className="flex items-center gap-1">
+                    <label
+                      key={n}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+                    >
                       <input
                         type="radio"
                         name={`att_${item.id}`}
                         value={n}
                         defaultChecked={n === 3}
+                        className="sr-only"
                       />
                       {n}
                     </label>
