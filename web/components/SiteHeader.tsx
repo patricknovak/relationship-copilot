@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/actions/auth";
+import HeaderNav from "@/components/HeaderNav";
 
 // Two overlapping rings — two people, one connection.
 function LogoMark() {
@@ -27,62 +27,15 @@ export default async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-100/70 bg-paper/80 backdrop-blur-md">
-      <nav className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between">
+      <nav className="relative mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
         <Link
           href="/"
-          className="flex items-center gap-2 font-display text-lg text-ink"
+          className="flex items-center gap-2 font-display text-base text-ink sm:text-lg"
         >
           <LogoMark />
           Relationship&nbsp;Copilot
         </Link>
-        <div className="flex items-center gap-1 text-sm sm:gap-2">
-          {/* Safety must be reachable from every screen. */}
-          <Link
-            href="/safety"
-            className="rounded-full px-3 py-1.5 font-medium text-rose-700 hover:bg-rose-50"
-          >
-            Safety
-          </Link>
-          {user ? (
-            <>
-              <Link
-                href="/connections"
-                className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-brand-100/60 hover:text-ink"
-              >
-                Connections
-              </Link>
-              <Link
-                href="/library"
-                className="hidden rounded-full px-3 py-1.5 text-ink-soft hover:bg-brand-100/60 hover:text-ink sm:inline-block"
-              >
-                Library
-              </Link>
-              <Link
-                href="/account"
-                className="rounded-full px-3 py-1.5 text-ink-soft hover:bg-brand-100/60 hover:text-ink"
-              >
-                Account
-              </Link>
-              <form action={signOut}>
-                <button className="rounded-full px-3 py-1.5 text-ink-soft/70 hover:bg-brand-100/60 hover:text-ink">
-                  Sign out
-                </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/pricing"
-                className="hidden rounded-full px-3 py-1.5 text-ink-soft hover:bg-brand-100/60 hover:text-ink sm:inline-block"
-              >
-                Pricing
-              </Link>
-              <Link href="/login" className="btn-primary !px-4 !py-2">
-                Sign in
-              </Link>
-            </>
-          )}
-        </div>
+        <HeaderNav signedIn={!!user} />
       </nav>
     </header>
   );
