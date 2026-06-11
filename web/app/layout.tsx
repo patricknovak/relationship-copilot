@@ -35,6 +35,15 @@ export default function RootLayout({
               </Link>
               .
             </p>
+            <p>
+              <Link href="/privacy" className="underline">
+                Privacy
+              </Link>{" "}
+              ·{" "}
+              <Link href="/terms" className="underline">
+                Terms
+              </Link>
+            </p>
           </div>
         </footer>
       </body>
