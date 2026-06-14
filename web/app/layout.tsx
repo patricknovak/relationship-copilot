@@ -49,9 +49,17 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-screen flex flex-col font-sans">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-brand-700 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+        >
+          Skip to content
+        </a>
         <SiteHeader />
 
-        <main className="flex-1">{children}</main>
+        <main id="main" className="flex-1">
+          {children}
+        </main>
 
         <footer className="mt-16 border-t border-brand-900/40 bg-[#1c151c] text-brand-100/80">
           <div className="mx-auto max-w-5xl px-4 py-12">

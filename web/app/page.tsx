@@ -18,6 +18,33 @@ const STAGES = [
   { label: "Grief & endings", note: "remember together" },
 ];
 
+const FAQS = [
+  {
+    q: "Can the other person see my answer before I share mine?",
+    a: "No — and it's not just a promise in the app. The rule that hides an answer until you've both responded lives in the database itself, so no bug in the app could leak it early. You answer first, then you both see everything at once.",
+  },
+  {
+    q: "Is this therapy?",
+    a: "No. Relationship Copilot offers relationship-wellness and coaching-style prompts grounded in research, but it isn't therapy, counseling, or medical advice, and it never diagnoses. If you're in crisis, our Safety page lists free, confidential support — always one tap away.",
+  },
+  {
+    q: "What happens to what I write — and what does the AI see?",
+    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. The optional AI features send only the relevant answers — with names, emails, and phone numbers stripped out first — to generate a reflection for you, and that text isn't used to train models.",
+  },
+  {
+    q: "Is it really free?",
+    a: "The core experience — every relationship type, the 20 questions, daily prompts, reveals, discussions, and the library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
+  },
+  {
+    q: "Is it only for couples?",
+    a: "No. It's built for the whole arc of a relationship — romantic partners, friends, family, siblings, coworkers, mentors, and a trust-first parent–teen track. Each connection gets its own private space.",
+  },
+  {
+    q: "What if I'm in an unsafe relationship?",
+    a: "Safety comes first and free. The app screens for signs of harm and, when it sees them, withholds AI output and surfaces support resources instead. There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
+  },
+];
+
 export default function Home() {
   return (
     <div>
@@ -184,6 +211,30 @@ export default function Home() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------ FAQ */}
+      <section className="mx-auto max-w-2xl px-4 py-20">
+        <p className="eyebrow text-center">Good questions</p>
+        <h2 className="mt-3 text-center text-3xl sm:text-4xl">
+          Before you start
+        </h2>
+        <div className="mt-10 space-y-3">
+          {FAQS.map((f) => (
+            <details key={f.q} className="card group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+                {f.q}
+                <span
+                  aria-hidden
+                  className="text-brand-500 transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
+            </details>
+          ))}
         </div>
       </section>
 
