@@ -99,7 +99,7 @@ export default async function PromptInstanceView({
         </Link>
         <div className="mt-3 flex items-center gap-3">
           <h1 className="text-3xl">{heading}</h1>
-          <span className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-800">
+          <span className="rounded-full bg-brand-100 dark:bg-brand-900/40 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-200">
             ✨ Revealed together
           </span>
         </div>
@@ -119,8 +119,8 @@ export default async function PromptInstanceView({
                       key={r.user_id}
                       className={`rounded-2xl border p-3.5 ${
                         mine
-                          ? "border-brand-100 bg-brand-50/70"
-                          : "border-amber-100 bg-amber-50/60"
+                          ? "border-brand-100 bg-brand-50/70 dark:bg-brand-900/25"
+                          : "border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25"
                       }`}
                     >
                       <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
@@ -274,7 +274,7 @@ function Field({
         {values.map((n) => (
           <label
             key={n}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white dark:bg-surface text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
           >
             <input
               type="radio"

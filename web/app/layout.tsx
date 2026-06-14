@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
+import ThemeScript from "@/components/ThemeScript";
 import "./globals.css";
 
 const display = Fraunces({
@@ -44,12 +45,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
+      <head>
+        <ThemeScript />
+      </head>
       <body className="min-h-screen flex flex-col font-sans">
         <SiteHeader />
 
         <main className="flex-1">{children}</main>
 
-        <footer className="mt-16 bg-ink text-brand-100/80">
+        <footer className="mt-16 border-t border-brand-900/40 bg-[#1c151c] text-brand-100/80">
           <div className="mx-auto max-w-5xl px-4 py-12">
             <div className="grid gap-10 sm:grid-cols-3">
               <div>

@@ -57,7 +57,7 @@ export default async function BlueprintPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href={`/connections/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
+      <Link href={`/connections/${id}`} className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← Back
       </Link>
       <h1 className="mt-2 text-3xl">Relationship Blueprint</h1>
@@ -73,7 +73,7 @@ export default async function BlueprintPage({
           {payload.reflection && (
             <div className="card !p-4">
               <h2 className="font-semibold">A gentle reflection</h2>
-              <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+              <p className="mt-2 text-sm text-ink-soft whitespace-pre-wrap">
                 {payload.reflection}
               </p>
             </div>
@@ -83,7 +83,7 @@ export default async function BlueprintPage({
         <div className="mt-6 card">
           {revealed ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-ink-soft">
                 Generate an AI reflection on your strengths, shared goals, and
                 areas to nurture — based on your 20 answers.
               </p>
@@ -94,16 +94,16 @@ export default async function BlueprintPage({
               </form>
             </>
           ) : (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ink-soft">
               Finish the 20 questions together first, then your Blueprint will be
               available here.
             </p>
           )}
         </div>
       ) : (
-        <div className="mt-6 card !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-white">
+        <div className="mt-6 card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="font-semibold text-brand-700">A Premium feature</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-ink-soft">
             The AI Relationship Blueprint and weekly digests are part of Premium.
             Your core experience — questions, daily prompts, and safety resources
             — stays free.
@@ -117,7 +117,7 @@ export default async function BlueprintPage({
         </div>
       )}
 
-      <p className="mt-8 text-xs text-gray-400">
+      <p className="mt-8 text-xs text-ink-soft/60">
         This is relationship-wellness guidance, not therapy or diagnosis. If
         you&apos;re struggling, our{" "}
         <Link href="/safety" className="underline">
@@ -125,7 +125,7 @@ export default async function BlueprintPage({
         </Link>{" "}
         are always free.
       </p>
-      <p className="mt-2 text-xs text-gray-400">
+      <p className="mt-2 text-xs text-ink-soft/60">
         How this works: to generate a Blueprint, your written answers are sent
         to our AI provider (xAI&apos;s Grok) with names, email addresses, and
         phone numbers removed first. They are used only to produce this
@@ -140,7 +140,7 @@ function Section({ title, items }: { title: string; items?: string[] }) {
   return (
     <div className="card !p-4">
       <h2 className="font-semibold">{title}</h2>
-      <ul className="mt-2 list-disc pl-5 text-sm text-gray-700 space-y-1">
+      <ul className="mt-2 list-disc pl-5 text-sm text-ink-soft space-y-1">
         {items.map((it, i) => (
           <li key={i}>{it}</li>
         ))}
@@ -151,9 +151,9 @@ function Section({ title, items }: { title: string; items?: string[] }) {
 
 function SafetyCard() {
   return (
-    <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-5">
-      <h2 className="font-semibold text-rose-800">You deserve support</h2>
-      <p className="mt-1 text-sm text-rose-900">{SAFETY_NOTE}</p>
+    <div className="mt-6 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-5">
+      <h2 className="font-semibold text-rose-800 dark:text-rose-200">You deserve support</h2>
+      <p className="mt-1 text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
       <ul className="mt-3 space-y-1 text-sm">
         {INLINE_RESOURCES.map((r) => (
           <li key={r.name}>

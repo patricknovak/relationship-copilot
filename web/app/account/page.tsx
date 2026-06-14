@@ -42,12 +42,12 @@ export default async function AccountPage() {
           Edit profile
         </Link>
       </div>
-      <p className="mt-1 text-sm text-gray-500">{user?.email}</p>
+      <p className="mt-1 text-sm text-ink-soft/80">{user?.email}</p>
 
       <dl className="mt-6 space-y-4">
         <div className="card !p-4">
           <dt className="text-sm font-medium">Plan</dt>
-          <dd className="mt-1 text-sm text-gray-700">
+          <dd className="mt-1 text-sm text-ink-soft">
             {isPremium ? "Premium" : "Free"}
             {!isPremium && (
               <Link href="/pricing" className="ml-2 text-brand-700 underline">
@@ -60,7 +60,7 @@ export default async function AccountPage() {
         {intake.attachment?.style && (
           <div className="card !p-4">
             <dt className="text-sm font-medium">Your relating style</dt>
-            <dd className="mt-1 text-sm text-gray-700">
+            <dd className="mt-1 text-sm text-ink-soft">
               <span className="font-medium">{intake.attachment.style}</span> —{" "}
               {ATTACHMENT_BLURB[intake.attachment.style]}
             </dd>
@@ -68,21 +68,21 @@ export default async function AccountPage() {
         )}
 
         {sign && (
-          <div className="card !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-paper-warm !p-4">
+          <div className="card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20 !p-4">
             <dt className="text-sm font-medium text-brand-700">
               Your sign <span aria-hidden>{sign.symbol}</span>
             </dt>
-            <dd className="mt-1 text-sm text-gray-700">
+            <dd className="mt-1 text-sm text-ink-soft">
               {sign.name} ({sign.element}) — {sign.blurb}
             </dd>
-            <p className="mt-2 text-xs text-gray-400">{ZODIAC_DISCLAIMER}</p>
+            <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
           </div>
         )}
 
         {intake.goals && (
           <div className="card !p-4">
             <dt className="text-sm font-medium">What you want right now</dt>
-            <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+            <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.goals}
             </dd>
           </div>
@@ -96,12 +96,12 @@ export default async function AccountPage() {
       </div>
 
       <div className="mt-10 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-ink-soft/80 uppercase tracking-wide">
           Your data
         </h2>
         <div className="card !p-4">
           <dt className="text-sm font-medium">Download your data</dt>
-          <dd className="mt-1 text-sm text-gray-700">
+          <dd className="mt-1 text-sm text-ink-soft">
             Everything your account contains — profile, answers, discussions,
             insights — as a JSON file.{" "}
             <a

@@ -36,7 +36,7 @@ export default async function LibraryPage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="font-display text-lg text-ink">{a.title}</span>
                 {a.is_premium && (
-                  <span className="shrink-0 rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-800">
+                  <span className="shrink-0 rounded-full bg-brand-100 dark:bg-brand-900/40 px-2.5 py-0.5 text-xs font-medium text-brand-800 dark:text-brand-200">
                     Premium
                   </span>
                 )}

@@ -59,12 +59,12 @@ export default function SafetyPage() {
     <div className="mx-auto max-w-2xl px-4 py-12">
       <QuickExit />
 
-      <div className="rounded-lg bg-rose-50 border border-rose-200 p-4">
-        <p className="font-semibold text-rose-800">
+      <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-4">
+        <p className="font-semibold text-rose-800 dark:text-rose-200">
           If you are in immediate danger, call your local emergency number
           (911 in the US).
         </p>
-        <p className="mt-2 text-sm text-rose-900">
+        <p className="mt-2 text-sm text-rose-900 dark:text-rose-200">
           The <span className="font-medium">Quick exit</span> button (or the
           Escape key) instantly replaces this page with an unrelated site. If
           someone may check your device, consider using a private/incognito
@@ -92,7 +92,7 @@ export default function SafetyPage() {
                 href={r.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-1 inline-block text-sm underline text-gray-500"
+                className="mt-1 inline-block text-sm underline text-ink-soft/80"
               >
                 {r.href.replace("https://", "")}
               </a>
@@ -101,7 +101,7 @@ export default function SafetyPage() {
         ))}
       </ul>
 
-      <p className="mt-8 text-xs text-gray-500">
+      <p className="mt-8 text-xs text-ink-soft/80">
         Resources listed are US-based. Availability and numbers may change; if a
         number does not work, search for your local equivalent or contact local
         emergency services.

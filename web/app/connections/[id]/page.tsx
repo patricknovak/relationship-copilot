@@ -90,19 +90,19 @@ export default async function ConnectionPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href="/connections" className="text-sm text-gray-500 hover:text-gray-700">
+      <Link href="/connections" className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← All connections
       </Link>
       <h1 className="mt-2 text-3xl">{connectionLabel(conn.type)}</h1>
       {streak > 0 && (
-        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 px-3 py-1 text-sm font-medium text-amber-800">
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200">
           🔥 {streak}-day streak
         </p>
       )}
 
       {/* Parent & teen: trust-first, teen-revocable. Not surveillance. */}
       {isParentTeen && (
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-900 dark:text-amber-200">
           <p className="font-medium">A space for connection, not monitoring.</p>
           <p className="mt-1">
             Both people choose to be here and can leave anytime. Answers follow
@@ -115,9 +115,9 @@ export default async function ConnectionPage({
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && (
-        <section className="card mt-6 !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-white">
-          <h2 className="text-lg text-brand-800">Invite your person</h2>
-          <p className="mt-1 text-sm text-gray-600">
+        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+          <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
+          <p className="mt-1 text-sm text-ink-soft">
             Share this link. Once they join, you can both start the 20 questions.
           </p>
           <InviteShare url={inviteUrl} />
@@ -130,7 +130,7 @@ export default async function ConnectionPage({
           <h2 className="text-lg">The first 20 questions</h2>
           {!instance ? (
             <>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-ink-soft">
                 Answer thoughtfully — you&apos;ll each see the other&apos;s
                 answers only after you&apos;ve both finished.
               </p>
@@ -150,7 +150,7 @@ export default async function ConnectionPage({
               </Link>
             </p>
           ) : myResponse ? (
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-ink-soft">
               You&apos;re done — waiting for the other person to finish.{" "}
               <Link
                 href={`/connections/${id}/onboarding`}
@@ -176,7 +176,7 @@ export default async function ConnectionPage({
       {conn.status === "active" && (
         <section className="card mt-6">
           <h2 className="text-lg">Today&apos;s question</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-ink-soft">
             A fresh prompt each day to keep learning about each other.
           </p>
           <form action={ensureDaily.bind(null, id)} className="mt-3">
@@ -191,7 +191,7 @@ export default async function ConnectionPage({
       {conn.status === "active" && (
         <section className="card mt-6">
           <h2 className="text-lg">Quizzes &amp; challenges</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-ink-soft">
             Playful activities and reflections to do together.
           </p>
           <Link
@@ -207,7 +207,7 @@ export default async function ConnectionPage({
       {conn.status === "active" && (
         <section className="card mt-6">
           <h2 className="text-lg">Relationship Blueprint</h2>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-ink-soft">
             An AI reflection on your strengths, shared goals, and areas to
             nurture.
           </p>
@@ -228,8 +228,8 @@ export default async function ConnectionPage({
 
       {/* Zodiac compatibility — just for fun */}
       {conn.status === "active" && compat && (
-        <section className="card mt-6 !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-paper-warm">
-          <h2 className="text-lg text-brand-800">Star match ✨</h2>
+        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+          <h2 className="text-lg text-brand-800 dark:text-brand-200">Star match ✨</h2>
           <p className="mt-1 text-sm text-ink-soft">{compat.blurb}</p>
           <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
         </section>
@@ -238,7 +238,7 @@ export default async function ConnectionPage({
       {/* Leave — anyone can step away (teen-revocable). */}
       {conn.status !== "archived" && (
         <form action={leave} className="mt-10 border-t border-gray-100 pt-6">
-          <button className="text-sm text-gray-500 hover:text-rose-600">
+          <button className="text-sm text-ink-soft/80 hover:text-rose-600">
             Leave this connection
           </button>
         </form>

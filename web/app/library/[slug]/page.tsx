@@ -95,7 +95,7 @@ export default async function ArticlePage({
         )}
       </div>
 
-      <p className="mt-10 border-t border-brand-100/70 pt-6 text-xs text-ink-soft/70">
+      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/70">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
           Safety resources

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -8,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Warm mulberry — intimate and grown-up, kept clearly distinct from
-        // the rose used for safety surfaces.
+        // Mulberry accent ramp — fixed across themes (buttons, links stay
+        // mulberry in both light and dark).
         brand: {
           50: "#faf5fa",
           100: "#f4e9f3",
@@ -22,13 +23,20 @@ const config: Config = {
           800: "#5f2f5b",
           900: "#50284c",
         },
+        // Semantic tokens — CSS-variable backed so they flip in dark mode
+        // without touching component markup.
         ink: {
-          DEFAULT: "#221a22",
-          soft: "#4a3f49",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          soft: "rgb(var(--ink-soft) / <alpha-value>)",
         },
         paper: {
-          DEFAULT: "#fbf8f4",
-          warm: "#f6efe7",
+          DEFAULT: "rgb(var(--paper) / <alpha-value>)",
+          warm: "rgb(var(--paper-warm) / <alpha-value>)",
+        },
+        // Card surface + hairline; distinct from page paper so cards lift.
+        surface: {
+          DEFAULT: "rgb(var(--surface) / <alpha-value>)",
+          line: "rgb(var(--surface-line) / <alpha-value>)",
         },
       },
       fontFamily: {

@@ -26,7 +26,7 @@ export default async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-brand-100/70 bg-paper/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-brand-100/70 dark:border-surface-line bg-paper/80 backdrop-blur-md">
       <nav className="relative mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
         <Link
           href="/"

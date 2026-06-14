@@ -24,16 +24,16 @@ export default function DeleteAccount() {
   }
 
   return (
-    <div className="rounded-lg border border-rose-200 p-4">
+    <div className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
       <h2 className="text-sm font-medium text-rose-700">Delete account</h2>
-      <p className="mt-1 text-sm text-gray-600">
+      <p className="mt-1 text-sm text-ink-soft">
         This permanently deletes your profile, your answers, and your activity.
         If you share a connection with someone, they keep their own answers and
         the connection is archived for them; everything you wrote is removed.
         This cannot be undone.
       </p>
       <form action={onSubmit} className="mt-3 space-y-2">
-        <label className="block text-xs text-gray-500" htmlFor="confirm-delete">
+        <label className="block text-xs text-ink-soft/80" htmlFor="confirm-delete">
           Type <span className="font-mono font-semibold">DELETE</span> to confirm
         </label>
         <input
@@ -42,7 +42,7 @@ export default function DeleteAccount() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="off"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-rose-500 focus:outline-none"
+          className="w-full rounded-md border border-surface-line bg-surface px-3 py-2 text-sm text-ink focus:border-rose-500 focus:outline-none"
         />
         <button
           type="submit"
