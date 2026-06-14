@@ -1,7 +1,31 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { renderArticleBlocks, type Span } from "@/lib/markdown";
+
+// Per-article title + description so sharing a specific library link unfurls
+// with that article's own title and summary (falls back to the OG card).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+  const { data: article } = await supabase
+    .from("education_articles")
+    .select("title, summary")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!article) return { title: "Library" };
+  const description = article.summary ?? undefined;
+  return {
+    title: article.title,
+    description,
+    openGraph: { title: article.title, description },
+  };
+}
 
 export default async function ArticlePage({
   params,

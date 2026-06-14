@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createCheckout } from "@/app/actions/billing";
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description:
+    "Most of Relationship Copilot is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are always free.",
+};
 
 const FREE = [
   "All relationship types",
