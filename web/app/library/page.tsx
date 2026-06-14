@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Library",
+  description:
+    "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
+};
 
 // Evidence-based education. RLS returns free articles to everyone and premium
 // ones only to entitled users, so free users simply see fewer cards.
