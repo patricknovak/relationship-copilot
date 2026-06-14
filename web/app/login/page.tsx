@@ -70,7 +70,7 @@ export default function LoginPage() {
             <button
               onClick={() => signInWith("google")}
               disabled={oauthLoading !== null}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full border border-brand-200/80 bg-white px-5 py-2.5 text-sm font-medium text-ink shadow-soft transition hover:border-brand-300 hover:bg-brand-50/50 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2.5 rounded-full border border-brand-200/80 bg-white px-5 py-2.5 text-sm font-medium text-[#1f1f1f] shadow-soft transition hover:bg-gray-50 disabled:opacity-60"
             >
               <GoogleIcon />
               {oauthLoading === "google" ? "Connecting…" : "Continue with Google"}
@@ -101,7 +101,7 @@ export default function LoginPage() {
           </div>
 
           {sent ? (
-            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
+            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:text-brand-200">
               Check your inbox for a sign-in link. ✨
             </div>
           ) : (

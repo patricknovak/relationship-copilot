@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // Client nav: full links on desktop, hamburger panel on mobile. Auth state
 // arrives as a prop from the server header; signOut is a server action.
@@ -25,8 +26,8 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
   const linkCls = (href: string) =>
     `rounded-full px-3 py-1.5 transition ${
       pathname.startsWith(href)
-        ? "bg-brand-100 text-ink font-medium"
-        : "text-ink-soft hover:bg-brand-100/60 hover:text-ink"
+        ? "bg-brand-100 dark:bg-brand-900/40 text-ink font-medium"
+        : "text-ink-soft hover:bg-surface-line/60 hover:text-ink"
     }`;
 
   return (
@@ -34,10 +35,12 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
       {/* Safety must be reachable from every screen, at every width. */}
       <Link
         href="/safety"
-        className="rounded-full px-2 py-1.5 font-medium text-rose-700 hover:bg-rose-50 sm:px-3"
+        className="rounded-full px-2 py-1.5 font-medium text-rose-700 hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
       >
         Safety
       </Link>
+
+      <ThemeToggle />
 
       {/* Desktop links */}
       <div className="hidden items-center gap-1 sm:flex">
@@ -48,7 +51,7 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
         ))}
         {signedIn ? (
           <form action={signOut}>
-            <button className="rounded-full px-3 py-1.5 text-ink-soft/70 hover:bg-brand-100/60 hover:text-ink">
+            <button className="rounded-full px-3 py-1.5 text-ink-soft/70 hover:bg-surface-line/60 hover:text-ink">
               Sign out
             </button>
           </form>
@@ -72,7 +75,7 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-brand-100/60 sm:hidden"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-surface-line/60 sm:hidden"
       >
         <svg
           viewBox="0 0 24 24"
@@ -93,21 +96,21 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
 
       {/* Mobile panel */}
       {open && (
-        <div className="absolute inset-x-0 top-16 z-50 border-b border-brand-100 bg-paper shadow-lift sm:hidden">
+        <div className="absolute inset-x-0 top-16 z-50 border-b border-brand-100 dark:border-surface-line bg-paper shadow-lift sm:hidden">
           <div className="mx-auto max-w-5xl space-y-1 px-4 py-4">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="block rounded-xl px-3 py-2.5 text-base text-ink hover:bg-brand-100/60"
+                className="block rounded-xl px-3 py-2.5 text-base text-ink hover:bg-surface-line/60"
               >
                 {l.label}
               </Link>
             ))}
             {signedIn && (
-              <form action={signOut} className="border-t border-brand-100/70 pt-2">
-                <button className="block w-full rounded-xl px-3 py-2.5 text-left text-base text-ink-soft hover:bg-brand-100/60">
+              <form action={signOut} className="border-t border-brand-100/70 dark:border-surface-line pt-2">
+                <button className="block w-full rounded-xl px-3 py-2.5 text-left text-base text-ink-soft hover:bg-surface-line/60">
                   Sign out
                 </button>
               </form>

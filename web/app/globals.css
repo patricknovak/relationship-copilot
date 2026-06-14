@@ -4,6 +4,22 @@
 
 :root {
   color-scheme: light;
+  --paper: 251 248 244;
+  --paper-warm: 246 239 231;
+  --ink: 34 26 34;
+  --ink-soft: 74 63 73;
+  --surface: 255 255 255;
+  --surface-line: 244 233 243;
+}
+
+.dark {
+  color-scheme: dark;
+  --paper: 26 20 26;
+  --paper-warm: 34 26 34;
+  --ink: 244 237 243;
+  --ink-soft: 184 169 183;
+  --surface: 38 30 38;
+  --surface-line: 60 48 59;
 }
 
 @layer base {
@@ -18,7 +34,7 @@
   }
 
   ::selection {
-    @apply bg-brand-200 text-ink;
+    @apply bg-brand-300 text-ink;
   }
 
   a,
@@ -43,35 +59,40 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-brand-800 hover:shadow-lift active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-brand-800 hover:shadow-lift active:scale-[0.98] dark:bg-brand-500 dark:hover:bg-brand-400;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-brand-200 bg-white/70 px-5 py-2.5 text-sm font-medium text-brand-800 transition hover:border-brand-300 hover:bg-brand-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-surface-line bg-surface px-5 py-2.5 text-sm font-medium text-brand-800 transition hover:border-brand-300 hover:bg-paper-warm dark:text-brand-200;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-brand-100/60 hover:text-ink;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-surface-line/60 hover:text-ink;
   }
 
   .card {
-    @apply rounded-2xl border border-brand-100/80 bg-white/80 p-5 shadow-soft;
+    @apply rounded-2xl border border-surface-line bg-surface p-5 shadow-soft;
   }
 
   .card-hover {
-    @apply transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift;
+    @apply transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift;
+  }
+
+  /* Branded highlight card — a soft mulberry tint that works in both themes. */
+  .card-tint {
+    @apply rounded-2xl border border-brand-200 bg-brand-50/60 p-5 shadow-soft dark:border-brand-800/60 dark:bg-brand-900/20;
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full border border-brand-200/70 bg-white/70 px-3 py-1 text-sm text-brand-800;
+    @apply inline-flex items-center rounded-full border border-surface-line bg-surface px-3 py-1 text-sm text-brand-800 dark:text-brand-200;
   }
 
   .input {
-    @apply w-full rounded-xl border border-brand-200/70 bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+    @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
   }
 
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600;
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300;
   }
 
   /* Soft radial glow behind heroes and feature moments. */
@@ -80,5 +101,12 @@
       radial-gradient(46rem 24rem at 50% -4rem, rgb(212 173 209 / 0.45), transparent 70%),
       radial-gradient(30rem 18rem at 85% 8rem, rgb(250 224 200 / 0.5), transparent 70%),
       radial-gradient(26rem 16rem at 12% 12rem, rgb(244 233 243 / 0.9), transparent 70%);
+  }
+
+  .dark .hero-glow {
+    background:
+      radial-gradient(46rem 24rem at 50% -4rem, rgb(116 56 111 / 0.35), transparent 70%),
+      radial-gradient(30rem 18rem at 85% 8rem, rgb(95 47 91 / 0.30), transparent 70%),
+      radial-gradient(26rem 16rem at 12% 12rem, rgb(60 48 59 / 0.55), transparent 70%);
   }
 }

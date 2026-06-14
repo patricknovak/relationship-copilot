@@ -49,20 +49,20 @@ export default function Home() {
 
           {/* The signature moment: mutual reveal, as a living mockup. */}
           <div className="relative mx-auto mt-16 max-w-3xl animate-fade-up [animation-delay:340ms]">
-            <div className="card !rounded-3xl !bg-white/90 !p-6 text-left shadow-lift sm:!p-8">
+            <div className="card !rounded-3xl !bg-white/90 dark:!bg-surface !p-6 text-left shadow-lift sm:!p-8">
               <p className="eyebrow">Today&apos;s question</p>
               <p className="mt-2 font-display text-xl text-ink sm:text-2xl">
                 &ldquo;When do you feel most appreciated by me?&rdquo;
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                <div className="rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
                   <p className="text-xs font-semibold text-brand-700">You</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                     When you notice the small stuff — like Tuesday, when you
                     just said &ldquo;I saw how hard that was.&rdquo;
                   </p>
                 </div>
-                <div className="relative overflow-hidden rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+                <div className="relative overflow-hidden rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
                   <p className="text-xs font-semibold text-brand-700">Them</p>
                   <p
                     aria-hidden
@@ -71,8 +71,8 @@ export default function Home() {
                     Honestly, it&apos;s the mornings. You always remember the
                     little rituals that make us, us.
                   </p>
-                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-white/85 via-white/30 to-transparent p-3">
-                    <span className="rounded-full bg-ink/85 px-3 py-1 text-xs font-medium text-white">
+                  <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-white/85 via-white/30 to-transparent p-3 dark:from-surface dark:via-surface/40">
+                    <span className="rounded-full bg-brand-800 px-3 py-1 text-xs font-medium text-white dark:bg-brand-500">
                       Reveals when you both answer ✨
                     </span>
                   </div>
@@ -234,7 +234,7 @@ function Feature({
 }) {
   return (
     <div className="card card-hover">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-700">
         {icon}
       </span>
       <h3 className="mt-4 font-semibold text-ink">{title}</h3>

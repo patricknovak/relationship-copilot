@@ -78,22 +78,22 @@ export default async function LookingBack({
   if (cards.length === 0) return null;
 
   return (
-    <section className="card mt-6 !border-brand-200 !bg-gradient-to-br !from-brand-50 !to-paper-warm">
-      <h2 className="text-lg text-brand-800">Looking back</h2>
+    <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+      <h2 className="text-lg text-brand-800 dark:text-brand-200">Looking back</h2>
       <div className="mt-2 space-y-4">
         {cards.map(({ pick, question, myAnswer, theirAnswer }) => (
           <div key={pick.id} className="text-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/60">
               {pick.label} — {pick.scheduled_for}
             </p>
-            <p className="mt-1 font-medium text-gray-800">{question}</p>
+            <p className="mt-1 font-medium text-ink">{question}</p>
             {myAnswer && (
-              <p className="mt-1 text-gray-700">
+              <p className="mt-1 text-ink-soft">
                 <span className="font-medium">You:</span> {myAnswer}
               </p>
             )}
             {theirAnswer && (
-              <p className="mt-1 text-gray-700">
+              <p className="mt-1 text-ink-soft">
                 <span className="font-medium">{otherName}:</span> {theirAnswer}
               </p>
             )}

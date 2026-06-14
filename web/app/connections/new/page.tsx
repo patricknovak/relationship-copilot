@@ -15,7 +15,7 @@ export default function NewConnectionPage() {
           {CONNECTION_TYPES.map((t, i) => (
             <label
               key={t.value}
-              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-brand-100 bg-white/80 p-4 shadow-soft transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 has-[:checked]:shadow-lift"
+              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-brand-100 dark:border-surface-line bg-white/80 dark:bg-surface/80 p-4 shadow-soft transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 dark:has-[:checked]:bg-brand-900/25 dark:bg-brand-900/25 has-[:checked]:shadow-lift"
             >
               <input
                 type="radio"

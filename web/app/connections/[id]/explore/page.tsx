@@ -43,7 +43,7 @@ export default async function ExplorePage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href={`/connections/${id}`} className="text-sm text-gray-500 hover:text-gray-700">
+      <Link href={`/connections/${id}`} className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← Back
       </Link>
       <h1 className="mt-2 text-3xl">Quizzes &amp; challenges</h1>
@@ -65,7 +65,7 @@ export default async function ExplorePage({
                   className="flex items-center justify-between rounded-md border border-gray-100 p-3 text-sm hover:border-brand-200"
                 >
                   <span>{KIND_LABEL[m.kind] ?? m.kind}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-ink-soft/80">
                     {m.status === "revealed" ? "Revealed" : "In progress"}
                   </span>
                 </Link>

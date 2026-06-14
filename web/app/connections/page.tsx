@@ -55,7 +55,7 @@ export default async function ConnectionsPage() {
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                       c.status === "active"
-                        ? "bg-brand-100 text-brand-800"
+                        ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
                         : "bg-paper-warm text-ink-soft"
                     }`}
                   >

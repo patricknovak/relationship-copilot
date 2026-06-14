@@ -42,7 +42,7 @@ export default async function OnboardingPage() {
 
         <div>
           <label className="block text-sm font-medium" htmlFor="birthday">
-            Birthday <span className="text-gray-400">(optional)</span>
+            Birthday <span className="text-ink-soft/60">(optional)</span>
           </label>
           <input
             id="birthday"
@@ -51,7 +51,7 @@ export default async function OnboardingPage() {
             defaultValue={profile?.birthday ?? ""}
             className="input mt-1.5 !w-auto"
           />
-          <p className="mt-1 text-xs text-gray-400">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-1 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
         </div>
 
         <div>
@@ -84,7 +84,7 @@ export default async function OnboardingPage() {
           <legend className="px-1 text-sm font-medium">
             A quick reflection
           </legend>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-soft/80">
             How much do you agree? (1 = not at all, 5 = very much) — educational,
             not a diagnosis.
           </p>
@@ -96,7 +96,7 @@ export default async function OnboardingPage() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <label
                       key={n}
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white dark:bg-surface text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
                     >
                       <input
                         type="radio"

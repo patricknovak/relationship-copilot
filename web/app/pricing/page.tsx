@@ -52,7 +52,7 @@ export default async function PricingPage() {
 
         <Plan title="Premium" price="$18/mo" features={PREMIUM} highlight>
           {isPremium ? (
-            <span className="block rounded-full bg-brand-100 px-4 py-2.5 text-center text-sm font-medium text-brand-800">
+            <span className="block rounded-full bg-brand-100 dark:bg-brand-900/40 px-4 py-2.5 text-center text-sm font-medium text-brand-800 dark:text-brand-200">
               You&apos;re on Premium ✨
             </span>
           ) : (
@@ -90,7 +90,7 @@ function Plan({
     <div
       className={`card !p-7 ${
         highlight
-          ? "!rounded-3xl !border-brand-300 !bg-gradient-to-b !from-brand-50 !to-white shadow-lift"
+          ? "!rounded-3xl !border-brand-300 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20 shadow-lift"
           : "!rounded-3xl"
       }`}
     >

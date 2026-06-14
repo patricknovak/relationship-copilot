@@ -51,8 +51,8 @@ export default async function WeeklyDigest({
       <h2 className="text-lg">Weekly digest</h2>
 
       {payload?.safety ? (
-        <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-4">
-          <p className="text-sm text-rose-900">{SAFETY_NOTE}</p>
+        <div className="mt-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-4">
+          <p className="text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
           <ul className="mt-2 space-y-1 text-sm">
             {INLINE_RESOURCES.map((r) => (
               <li key={r.name}>
@@ -65,9 +65,9 @@ export default async function WeeklyDigest({
           </Link>
         </div>
       ) : payload ? (
-        <div className="mt-2 space-y-3 text-sm text-gray-700">
+        <div className="mt-2 space-y-3 text-sm text-ink-soft">
           {generatedAt && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-ink-soft/60">
               From your week up to {generatedAt.slice(0, 10)}
             </p>
           )}
@@ -98,11 +98,11 @@ export default async function WeeklyDigest({
             </div>
           )}
           {payload.reflection && (
-            <p className="text-gray-600 whitespace-pre-wrap">{payload.reflection}</p>
+            <p className="text-ink-soft whitespace-pre-wrap">{payload.reflection}</p>
           )}
         </div>
       ) : (
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-ink-soft">
           A short AI reflection on the week you answered together — bright
           spots, appreciations, and one small thing to try.
         </p>
@@ -114,7 +114,7 @@ export default async function WeeklyDigest({
             <button className="btn-primary">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
             </button>
-            <p className="mt-2 text-xs text-gray-400">
+            <p className="mt-2 text-xs text-ink-soft/60">
               Your week&apos;s revealed answers are sent to our AI provider
               (xAI&apos;s Grok) with names and contact details removed, used
               only to write this digest.
@@ -122,7 +122,7 @@ export default async function WeeklyDigest({
           </form>
         )
       ) : (
-        <p className="mt-3 text-sm text-gray-600">
+        <p className="mt-3 text-sm text-ink-soft">
           Part of{" "}
           <Link href="/pricing" className="text-brand-700 underline">
             Premium

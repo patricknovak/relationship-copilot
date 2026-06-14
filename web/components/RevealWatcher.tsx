@@ -57,7 +57,7 @@ export default function RevealWatcher({ instanceId }: { instanceId: string }) {
       aria-live="polite"
       className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
     >
-      <div className="animate-fade-up rounded-3xl bg-ink/90 px-8 py-6 text-center shadow-lift">
+      <div className="animate-fade-up rounded-3xl bg-brand-900/95 px-8 py-6 text-center shadow-lift">
         <div className="flex justify-center gap-2 text-2xl">
           {["✨", "💜", "✨"].map((e, i) => (
             <span
