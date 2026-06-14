@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 // it is a description, not aspiration.
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-gray-700">
-      <h1 className="text-3xl text-gray-900">Privacy Policy</h1>
-      <p className="mt-1 text-xs text-gray-400">
+    <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
+      <h1 className="text-3xl text-ink">Privacy Policy</h1>
+      <p className="mt-1 text-xs text-ink-soft/60">
         Draft — under legal review. Last updated June 2026.
       </p>
 
       <section className="mt-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">What we collect</h2>
+        <h2 className="text-lg font-semibold text-ink">What we collect</h2>
         <p>
           Your account details (email, display name, optional birthday), your
           profile reflections, and the answers, discussions, and quiz responses
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
           store your subscription status, not your card details.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-ink">
           Who can see what you write
         </h2>
         <p>
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           else. We do not sell your data or share it with advertisers.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">AI features</h2>
+        <h2 className="text-lg font-semibold text-ink">AI features</h2>
         <p>
           If you use an AI feature (the Relationship Blueprint or weekly
           digest), the answers involved are sent to our AI provider
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           resources instead. Safety features are free for everyone.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-ink">
           Your data, your controls
         </h2>
         <p>
@@ -59,14 +59,14 @@ export default function PrivacyPage() {
           your answers are removed.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Children</h2>
+        <h2 className="text-lg font-semibold text-ink">Children</h2>
         <p>
           Relationship Copilot is not available to children under 13. The
           parent–teen track is designed for connection, not monitoring, and a
           teen can leave a connection at any time.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Contact</h2>
+        <h2 className="text-lg font-semibold text-ink">Contact</h2>
         <p>
           Questions or requests:{" "}
           <a href="mailto:privacy@relationshipcopilot.com" className="underline">

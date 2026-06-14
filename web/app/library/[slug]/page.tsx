@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { renderArticleBlocks, type Span } from "@/lib/markdown";
 
 export default async function ArticlePage({
   params,
@@ -18,23 +19,59 @@ export default async function ArticlePage({
     .maybeSingle();
   if (!article) notFound();
 
+  const blocks = renderArticleBlocks(article.body);
+
   return (
     <article className="mx-auto max-w-2xl px-4 py-12">
-      <Link href="/library" className="text-sm text-gray-500 hover:text-gray-700">
+      <Link
+        href="/library"
+        className="text-sm text-ink-soft/70 hover:text-ink"
+      >
         ← Library
       </Link>
-      <h1 className="mt-2 text-3xl">{article.title}</h1>
+      <p className="eyebrow mt-4">
+        {article.framework ? `${article.framework} · ` : ""}From the library
+      </p>
+      <h1 className="mt-2 text-4xl leading-tight">{article.title}</h1>
       {article.summary && (
-        <p className="mt-1 text-gray-600">{article.summary}</p>
+        <p className="mt-3 text-lg leading-relaxed text-ink-soft">
+          {article.summary}
+        </p>
       )}
-      <div className="mt-6 space-y-3 text-sm text-gray-800">
-        {article.body.split("\n\n").map((para, i) => (
-          <p key={i} className="whitespace-pre-wrap">
-            {para}
-          </p>
-        ))}
+      {article.evidence_rating != null && (
+        <p className="mt-3 text-xs text-brand-600/90">
+          Evidence: {"★".repeat(article.evidence_rating)}
+          <span className="text-brand-300">
+            {"★".repeat(Math.max(0, 5 - article.evidence_rating))}
+          </span>
+        </p>
+      )}
+
+      <div className="mt-8 space-y-4 leading-relaxed text-ink">
+        {blocks.map((block, i) =>
+          block.type === "list" ? (
+            <ul key={i} className="space-y-2 pl-1">
+              {block.items.map((item, j) => (
+                <li key={j} className="flex gap-2.5">
+                  <span
+                    aria-hidden
+                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400"
+                  />
+                  <span>
+                    <Spans spans={item} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p key={i}>
+              <Spans spans={block.spans} />
+            </p>
+          ),
+        )}
       </div>
-      <p className="mt-8 text-xs text-gray-400">
+
+      <p className="mt-10 border-t border-brand-100/70 pt-6 text-xs text-ink-soft/70">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
           Safety resources
@@ -42,5 +79,21 @@ export default async function ArticlePage({
         are always free.
       </p>
     </article>
+  );
+}
+
+function Spans({ spans }: { spans: Span[] }) {
+  return (
+    <>
+      {spans.map((s, i) =>
+        s.bold ? (
+          <strong key={i} className="font-semibold text-ink">
+            {s.text}
+          </strong>
+        ) : (
+          <span key={i}>{s.text}</span>
+        ),
+      )}
+    </>
   );
 }

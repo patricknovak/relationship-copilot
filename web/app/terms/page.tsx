@@ -8,14 +8,14 @@ export const metadata: Metadata = {
 // DRAFT — requires legal review before real users.
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-gray-700">
-      <h1 className="text-3xl text-gray-900">Terms of Service</h1>
-      <p className="mt-1 text-xs text-gray-400">
+    <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
+      <h1 className="text-3xl text-ink">Terms of Service</h1>
+      <p className="mt-1 text-xs text-ink-soft/60">
         Draft — under legal review. Last updated June 2026.
       </p>
 
       <section className="mt-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">The service</h2>
+        <h2 className="text-lg font-semibold text-ink">The service</h2>
         <p>
           Relationship Copilot provides relationship-wellness tools: shared
           questions with mutual reveal, educational content, and optional AI
@@ -28,7 +28,7 @@ export default function TermsPage() {
           or contact local emergency services.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Your account</h2>
+        <h2 className="text-lg font-semibold text-ink">Your account</h2>
         <p>
           You must be at least 13 to use the service and old enough to consent
           to these terms in your jurisdiction. You are responsible for what you
@@ -36,14 +36,14 @@ export default function TermsPage() {
           endangers others.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
+        <h2 className="text-lg font-semibold text-ink">Billing</h2>
         <p>
           Core features are free. Premium is a monthly subscription billed via
           Stripe and can be canceled anytime, effective at the end of the
           billing period. Safety features are never paid.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Your content</h2>
+        <h2 className="text-lg font-semibold text-ink">Your content</h2>
         <p>
           You own what you write. You grant us the limited license needed to
           operate the service — storing your content, revealing it to your
@@ -51,7 +51,7 @@ export default function TermsPage() {
           processing redacted excerpts to generate reflections for you.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Termination</h2>
+        <h2 className="text-lg font-semibold text-ink">Termination</h2>
         <p>
           You can delete your account at any time from your account page (see
           the{" "}
@@ -62,7 +62,7 @@ export default function TermsPage() {
           terms or put others at risk.
         </p>
 
-        <h2 className="text-lg font-semibold text-gray-900">Disclaimers</h2>
+        <h2 className="text-lg font-semibold text-ink">Disclaimers</h2>
         <p>
           The service is provided &ldquo;as is&rdquo; without warranties. To
           the maximum extent permitted by law, our liability is limited to the
