@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/redirect";
+import {
+  parseAuthProviders,
+  type OAuthProvider,
+} from "@/lib/authProviders";
 
-type OAuthProvider = "google" | "apple" | "facebook";
+// Inlined at build time; only providers enabled in the Supabase dashboard
+// should be listed so visitors never see a button that can't work.
+const ENABLED_PROVIDERS = parseAuthProviders(
+  process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
+);
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -66,39 +74,51 @@ export default function LoginPage() {
             Sign in or create your free account — same door for both.
           </p>
 
-          <div className="mt-6 space-y-2.5">
-            <button
-              onClick={() => signInWith("google")}
-              disabled={oauthLoading !== null}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full border border-brand-200/80 bg-white px-5 py-2.5 text-sm font-medium text-[#1f1f1f] shadow-soft transition hover:bg-gray-50 disabled:opacity-60"
-            >
-              <GoogleIcon />
-              {oauthLoading === "google" ? "Connecting…" : "Continue with Google"}
-            </button>
-            <button
-              onClick={() => signInWith("apple")}
-              disabled={oauthLoading !== null}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-gray-900 disabled:opacity-60"
-            >
-              <AppleIcon />
-              {oauthLoading === "apple" ? "Connecting…" : "Continue with Apple"}
-            </button>
-            <button
-              onClick={() => signInWith("facebook")}
-              disabled={oauthLoading !== null}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[#1877F2] px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-[#0f6ae0] disabled:opacity-60"
-            >
-              <FacebookIcon />
-              {oauthLoading === "facebook"
-                ? "Connecting…"
-                : "Continue with Facebook"}
-            </button>
-          </div>
+          {ENABLED_PROVIDERS.length > 0 && (
+            <div className="mt-6 space-y-2.5">
+              {ENABLED_PROVIDERS.includes("google") && (
+                <button
+                  onClick={() => signInWith("google")}
+                  disabled={oauthLoading !== null}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full border border-brand-200/80 bg-white px-5 py-2.5 text-sm font-medium text-[#1f1f1f] shadow-soft transition hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <GoogleIcon />
+                  {oauthLoading === "google" ? "Connecting…" : "Continue with Google"}
+                </button>
+              )}
+              {ENABLED_PROVIDERS.includes("apple") && (
+                <button
+                  onClick={() => signInWith("apple")}
+                  disabled={oauthLoading !== null}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-gray-900 disabled:opacity-60"
+                >
+                  <AppleIcon />
+                  {oauthLoading === "apple" ? "Connecting…" : "Continue with Apple"}
+                </button>
+              )}
+              {ENABLED_PROVIDERS.includes("facebook") && (
+                <button
+                  onClick={() => signInWith("facebook")}
+                  disabled={oauthLoading !== null}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[#1877F2] px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-[#0f6ae0] disabled:opacity-60"
+                >
+                  <FacebookIcon />
+                  {oauthLoading === "facebook"
+                    ? "Connecting…"
+                    : "Continue with Facebook"}
+                </button>
+              )}
+            </div>
+          )}
 
-          <div className="my-6 flex items-center gap-3 text-xs text-ink-soft/60">
-            <span className="h-px flex-1 bg-brand-200/70" /> or use email{" "}
-            <span className="h-px flex-1 bg-brand-200/70" />
-          </div>
+          {ENABLED_PROVIDERS.length > 0 ? (
+            <div className="my-6 flex items-center gap-3 text-xs text-ink-soft/60">
+              <span className="h-px flex-1 bg-brand-200/70" /> or use email{" "}
+              <span className="h-px flex-1 bg-brand-200/70" />
+            </div>
+          ) : (
+            <div className="mt-6" />
+          )}
 
           {sent ? (
             <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:text-brand-200">
