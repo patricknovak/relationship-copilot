@@ -24,31 +24,28 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
 
 ## Blocking launch
 
-### 1. Stripe (billing is not provisioned)
+### 1. Stripe (objects created; env vars still needed)
 
-The app expects a $18/mo Premium subscription (see `/pricing`). Verified:
-`STRIPE_WEBHOOK_SECRET` is unset in production (`POST /api/stripe/webhook`
-returns `500 not configured`), and no Relationship Copilot product exists in
-Stripe. In the **relationship** Stripe account (live mode):
+Provisioned 2026-08-10 in the **Relationship** account
+(`acct_1TzIPbDmJBrl3Tmr`), live mode:
 
-- [ ] Create product **Relationship Copilot Premium** with a recurring price
-      of **$18/month USD**.
-- [ ] Create a webhook endpoint for
-      `https://relationshipcopilot.com/api/stripe/webhook` subscribed to
+- [x] Product **Relationship Copilot Premium** (`prod_V2zqvmZXWKoURt`) with
+      recurring price **$18/month USD**:
+      `price_1U2tqaDmJBrl3Tmr3ILmUFy4` (lookup key `premium_monthly`).
+- [x] Webhook endpoint `we_1U2tqeDmJBrl3Tmrtsq5TP9M` →
+      `https://relationshipcopilot.com/api/stripe/webhook`, subscribed to
       exactly: `checkout.session.completed`,
       `customer.subscription.updated`, `customer.subscription.deleted`
       (all the handler consumes — see `web/app/api/stripe/webhook/route.ts`).
 - [ ] In Vercel → Project → Environment Variables (Production), set
-      `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-      `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM`, then redeploy (the
-      `NEXT_PUBLIC_*` value is inlined at build time).
-- [ ] Test checkout with a live card (or test-mode keys first), confirm the
-      `subscriptions` row flips and `/account` shows Premium; then cancel and
-      confirm it downgrades.
-
-Note: the Claude Stripe connector is currently authorized against the
-**Lil Learning** account (`acct_1TyFRxKE2gtsD9sR`) — re-authorize it against
-the new **relationship** account before asking Claude to do the above.
+      `STRIPE_SECRET_KEY` (Dashboard → Developers → API keys),
+      `STRIPE_WEBHOOK_SECRET` (the endpoint's signing secret),
+      `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM=price_1U2tqaDmJBrl3Tmr3ILmUFy4`,
+      then redeploy (the `NEXT_PUBLIC_*` value is inlined at build time).
+- [ ] Confirm the account is fully **activated** for live charges (Stripe
+      Dashboard shows a banner if business/bank details are incomplete).
+- [ ] Test checkout with a live card, confirm the `subscriptions` row flips
+      and `/account` shows Premium; then cancel and confirm it downgrades.
 
 ### 2. Supabase Auth configuration (dashboard)
 
