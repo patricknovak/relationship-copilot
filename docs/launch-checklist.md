@@ -24,7 +24,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
 
 ## Blocking launch
 
-### 1. Stripe (objects created; env vars still needed)
+### 1. Stripe (provisioned and connected; activation + test remain)
 
 Provisioned 2026-08-10 in the **Relationship** account
 (`acct_1TzIPbDmJBrl3Tmr`), live mode:
@@ -37,11 +37,9 @@ Provisioned 2026-08-10 in the **Relationship** account
       exactly: `checkout.session.completed`,
       `customer.subscription.updated`, `customer.subscription.deleted`
       (all the handler consumes — see `web/app/api/stripe/webhook/route.ts`).
-- [ ] In Vercel → Project → Environment Variables (Production), set
-      `STRIPE_SECRET_KEY` (Dashboard → Developers → API keys),
-      `STRIPE_WEBHOOK_SECRET` (the endpoint's signing secret),
-      `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM=price_1U2tqaDmJBrl3Tmr3ILmUFy4`,
-      then redeploy (the `NEXT_PUBLIC_*` value is inlined at build time).
+- [x] Vercel Production env vars set (`STRIPE_SECRET_KEY`,
+      `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM`) and
+      redeployed 2026-08-10 — billing is connected.
 - [ ] Confirm the account is fully **activated** for live charges (Stripe
       Dashboard shows a banner if business/bank details are incomplete).
 - [ ] Test checkout with a live card, confirm the `subscriptions` row flips
@@ -49,21 +47,22 @@ Provisioned 2026-08-10 in the **Relationship** account
 
 ### 2. Supabase Auth configuration (dashboard)
 
-Verified today: **no OAuth provider is enabled** — Google, Apple, and
-Facebook all return "provider is not enabled", so only magic-link email
-works, on Supabase's built-in rate-limited SMTP (a few emails/hour).
+Configured 2026-08-10 (verified: Google `/authorize` redirects; the OTP
+endpoint enforces captcha):
 
-- [ ] Configure **custom SMTP** (e.g. Resend/Postmark/SES) — magic link is
-      the primary auth path and the default sender cannot handle launch
-      traffic. Set a matching sender domain + SPF/DKIM.
-- [ ] Enable the OAuth providers you want at launch (Google at minimum);
-      add `https://relationshipcopilot.com/auth/callback` as a redirect URL.
-- [ ] Set `NEXT_PUBLIC_AUTH_PROVIDERS` in Vercel to the providers actually
-      enabled (e.g. `google`), or `none` for email-only — unconfigured
-      buttons are hidden instead of failing on click.
-- [ ] Enable **CAPTCHA** on auth (Turnstile/hCaptcha): three bot signups
-      already landed between Jul 11–22 (never signed in). Requires passing
-      the captcha token in the client auth calls — small code change.
+- [x] **Custom SMTP** via Resend (`smtp.resend.com`, sender
+      `noreply@relationshipcopilot.com`), with DKIM/SPF DNS in Cloudflare.
+- [x] **Google OAuth** enabled (new Google Cloud project + web client;
+      redirect URL allow-listed).
+- [x] `NEXT_PUBLIC_AUTH_PROVIDERS=google` set in Vercel — only the Google
+      button renders on production.
+- [x] **CAPTCHA**: Turnstile widget for `relationshipcopilot.com` enabled in
+      Supabase Attack Protection, and the login form now submits the
+      Turnstile token with magic-link requests
+      (`web/components/Turnstile.tsx`; the production site key is the
+      built-in default, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=off` for local dev).
+- [ ] After this change deploys, send a real magic link end-to-end to
+      confirm Resend delivery and the captcha flow.
 - [ ] Optional cleanup: delete the three bot users; delete the old INACTIVE
       `relationshipcopilot` Supabase project from 2025 to avoid confusion.
 
@@ -75,8 +74,9 @@ is actually in place. Until then the app works but Blueprint/digest
 generation errors, and the safety classifier runs regex-only (its model
 escalation uses the same client; the regex fast path still gates).
 
-- [ ] Production `XAI_API_KEY` in Vercel.
-- [ ] No-training DPA with xAI, then set `XAI_NO_TRAINING_DPA=true`.
+- [x] `XAI_API_KEY` present in Vercel (since Jun 11).
+- [ ] Confirm `XAI_NO_TRAINING_DPA` in Vercel matches the real DPA status
+      with xAI — only `true` once a no-training agreement is in place.
 
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 

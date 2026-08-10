@@ -7,11 +7,19 @@ import {
   parseAuthProviders,
   type OAuthProvider,
 } from "@/lib/authProviders";
+import { resolveTurnstileSiteKey } from "@/lib/turnstile";
+import Turnstile from "@/components/Turnstile";
 
 // Inlined at build time; only providers enabled in the Supabase dashboard
 // should be listed so visitors never see a button that can't work.
 const ENABLED_PROVIDERS = parseAuthProviders(
   process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
+);
+
+// Supabase enforces captcha on the OTP endpoint (not on OAuth redirects), so
+// the magic-link form must submit a Turnstile token with the email.
+const TURNSTILE_SITE_KEY = resolveTurnstileSiteKey(
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 );
 
 export default function LoginPage() {
@@ -20,6 +28,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Turnstile tokens are single-use; bumping the key remounts a fresh widget
+  // after each attempt.
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   // Carry the post-login destination (set by the auth middleware) through the
   // magic link / OAuth round-trip. Validated here and again in the callback.
@@ -32,14 +44,25 @@ export default function LoginPage() {
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault();
+    if (TURNSTILE_SITE_KEY && !captchaToken) {
+      setError("Please complete the verification check first.");
+      return;
+    }
     setLoading(true);
     setError(null);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo },
+      options: {
+        emailRedirectTo: redirectTo,
+        captchaToken: captchaToken ?? undefined,
+      },
     });
     setLoading(false);
+    if (TURNSTILE_SITE_KEY) {
+      setCaptchaToken(null);
+      setCaptchaKey((k) => k + 1);
+    }
     if (error) setError(error.message);
     else setSent(true);
   }
@@ -134,9 +157,16 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 className="input"
               />
+              {TURNSTILE_SITE_KEY && (
+                <Turnstile
+                  key={captchaKey}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onToken={setCaptchaToken}
+                />
+              )}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (!!TURNSTILE_SITE_KEY && !captchaToken)}
                 className="btn-secondary w-full disabled:opacity-60"
               >
                 {loading ? "Sending…" : "Email me a secure link"}
