@@ -91,7 +91,11 @@ export async function leaveConnection(connectionId: string) {
 }
 
 // Accept an invite via the SECURITY DEFINER RPC, then land on the connection.
-export async function acceptInvite(code: string) {
+// Returns a friendly error instead of throwing so the invite page can render
+// it inline (this action is auto-fired on arrival, not just button-clicked).
+export async function acceptInvite(
+  code: string,
+): Promise<{ error: string } | never> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,9 +105,72 @@ export async function acceptInvite(code: string) {
   const { data, error } = await supabase.rpc("accept_invite", {
     p_code: code,
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message.includes("cannot accept your own invite")
+      ? "This is your own invite link — send it to the person you want to connect with."
+      : "This invite has already been used or has expired. Ask for a fresh link.";
+    return { error: msg };
+  }
 
   await logAudit(user.id, "connection.join", data);
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Email an invite. For a new address this uses Supabase's admin invite, which
+// creates the account and emails a sign-in link through our configured SMTP —
+// the invitee clicks once, is signed in, and lands on the invite page where
+// the join completes automatically. Existing accounts can't be invited this
+// way (Supabase rejects re-inviting a registered email), so we tell the
+// inviter to share the link directly instead.
+export async function sendEmailInvite(
+  connectionId: string,
+  email: string,
+): Promise<{ status: "sent" | "existing" } | { error: string }> {
+  const address = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(address)) {
+    return { error: "That doesn't look like an email address." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (address === user.email?.toLowerCase()) {
+    return { error: "That's your own email — enter the other person's." };
+  }
+
+  // RLS scopes this read to connections the caller belongs to, so a non-member
+  // simply finds nothing. The invite must still be open (code unburned).
+  const { data: conn } = await supabase
+    .from("connections")
+    .select("id, invite_code")
+    .eq("id", connectionId)
+    .maybeSingle();
+  if (!conn?.invite_code) {
+    return { error: "This connection is no longer accepting invites." };
+  }
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const { error } = await createAdminClient().auth.admin.inviteUserByEmail(
+    address,
+    { redirectTo: `${site}/invite/${conn.invite_code}` },
+  );
+
+  if (error) {
+    if (/already.*(registered|exists)/i.test(error.message)) {
+      return { status: "existing" };
+    }
+    return { error: "Couldn't send the invite email — try sharing the link instead." };
+  }
+
+  // PII-minimal audit: log the domain, not the address.
+  await logAudit(user.id, "connection.invite_email", connectionId, {
+    email_domain: address.split("@")[1] ?? "",
+  });
+  return { status: "sent" };
 }

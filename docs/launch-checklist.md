@@ -63,6 +63,15 @@ endpoint enforces captcha):
       built-in default, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=off` for local dev).
 - [ ] After this change deploys, send a real magic link end-to-end to
       confirm Resend delivery and the captcha flow.
+- [ ] **Email invites** (Authentication → URL Configuration): add
+      `https://relationshipcopilot.com/invite/*` to Redirect URLs so the
+      invite email can land on the invite page.
+- [ ] **Email invites, zero-friction sign-in** (Authentication → Emails →
+      Invite user template): point the link at our token-hash callback so
+      one click both signs the invitee in and joins the connection:
+      `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite&next={{ .RedirectTo }}`
+      (with the default template the flow still works — the invitee just
+      signs in normally after tapping the link).
 - [ ] Optional cleanup: delete the three bot users; delete the old INACTIVE
       `relationshipcopilot` Supabase project from 2025 to avoid confusion.
 
