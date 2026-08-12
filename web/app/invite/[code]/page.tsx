@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECTION_TYPES, connectionLabel } from "@/lib/relationships";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
+import AuthFragmentSession from "@/components/AuthFragmentSession";
 
 // The invite landing page. Possession of the (unguessable, single-use) code
 // is the authorization to see the preview, so the lookup uses the admin
@@ -150,6 +151,9 @@ export default async function InvitePage({
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="hero-glow">
+      {/* Consumes invite-email auth tokens from the URL fragment, then
+          refreshes so the signed-in view (auto-join) renders. */}
+      <AuthFragmentSession />
       <div className="mx-auto max-w-md px-4 py-16 text-center">
         <div className="card !rounded-3xl !p-10 shadow-lift animate-fade-up">
           {children}
