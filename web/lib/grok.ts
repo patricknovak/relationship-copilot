@@ -38,6 +38,9 @@ export async function grokChat(
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
+    // A hung provider request should fail fast-ish, not pin the server action
+    // until the platform kills it.
+    signal: AbortSignal.timeout(60_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,

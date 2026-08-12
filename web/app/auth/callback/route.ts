@@ -37,7 +37,10 @@ export async function GET(request: Request) {
     authed = !error;
   }
   if (!authed) {
-    return NextResponse.redirect(`${origin}/login?error=auth`);
+    // Keep the destination (e.g. an invite deep link) through the failure so
+    // a fresh sign-in still lands where the user was headed.
+    const carry = explicitNext ? `&next=${encodeURIComponent(explicitNext)}` : "";
+    return NextResponse.redirect(`${origin}/login?error=auth${carry}`);
   }
 
   if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);

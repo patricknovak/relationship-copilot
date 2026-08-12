@@ -3,6 +3,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBlueprint } from "@/app/actions/blueprint";
 import { INLINE_RESOURCES, SAFETY_NOTE } from "@/lib/safety";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
+
+const ERRORS: Record<string, string> = {
+  premium: "The Blueprint is a Premium feature — upgrade to generate one.",
+  ratelimit:
+    "A Blueprint was generated just now. Give it a few minutes before regenerating.",
+  notready: "Finish the 20 questions together first — then the Blueprint unlocks.",
+  ai: "The AI couldn't finish just now. Nothing was lost — try again in a moment.",
+};
 
 type Payload = {
   safety?: boolean;
@@ -15,10 +25,13 @@ type Payload = {
 
 export default async function BlueprintPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,9 +75,23 @@ export default async function BlueprintPage({
       </Link>
       <h1 className="mt-2 text-3xl">Relationship Blueprint</h1>
 
+      <NoticeBanner message={error ? (ERRORS[error] ?? ERRORS.ai) : null} />
+
       {/* Safety-first: a high-severity signal withholds AI and shows support. */}
       {payload?.safety ? (
-        <SafetyCard />
+        <>
+          <SafetyCard />
+          {isPremium && (
+            <form action={generate} className="mt-4">
+              <PendingButton
+                className="btn-secondary !px-4 !py-2 text-sm"
+                pendingLabel="Trying again…"
+              >
+                Generate again
+              </PendingButton>
+            </form>
+          )}
+        </>
       ) : payload ? (
         <div className="mt-6 space-y-6">
           <Section title="Strengths" items={payload.strengths} />
@@ -78,6 +105,28 @@ export default async function BlueprintPage({
               </p>
             </div>
           )}
+          {isPremium && (
+            <div className="flex flex-wrap items-center gap-3">
+              {insight?.generated_at && (
+                <p className="text-xs text-ink-soft/60">
+                  Generated{" "}
+                  {new Date(insight.generated_at).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              )}
+              <form action={generate}>
+                <PendingButton
+                  className="btn-secondary !px-4 !py-2 text-sm"
+                  pendingLabel="Regenerating…"
+                >
+                  Regenerate
+                </PendingButton>
+              </form>
+            </div>
+          )}
         </div>
       ) : isPremium ? (
         <div className="mt-6 card">
@@ -88,9 +137,9 @@ export default async function BlueprintPage({
                 areas to nurture — based on your 20 answers.
               </p>
               <form action={generate} className="mt-3">
-                <button className="btn-primary">
+                <PendingButton pendingLabel="Generating — this takes a moment…">
                   Generate Blueprint
-                </button>
+                </PendingButton>
               </form>
             </>
           ) : (

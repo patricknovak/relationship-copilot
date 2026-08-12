@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
@@ -25,21 +26,26 @@ const MAX_ITEMS = 24; // cap prompt size
 // reaches the model. Reads go through the user's session client, so the
 // reveal gate in RLS bounds exactly what the digest can see.
 export async function generateWeeklyDigest(connectionId: string) {
+  // Predictable failures land back on the connection page as a banner
+  // (?notice=…) instead of the generic crash boundary.
+  const back = (code: string): never =>
+    redirect(`/connections/${connectionId}?notice=${code}`);
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
+  if (!user) redirect(`/login?next=/connections/${connectionId}`);
 
   const { data: conn } = await supabase
     .from("connections")
     .select("id, type, status")
     .eq("id", connectionId)
     .maybeSingle();
-  if (!conn || conn.status !== "active") throw new Error("Connection not found.");
+  if (!conn || conn.status !== "active") redirect("/connections");
 
   const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
-  if (!isPremium) throw new Error("PREMIUM_REQUIRED");
+  if (!isPremium) back("digest-premium");
 
   const { data: lastDigest } = await supabase
     .from("relationship_insights")
@@ -53,9 +59,7 @@ export async function generateWeeklyDigest(connectionId: string) {
     lastDigest &&
     Date.now() - new Date(lastDigest.generated_at).getTime() < MIN_GAP_MS
   ) {
-    throw new Error(
-      "This week's digest already exists — a new one unlocks next week.",
-    );
+    back("digest-gap");
   }
 
   // Last week's revealed activity (daily questions, quizzes, challenges).
@@ -67,13 +71,9 @@ export async function generateWeeklyDigest(connectionId: string) {
     .eq("status", "revealed")
     .gte("revealed_at", since)
     .order("revealed_at", { ascending: true });
-  if (!instances || instances.length === 0) {
-    throw new Error(
-      "Nothing to digest yet — answer a few daily questions together this week first.",
-    );
-  }
+  if (!instances || instances.length === 0) back("digest-empty");
 
-  const instanceIds = instances.map((i) => i.id);
+  const instanceIds = (instances ?? []).map((i) => i.id);
   const { data: responses } = await supabase
     .from("prompt_responses")
     .select("instance_id, user_id, answers")
@@ -84,8 +84,9 @@ export async function generateWeeklyDigest(connectionId: string) {
     .select("user_id")
     .eq("connection_id", connectionId)
     .not("joined_at", "is", null);
-  const ids = (members ?? []).map((m) => m.user_id);
-  if (ids.length < 2) throw new Error("Both people need to be in the connection.");
+  // Sorted so which participant is P1 is stable across regenerations.
+  const ids = (members ?? []).map((m) => m.user_id).sort();
+  if (ids.length < 2) back("digest-solo");
   const [m1, m2] = ids;
 
   const { data: profiles } = await supabase
@@ -99,7 +100,7 @@ export async function generateWeeklyDigest(connectionId: string) {
   // Build Q/A items; include only instances where both answers are visible.
   const items: DigestItem[] = [];
   const rawParts: string[] = [];
-  for (const inst of instances) {
+  for (const inst of instances ?? []) {
     const r1 = responses?.find(
       (r) => r.instance_id === inst.id && r.user_id === m1,
     );
@@ -123,11 +124,7 @@ export async function generateWeeklyDigest(connectionId: string) {
       });
     }
   }
-  if (items.length === 0) {
-    throw new Error(
-      "Nothing to digest yet — answer a few daily questions together this week first.",
-    );
-  }
+  if (items.length === 0) back("digest-empty");
   const trimmed = items.slice(0, MAX_ITEMS);
 
   // Safety: regex on raw text, model pass on redacted; high severity withholds.
@@ -151,14 +148,20 @@ export async function generateWeeklyDigest(connectionId: string) {
     });
     await logAudit(user.id, "digest.withheld_safety", connectionId);
     revalidatePath(`/connections/${connectionId}`);
-    return;
+    redirect(`/connections/${connectionId}`);
   }
 
-  const content = await grokChat(
-    [digestSystemPrompt(), digestUserPrompt(conn.type, trimmed)],
-    { json: true },
-  );
-  const digest = parseDigest(content);
+  let digest;
+  try {
+    const content = await grokChat(
+      [digestSystemPrompt(), digestUserPrompt(conn!.type, trimmed)],
+      { json: true },
+    );
+    digest = parseDigest(content);
+  } catch {
+    back("digest-ai");
+    return; // unreachable — for control-flow analysis
+  }
 
   await admin.from("relationship_insights").insert({
     connection_id: connectionId,
@@ -172,4 +175,6 @@ export async function generateWeeklyDigest(connectionId: string) {
   await logAudit(user.id, "digest.generate", connectionId);
 
   revalidatePath(`/connections/${connectionId}`);
+  // Land on a clean URL (drops any stale ?notice= from a previous attempt).
+  redirect(`/connections/${connectionId}`);
 }

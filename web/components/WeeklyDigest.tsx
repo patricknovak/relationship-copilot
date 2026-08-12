@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { generateWeeklyDigest } from "@/app/actions/digest";
 import { INLINE_RESOURCES, SAFETY_NOTE } from "@/lib/safety";
+import PendingButton from "@/components/PendingButton";
 
 type Payload = {
   safety?: boolean;
@@ -45,6 +46,17 @@ export default async function WeeklyDigest({
   const canRegenerate =
     !generatedAt || Date.now() - new Date(generatedAt).getTime() >= MIN_GAP_MS;
   const generate = generateWeeklyDigest.bind(null, connectionId);
+
+  // Only offer generation when the week actually has revealed answers —
+  // otherwise the button's only possible outcome is an error.
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count: weekCount } = await supabase
+    .from("prompt_instances")
+    .select("id", { count: "exact", head: true })
+    .eq("connection_id", connectionId)
+    .eq("status", "revealed")
+    .gte("revealed_at", since);
+  const hasMaterial = (weekCount ?? 0) > 0;
 
   return (
     <section className="card mt-6">
@@ -109,18 +121,23 @@ export default async function WeeklyDigest({
       )}
 
       {isPremium ? (
-        canRegenerate && (
+        canRegenerate &&
+        (hasMaterial ? (
           <form action={generate} className="mt-3">
-            <button className="btn-primary">
+            <PendingButton pendingLabel="Writing your digest…">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
-            </button>
+            </PendingButton>
             <p className="mt-2 text-xs text-ink-soft/60">
               Your week&apos;s revealed answers are sent to our AI provider
               (xAI&apos;s Grok) with names and contact details removed, used
               only to write this digest.
             </p>
           </form>
-        )
+        ) : (
+          <p className="mt-3 text-sm text-ink-soft/70">
+            Answer a daily question together this week and the digest unlocks.
+          </p>
+        ))
       ) : (
         <p className="mt-3 text-sm text-ink-soft">
           Part of{" "}

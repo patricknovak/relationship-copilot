@@ -45,8 +45,19 @@ export default function RevealWatcher({ instanceId }: { instanceId: string }) {
       )
       .subscribe();
 
+    // Realtime events missed while the tab was asleep are never replayed, so
+    // re-sync whenever the user comes back — otherwise a phone that dozed
+    // through the reveal keeps showing the answer form.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
     return () => {
       supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [instanceId, router]);
 

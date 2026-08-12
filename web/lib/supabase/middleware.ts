@@ -2,9 +2,9 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Routes that require a signed-in user. Everything else (landing, login,
-// /safety, the invite landing) is public — safety resources must always be
-// reachable, signed in or not.
-const PROTECTED_PREFIXES = ["/onboarding", "/connections", "/library", "/account"];
+// /safety, /library, the invite landing) is public — safety resources must
+// always be reachable, and the library is part of the free public promise.
+const PROTECTED_PREFIXES = ["/onboarding", "/connections", "/account"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -45,6 +45,20 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Already signed in? /login has nothing to offer — forward to the intended
+  // destination (e.g. an invite deep link) or the connections home.
+  if (user && pathname === "/login") {
+    const rawNext = request.nextUrl.searchParams.get("next") ?? "";
+    const url = request.nextUrl.clone();
+    url.search = "";
+    const target =
+      rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/connections";
+    const [pathOnly, query = ""] = target.split("?", 2);
+    url.pathname = pathOnly;
+    url.search = query ? `?${query}` : "";
     return NextResponse.redirect(url);
   }
 

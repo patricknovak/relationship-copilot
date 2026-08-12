@@ -111,4 +111,75 @@ begin
   raise notice 'PASS: accept_invite adds member, advances status, burns code';
 end $$;
 
+-- Blank submissions must not count as answering (migration 0010): an empty
+-- response neither unlocks the partner's answers nor triggers the reveal;
+-- filling it in later (the upsert/UPDATE path) completes the reveal.
+insert into connections (id, type, status, created_by, onboarding_done)
+  values ('77777777-7777-7777-7777-777777777777', 'friend', 'active',
+          '11111111-1111-1111-1111-111111111111', false);
+insert into connection_members (connection_id, user_id, role, joined_at) values
+  ('77777777-7777-7777-7777-777777777777','11111111-1111-1111-1111-111111111111','creator', now()),
+  ('77777777-7777-7777-7777-777777777777','22222222-2222-2222-2222-222222222222','member',  now());
+insert into prompt_instances (id, connection_id, kind, questions, status)
+  values ('88888888-8888-8888-8888-888888888888',
+          '77777777-7777-7777-7777-777777777777','daily',
+          '[{"id":"q1","text":"How are you today?"}]'::jsonb, 'open');
+
+-- A answers for real; B submits only whitespace.
+set role authenticated;
+set "test.user_id" = '11111111-1111-1111-1111-111111111111';
+insert into prompt_responses (instance_id, user_id, answers)
+  values ('88888888-8888-8888-8888-888888888888',
+          '11111111-1111-1111-1111-111111111111', '{"q1":"grateful"}'::jsonb);
+reset role;
+set role authenticated;
+set "test.user_id" = '22222222-2222-2222-2222-222222222222';
+insert into prompt_responses (instance_id, user_id, answers)
+  values ('88888888-8888-8888-8888-888888888888',
+          '22222222-2222-2222-2222-222222222222', '{"q1":"   "}'::jsonb);
+reset role;
+
+do $$
+declare n int; st text;
+begin
+  -- Blank B must not see A's answer…
+  set local role authenticated;
+  set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
+  select count(*) into n from prompt_responses
+    where instance_id = '88888888-8888-8888-8888-888888888888'
+      and user_id = '11111111-1111-1111-1111-111111111111';
+  assert n = 0, format('REVEAL LEAK: blank submit exposed %s partner response(s)', n);
+  reset role;
+
+  -- …and the instance must still be open.
+  select status into st from prompt_instances
+    where id = '88888888-8888-8888-8888-888888888888';
+  assert st = 'open', format('EXPECTED open after blank submit, got %s', st);
+  raise notice 'PASS: a blank submission neither unlocks nor reveals';
+end $$;
+
+-- B fills the answer in (UPDATE path) → reveal must complete now.
+set role authenticated;
+set "test.user_id" = '22222222-2222-2222-2222-222222222222';
+update prompt_responses set answers = '{"q1":"tired but happy"}'::jsonb
+  where instance_id = '88888888-8888-8888-8888-888888888888'
+    and user_id = '22222222-2222-2222-2222-222222222222';
+reset role;
+
+do $$
+declare st text; n int;
+begin
+  select status into st from prompt_instances
+    where id = '88888888-8888-8888-8888-888888888888';
+  assert st = 'revealed', format('EXPECTED revealed after B added content, got %s', st);
+
+  set local role authenticated;
+  set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
+  select count(*) into n from prompt_responses
+    where instance_id = '88888888-8888-8888-8888-888888888888';
+  assert n = 2, format('EXPECTED both responses visible after reveal, got %s', n);
+  reset role;
+  raise notice 'PASS: adding content to a blank response completes the reveal';
+end $$;
+
 select 'ALL REVEAL-GATE TESTS PASSED' as result;

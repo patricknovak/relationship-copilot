@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Copilot",
     description:
       "Answer thoughtful questions together — and see each other's answers only when you've both shared.",
-    start_url: "/connections",
+    start_url: "/",
     display: "standalone",
     background_color: "#fbf8f4",
     theme_color: "#74386f",

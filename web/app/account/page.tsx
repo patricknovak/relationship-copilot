@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sunSign, ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import { ATTACHMENT_BLURB } from "@/lib/attachment";
 import DeleteAccount from "@/components/DeleteAccount";
+import NoticeBanner from "@/components/NoticeBanner";
 
 type Intake = {
   goals?: string;
@@ -10,7 +11,12 @@ type Intake = {
   attachment?: { style?: keyof typeof ATTACHMENT_BLURB };
 };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>;
+}) {
+  const { upgraded } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -43,6 +49,15 @@ export default async function AccountPage() {
         </Link>
       </div>
       <p className="mt-1 text-sm text-ink-soft/80">{user?.email}</p>
+
+      <NoticeBanner
+        tone="success"
+        message={
+          upgraded
+            ? "Welcome to Premium ✨ The AI Blueprint and weekly digests are unlocked."
+            : null
+        }
+      />
 
       <dl className="mt-6 space-y-4">
         <div className="card !p-4">
@@ -84,6 +99,15 @@ export default async function AccountPage() {
             <dt className="text-sm font-medium">What you want right now</dt>
             <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.goals}
+            </dd>
+          </div>
+        )}
+
+        {intake.values && (
+          <div className="card !p-4">
+            <dt className="text-sm font-medium">What matters to you</dt>
+            <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
+              {intake.values}
             </dd>
           </div>
         )}

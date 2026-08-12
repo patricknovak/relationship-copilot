@@ -15,10 +15,13 @@ export interface Redactor {
 // Build a redactor from the participants' display names. Longest names first so
 // "Anna Lee" is replaced before "Anna".
 export function buildRedactor(names: (string | null | undefined)[]): Redactor {
-  // Placeholder numbering follows input order (P1 = first participant)...
+  // Placeholder numbering follows input order (P1 = first participant). A
+  // missing/short name keeps its slot's number and simply has nothing to
+  // replace — filtering before numbering would shift the partner's name onto
+  // the wrong placeholder and cross-wire identities in the prompt.
   const map = names
-    .filter((n): n is string => !!n && n.trim().length > 1)
-    .map((n, i) => ({ name: n.trim(), placeholder: `P${i + 1}` }));
+    .map((n, i) => ({ name: n?.trim() ?? "", placeholder: `P${i + 1}` }))
+    .filter((e) => e.name.length > 1);
 
   // ...but replacement applies longest name first so "Anna Lee" beats "Anna".
   const ordered = [...map].sort((a, b) => b.name.length - a.name.length);

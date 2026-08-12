@@ -1,7 +1,15 @@
+import Link from "next/link";
 import { createConnection } from "@/app/actions/connections";
-import { CONNECTION_TYPES } from "@/lib/relationships";
+import { CONNECTION_TYPES, FREE_CONNECTION_CAP } from "@/lib/relationships";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
 
-export default function NewConnectionPage() {
+export default async function NewConnectionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
       <h1 className="text-3xl">Start a new connection</h1>
@@ -9,6 +17,25 @@ export default function NewConnectionPage() {
         Choose the kind of relationship. You&apos;ll get a link to invite the
         other person.
       </p>
+
+      {error === "cap" ? (
+        <div className="mt-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-200" role="status">
+          The free plan holds up to {FREE_CONNECTION_CAP} connections.{" "}
+          <Link href="/pricing" className="font-medium underline">
+            Premium removes the limit →
+          </Link>
+        </div>
+      ) : (
+        <NoticeBanner
+          message={
+            error === "type"
+              ? "Pick a relationship type first."
+              : error
+                ? "Couldn't create the connection — please try again."
+                : null
+          }
+        />
+      )}
 
       <form action={createConnection} className="mt-8 space-y-4">
         <fieldset className="space-y-2.5">
@@ -32,9 +59,9 @@ export default function NewConnectionPage() {
           ))}
         </fieldset>
 
-        <button type="submit" className="btn-primary w-full !py-3">
+        <PendingButton className="btn-primary w-full !py-3" pendingLabel="Creating…">
           Create &amp; get invite link
-        </button>
+        </PendingButton>
       </form>
     </div>
   );

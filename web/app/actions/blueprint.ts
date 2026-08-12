@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
@@ -19,22 +20,27 @@ import type { PromptQuestion, Json } from "@/lib/database.types";
 // is never paywalled: a high-severity signal withholds the AI analysis and
 // surfaces support instead, logging a safety_event for review.
 export async function generateBlueprint(connectionId: string) {
+  // Predictable failures redirect back with a message the page renders as a
+  // banner — throwing would replace the page with the generic error boundary.
+  const back = (code: string): never =>
+    redirect(`/connections/${connectionId}/blueprint?error=${code}`);
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in.");
+  if (!user) redirect(`/login?next=/connections/${connectionId}/blueprint`);
 
   const { data: conn } = await supabase
     .from("connections")
     .select("id, type")
     .eq("id", connectionId)
     .maybeSingle();
-  if (!conn) throw new Error("Connection not found.");
+  if (!conn) redirect("/connections");
 
   // --- entitlement gate (premium only). No Grok call fires for free users. ---
   const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
-  if (!isPremium) throw new Error("PREMIUM_REQUIRED");
+  if (!isPremium) back("premium");
 
   // Rate limit: one generation per connection per 10 minutes (cost control —
   // each run is a model call). DB-backed so it holds across serverless instances.
@@ -50,9 +56,7 @@ export async function generateBlueprint(connectionId: string) {
     recent &&
     Date.now() - new Date(recent.generated_at).getTime() < 10 * 60 * 1000
   ) {
-    throw new Error(
-      "A Blueprint was generated for this connection just now. Please wait a few minutes before regenerating.",
-    );
+    back("ratelimit");
   }
 
   // Need a revealed onboarding instance so both answers are readable.
@@ -62,19 +66,16 @@ export async function generateBlueprint(connectionId: string) {
     .eq("connection_id", connectionId)
     .eq("kind", "onboarding")
     .maybeSingle();
-  if (!instance || instance.status !== "revealed") {
-    throw new Error("Finish the 20 questions together first.");
-  }
+  if (!instance || instance.status !== "revealed") back("notready");
 
   const { data: responses } = await supabase
     .from("prompt_responses")
     .select("user_id, answers")
-    .eq("instance_id", instance.id);
-  if (!responses || responses.length < 2) {
-    throw new Error("Both people's answers are needed.");
-  }
+    .eq("instance_id", instance!.id);
+  if (!responses || responses.length < 2) back("notready");
 
-  const ids = responses.map((r) => r.user_id);
+  // Sorted so which participant is P1 is stable across regenerations.
+  const ids = responses!.map((r) => r.user_id).sort();
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, display_name")
@@ -84,9 +85,9 @@ export async function generateBlueprint(connectionId: string) {
 
   const [m1, m2] = ids;
   const redactor = buildRedactor([nameFor(m1), nameFor(m2)]);
-  const questions = instance.questions as PromptQuestion[];
-  const a1 = (responses.find((r) => r.user_id === m1)?.answers ?? {}) as Record<string, string>;
-  const a2 = (responses.find((r) => r.user_id === m2)?.answers ?? {}) as Record<string, string>;
+  const questions = instance!.questions as PromptQuestion[];
+  const a1 = (responses!.find((r) => r.user_id === m1)?.answers ?? {}) as Record<string, string>;
+  const a2 = (responses!.find((r) => r.user_id === m2)?.answers ?? {}) as Record<string, string>;
 
   // Safety assessment: regex fast path runs on the RAW text; the model-backed
   // classifier (which catches paraphrase) sees only redacted text and can
@@ -113,7 +114,7 @@ export async function generateBlueprint(connectionId: string) {
     });
     await logAudit(user.id, "blueprint.withheld_safety", connectionId);
     revalidatePath(`/connections/${connectionId}/blueprint`);
-    return;
+    redirect(`/connections/${connectionId}/blueprint`);
   }
 
   const qa = questions.map((q) => ({
@@ -122,11 +123,17 @@ export async function generateBlueprint(connectionId: string) {
     p2: redactor.redact(a2[q.id] ?? ""),
   }));
 
-  const content = await grokChat(
-    [blueprintSystemPrompt(), blueprintUserPrompt(conn.type, qa)],
-    { json: true },
-  );
-  const bp = parseBlueprint(content);
+  let bp;
+  try {
+    const content = await grokChat(
+      [blueprintSystemPrompt(), blueprintUserPrompt(conn!.type, qa)],
+      { json: true },
+    );
+    bp = parseBlueprint(content);
+  } catch {
+    back("ai");
+    return; // unreachable — for control-flow analysis
+  }
 
   await admin.from("relationship_insights").insert({
     connection_id: connectionId,
@@ -141,4 +148,6 @@ export async function generateBlueprint(connectionId: string) {
 
   revalidatePath(`/connections/${connectionId}/blueprint`);
   revalidatePath(`/connections/${connectionId}`);
+  // Land on a clean URL (drops any stale ?error= from a previous attempt).
+  redirect(`/connections/${connectionId}/blueprint`);
 }

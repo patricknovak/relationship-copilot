@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createCheckout } from "@/app/actions/billing";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -13,18 +15,23 @@ const FREE = [
   "All relationship types",
   "20-question onboarding + mutual reveal",
   "Daily questions, reveal & discussion",
+  "Quizzes & challenges",
   "Education library",
   "Safety resources — always free",
 ];
 const PREMIUM = [
   "AI Relationship Blueprint",
   "Unlimited connections",
-  "Full quiz & challenge catalog",
   "Premium education library",
   "Weekly AI digests",
 ];
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,6 +47,14 @@ export default async function PricingPage() {
       <p className="mt-3 text-center text-ink-soft">
         Most of Relationship Copilot is free. Premium adds the AI layer.
       </p>
+
+      <NoticeBanner
+        message={
+          error === "checkout"
+            ? "Checkout couldn't start — you weren't charged. Please try again."
+            : null
+        }
+      />
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         <Plan title="Free" price="$0" features={FREE} highlight={false}>
@@ -57,9 +72,9 @@ export default async function PricingPage() {
             </span>
           ) : (
             <form action={createCheckout}>
-              <button className="btn-primary w-full">
+              <PendingButton className="btn-primary w-full" pendingLabel="Opening checkout…">
                 Upgrade to Premium
-              </button>
+              </PendingButton>
             </form>
           )}
         </Plan>

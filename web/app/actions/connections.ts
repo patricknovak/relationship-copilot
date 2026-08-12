@@ -22,16 +22,18 @@ function newInviteCode(): string {
 // Create a connection, add the creator as a member, and hand back an invite
 // link. Free users are capped; premium is unlimited.
 export async function createConnection(formData: FormData) {
+  // Predictable failures (plan cap, validation) go back to the form as a
+  // banner instead of crashing into the generic error boundary.
   const type = String(formData.get("type") || "") as ConnectionType;
   if (!CONNECTION_TYPES.some((t) => t.value === type)) {
-    throw new Error("Please choose a relationship type.");
+    redirect("/connections/new?error=type");
   }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/login?next=/connections/new");
 
   const { data: isPremium } = await supabase.rpc("has_premium", {
     uid: user.id,
@@ -42,9 +44,7 @@ export async function createConnection(formData: FormData) {
       .select("connection_id", { count: "exact", head: true })
       .eq("user_id", user.id);
     if ((count ?? 0) >= FREE_CONNECTION_CAP) {
-      throw new Error(
-        `Free plan allows up to ${FREE_CONNECTION_CAP} connections. Upgrade to add more.`,
-      );
+      redirect("/connections/new?error=cap");
     }
   }
 
@@ -54,16 +54,16 @@ export async function createConnection(formData: FormData) {
     .select("id")
     .single();
   if (error || !conn) {
-    throw new Error(error?.message ?? "Could not create connection.");
+    redirect("/connections/new?error=save");
   }
 
   const { error: memErr } = await supabase.from("connection_members").insert({
-    connection_id: conn.id,
+    connection_id: conn!.id,
     user_id: user.id,
     role: "creator",
     joined_at: new Date().toISOString(),
   });
-  if (memErr) throw new Error(memErr.message);
+  if (memErr) redirect("/connections/new?error=save");
 
   await logAudit(user.id, "connection.create", conn.id);
   revalidatePath("/connections");
@@ -108,7 +108,9 @@ export async function acceptInvite(
   if (error) {
     const msg = error.message.includes("cannot accept your own invite")
       ? "This is your own invite link — send it to the person you want to connect with."
-      : "This invite has already been used or has expired. Ask for a fresh link.";
+      : error.message.includes("invalid or expired invite")
+        ? "This invite has already been used or has expired. Ask for a fresh link."
+        : "Something went wrong on our end — tap Try again in a moment.";
     return { error: msg };
   }
 
