@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/redirect";
 import {
@@ -24,6 +24,8 @@ const TURNSTILE_SITE_KEY = resolveTurnstileSiteKey(
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  // Set in an effect (not at render) so server and client HTML agree.
+  const [inviteContext, setInviteContext] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,11 @@ export default function LoginPage() {
   // Turnstile tokens are single-use; bumping the key remounts a fresh widget
   // after each attempt.
   const [captchaKey, setCaptchaKey] = useState(0);
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next");
+    setInviteContext(!!next?.startsWith("/invite/"));
+  }, []);
 
   // Carry the post-login destination (set by the auth middleware) through the
   // magic link / OAuth round-trip. Validated here and again in the callback.
@@ -92,9 +99,13 @@ export default function LoginPage() {
     <div className="hero-glow">
       <div className="mx-auto max-w-md px-4 py-16">
         <div className="card !rounded-3xl !p-8 shadow-lift animate-fade-up">
-          <h1 className="text-3xl">Welcome</h1>
+          <h1 className="text-3xl">
+            {inviteContext ? "You're invited" : "Welcome"}
+          </h1>
           <p className="mt-2 text-sm text-ink-soft">
-            Sign in or create your free account — same door for both.
+            {inviteContext
+              ? "One quick sign-in and you'll land right back on your invitation."
+              : "Sign in or create your free account — same door for both."}
           </p>
 
           {ENABLED_PROVIDERS.length > 0 && (

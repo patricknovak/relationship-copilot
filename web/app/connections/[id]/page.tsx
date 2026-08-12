@@ -7,7 +7,7 @@ import { leaveConnection } from "@/app/actions/connections";
 import { computeStreak } from "@/lib/streak";
 import { zodiacCompatibility } from "@/lib/compat";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
-import InviteShare from "@/components/InviteShare";
+import InvitePanel from "@/components/InvitePanel";
 import WeeklyDigest from "@/components/WeeklyDigest";
 import LookingBack from "@/components/LookingBack";
 
@@ -34,6 +34,17 @@ export default async function ConnectionPage({
     .select("user_id, role, joined_at")
     .eq("connection_id", id);
   const joinedCount = (members ?? []).filter((m) => m.joined_at).length;
+
+  // Personalizes the outgoing invite message ("Sam invited you…").
+  let myName: string | null = null;
+  if (user && joinedCount < 2) {
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    myName = me?.display_name?.trim() || null;
+  }
 
   const { data: instance } = await supabase
     .from("prompt_instances")
@@ -118,9 +129,14 @@ export default async function ConnectionPage({
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Share this link. Once they join, you can both start the 20 questions.
+            Email it, text it, or share the link — one tap gets them in, and
+            then you can both start the 20 questions.
           </p>
-          <InviteShare url={inviteUrl} />
+          <InvitePanel
+            connectionId={id}
+            url={inviteUrl}
+            inviterName={myName}
+          />
         </section>
       )}
 
