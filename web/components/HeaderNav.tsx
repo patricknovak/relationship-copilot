@@ -16,6 +16,7 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
     ? [
         { href: "/connections", label: "Connections" },
         { href: "/library", label: "Library" },
+        { href: "/pricing", label: "Pricing" },
         { href: "/account", label: "Account" },
       ]
     : [

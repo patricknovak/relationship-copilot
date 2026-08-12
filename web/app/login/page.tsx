@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/redirect";
 import {
@@ -36,8 +37,13 @@ export default function LoginPage() {
   const [captchaKey, setCaptchaKey] = useState(0);
 
   useEffect(() => {
-    const next = new URLSearchParams(window.location.search).get("next");
-    setInviteContext(!!next?.startsWith("/invite/"));
+    const params = new URLSearchParams(window.location.search);
+    setInviteContext(!!params.get("next")?.startsWith("/invite/"));
+    if (params.get("error") === "auth") {
+      setError(
+        "That sign-in link didn't work — it may have expired or already been used. Request a fresh one below.",
+      );
+    }
   }, []);
 
   // Carry the post-login destination (set by the auth middleware) through the
@@ -189,13 +195,13 @@ export default function LoginPage() {
         </div>
         <p className="mt-6 text-center text-xs text-ink-soft/70">
           By continuing you agree to our{" "}
-          <a href="/terms" className="underline">
+          <Link href="/terms" className="underline">
             Terms
-          </a>{" "}
+          </Link>{" "}
           and{" "}
-          <a href="/privacy" className="underline">
+          <Link href="/privacy" className="underline">
             Privacy Policy
-          </a>
+          </Link>
           .
         </p>
       </div>

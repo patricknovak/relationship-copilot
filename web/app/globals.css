@@ -91,6 +91,14 @@
     @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
   }
 
+  /* iOS Safari zooms any focused input under 16px and stays zoomed — with 20
+     questions that's 20 zoom jumps. Keep fields at 16px on small screens. */
+  @media (max-width: 640px) {
+    .input {
+      font-size: 1rem;
+    }
+  }
+
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300;
   }

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { submitResponse, postDiscussion } from "@/app/actions/prompts";
 import RevealWatcher from "@/components/RevealWatcher";
+import AnswerForm from "@/components/AnswerForm";
+import DiscussionForm from "@/components/DiscussionForm";
 import type { PromptQuestion } from "@/lib/database.types";
 
 type AnswerMap = Record<string, string>;
@@ -179,17 +180,7 @@ export default async function PromptInstanceView({
               </li>
             )}
           </ul>
-          <form action={postDiscussion} className="mt-4 flex gap-2">
-            <input type="hidden" name="instance_id" value={instance.id} />
-            <input type="hidden" name="connection_id" value={connectionId} />
-            <input
-              name="body"
-              required
-              placeholder="Share a thought…"
-              className="input flex-1"
-            />
-            <button className="btn-primary shrink-0">Send</button>
-          </form>
+          <DiscussionForm instanceId={instance.id} connectionId={connectionId} />
         </section>
       </div>
     );
@@ -214,29 +205,14 @@ export default async function PromptInstanceView({
           : "Your answer stays private until you've both finished."}
       </p>
 
-      <form action={submitResponse} className="mt-7 space-y-5">
-        <input type="hidden" name="instance_id" value={instance.id} />
-        <input type="hidden" name="connection_id" value={connectionId} />
-
-        {questions.map((q, i) => (
-          <div key={q.id} className="card !p-5">
-            <p className="eyebrow">
-              Question {i + 1} of {questions.length}
-            </p>
-            <label
-              className="mt-1.5 block font-display text-lg leading-snug text-ink"
-              htmlFor={`q_${q.id}`}
-            >
-              {q.text}
-            </label>
-            <Field question={q} defaultValue={myAnswers[q.id]} />
-          </div>
-        ))}
-
-        <button type="submit" className="btn-primary w-full !py-3">
-          {answered ? "Update my answer" : "Submit my answer"}
-        </button>
-      </form>
+      <AnswerForm
+        instanceId={instance.id}
+        connectionId={connectionId}
+        userId={user?.id ?? "anon"}
+        questions={questions}
+        initialAnswers={myAnswers}
+        answered={answered}
+      />
     </div>
   );
 }
@@ -254,72 +230,5 @@ function LockIcon() {
       <rect x="5" y="10.5" width="14" height="9.5" rx="2.5" />
       <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
     </svg>
-  );
-}
-
-function Field({
-  question,
-  defaultValue,
-}: {
-  question: PromptQuestion;
-  defaultValue?: string;
-}) {
-  const name = `q_${question.id}`;
-  if (question.format === "scale") {
-    const min = question.min ?? 1;
-    const max = question.max ?? 10;
-    const values = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-    return (
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {values.map((n) => (
-          <label
-            key={n}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white dark:bg-surface text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={n}
-              defaultChecked={
-                defaultValue != null && String(n) === String(defaultValue)
-              }
-              className="sr-only"
-            />
-            {n}
-          </label>
-        ))}
-      </div>
-    );
-  }
-  if (question.format === "choice" && question.options) {
-    return (
-      <div className="mt-3 flex flex-wrap gap-2">
-        {question.options.map((opt) => (
-          <label
-            key={opt}
-            className="cursor-pointer rounded-full border border-brand-200 bg-white px-4 py-2 text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
-          >
-            <input
-              type="radio"
-              name={name}
-              value={opt}
-              defaultChecked={defaultValue === opt}
-              className="sr-only"
-            />
-            {opt}
-          </label>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <textarea
-      id={name}
-      name={name}
-      rows={3}
-      defaultValue={defaultValue}
-      placeholder="Write what's true for you…"
-      className="input mt-3"
-    />
   );
 }

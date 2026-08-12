@@ -1,11 +1,21 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { saveProfile } from "@/app/actions/profile";
+import { safeNextPath } from "@/lib/redirect";
 import { ATTACHMENT_ITEMS } from "@/lib/attachment";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
 
 type Intake = { goals?: string; values?: string };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; next?: string }>;
+}) {
+  const { error, next: rawNext } = await searchParams;
+  const next = safeNextPath(rawNext, "/account");
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,17 +26,31 @@ export default async function OnboardingPage() {
     .eq("id", user!.id)
     .maybeSingle();
   const intake = (profile?.intake ?? {}) as Intake;
+  const isFirstRun = !profile?.display_name;
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
-      <p className="eyebrow">Welcome</p>
-      <h1 className="mt-2 text-3xl">Set up your profile</h1>
+      <p className="eyebrow">{isFirstRun ? "Welcome" : "Your profile"}</p>
+      <h1 className="mt-2 text-3xl">
+        {isFirstRun ? "Set up your profile" : "Edit your profile"}
+      </h1>
       <p className="mt-2 text-ink-soft">
         A few quick things so your connections feel more personal. You can
         change these anytime.
       </p>
 
+      <NoticeBanner
+        message={
+          error === "name"
+            ? "Please tell us your name — it's how your person sees you."
+            : error
+              ? "Couldn't save just now — your entries below are untouched, try again."
+              : null
+        }
+      />
+
       <form action={saveProfile} className="mt-6 space-y-6">
+        <input type="hidden" name="next" value={next} />
         <div>
           <label className="block text-sm font-medium" htmlFor="display_name">
             Your name
@@ -35,6 +59,8 @@ export default async function OnboardingPage() {
             id="display_name"
             name="display_name"
             required
+            pattern=".*\S.*"
+            title="Please enter your name"
             defaultValue={profile?.display_name ?? ""}
             className="input mt-1.5"
           />
@@ -82,11 +108,11 @@ export default async function OnboardingPage() {
 
         <fieldset className="card !p-4">
           <legend className="px-1 text-sm font-medium">
-            A quick reflection
+            A quick reflection <span className="font-normal text-ink-soft/60">(optional)</span>
           </legend>
           <p className="text-xs text-ink-soft/80">
             How much do you agree? (1 = not at all, 5 = very much) — educational,
-            not a diagnosis.
+            not a diagnosis. Answer all four or skip it entirely.
           </p>
           <div className="mt-4 space-y-4">
             {ATTACHMENT_ITEMS.map((item) => (
@@ -102,7 +128,6 @@ export default async function OnboardingPage() {
                         type="radio"
                         name={`att_${item.id}`}
                         value={n}
-                        defaultChecked={n === 3}
                         className="sr-only"
                       />
                       {n}
@@ -114,12 +139,17 @@ export default async function OnboardingPage() {
           </div>
         </fieldset>
 
-        <button
-          type="submit"
-          className="w-full btn-primary"
-        >
+        <PendingButton className="w-full btn-primary" pendingLabel="Saving…">
           Save and continue
-        </button>
+        </PendingButton>
+
+        {!isFirstRun && (
+          <p className="text-center">
+            <Link href="/account" className="text-sm text-ink-soft underline">
+              Cancel
+            </Link>
+          </p>
+        )}
       </form>
     </div>
   );

@@ -10,13 +10,55 @@ import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
 import WeeklyDigest from "@/components/WeeklyDigest";
 import LookingBack from "@/components/LookingBack";
+import RevealWatcher from "@/components/RevealWatcher";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
+import { setDisplayName } from "@/app/actions/profile";
+
+const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
+  waiting: {
+    tone: "info",
+    text: "Once your person joins, the 20 questions unlock for you both.",
+  },
+  nopack: {
+    tone: "error",
+    text: "The question pack for this relationship type isn't ready yet — try again soon.",
+  },
+  nodaily: {
+    tone: "info",
+    text: "No new daily question is available right now — check back tomorrow.",
+  },
+  "digest-premium": {
+    tone: "info",
+    text: "Weekly digests are part of Premium.",
+  },
+  "digest-gap": {
+    tone: "info",
+    text: "This week's digest already exists — a new one unlocks next week.",
+  },
+  "digest-empty": {
+    tone: "info",
+    text: "Nothing to digest yet — answer a few daily questions together this week first.",
+  },
+  "digest-solo": {
+    tone: "info",
+    text: "Both people need to be in the connection before a digest can be written.",
+  },
+  "digest-ai": {
+    tone: "error",
+    text: "The AI couldn't finish the digest just now — nothing was lost, try again in a moment.",
+  },
+};
 
 export default async function ConnectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ notice?: string; error?: string }>;
 }) {
   const { id } = await params;
+  const { notice, error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,9 +77,10 @@ export default async function ConnectionPage({
     .eq("connection_id", id);
   const joinedCount = (members ?? []).filter((m) => m.joined_at).length;
 
-  // Personalizes the outgoing invite message ("Sam invited you…").
+  // Used to personalize the outgoing invite message ("Sam invited you…") and
+  // to nudge name-less users (e.g. email invitees who skipped onboarding).
   let myName: string | null = null;
-  if (user && joinedCount < 2) {
+  if (user) {
     const { data: me } = await supabase
       .from("profiles")
       .select("display_name")
@@ -111,6 +154,45 @@ export default async function ConnectionPage({
         </p>
       )}
 
+      {(notice || error) && (
+        <NoticeBanner
+          tone={error ? "error" : (NOTICES[notice ?? ""]?.tone ?? "info")}
+          message={
+            error === "name"
+              ? "Please enter a name first."
+              : (NOTICES[notice ?? ""]?.text ?? null)
+          }
+        />
+      )}
+
+      {/* Invitees who signed in straight from an email have no name yet —
+          their partner would see them as "Them". One field fixes it. */}
+      {user && !myName && (
+        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+          <h2 className="text-lg text-brand-800 dark:text-brand-200">
+            What should we call you?
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Your person sees this name next to your answers.
+          </p>
+          <form action={setDisplayName} className="mt-3 flex gap-2">
+            <input type="hidden" name="next" value={`/connections/${id}`} />
+            <input
+              name="display_name"
+              required
+              pattern=".*\S.*"
+              maxLength={80}
+              placeholder="Your name"
+              aria-label="Your name"
+              className="input flex-1"
+            />
+            <PendingButton className="btn-primary shrink-0" pendingLabel="Saving…">
+              Save
+            </PendingButton>
+          </form>
+        </section>
+      )}
+
       {/* Parent & teen: trust-first, teen-revocable. Not surveillance. */}
       {isParentTeen && (
         <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-900 dark:text-amber-200">
@@ -125,7 +207,7 @@ export default async function ConnectionPage({
       )}
 
       {/* Waiting for the other person to accept */}
-      {inviteUrl && joinedCount < 2 && (
+      {inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
           <p className="mt-1 text-sm text-ink-soft">
@@ -151,9 +233,9 @@ export default async function ConnectionPage({
                 answers only after you&apos;ve both finished.
               </p>
               <form action={begin} className="mt-3">
-                <button className="btn-primary">
+                <PendingButton pendingLabel="Setting up…">
                   Begin the 20 questions
-                </button>
+                </PendingButton>
               </form>
             </>
           ) : instance.status === "revealed" ? (
@@ -167,7 +249,8 @@ export default async function ConnectionPage({
             </p>
           ) : myResponse ? (
             <p className="mt-1 text-sm text-ink-soft">
-              You&apos;re done — waiting for the other person to finish.{" "}
+              {instance && <RevealWatcher instanceId={instance.id} />}
+              You&apos;re done — this page updates the moment they finish.{" "}
               <Link
                 href={`/connections/${id}/onboarding`}
                 className="text-brand-700 underline"
@@ -196,9 +279,9 @@ export default async function ConnectionPage({
             A fresh prompt each day to keep learning about each other.
           </p>
           <form action={ensureDaily.bind(null, id)} className="mt-3">
-            <button className="btn-primary">
+            <PendingButton pendingLabel="Opening…">
               Open today&apos;s question
-            </button>
+            </PendingButton>
           </form>
         </section>
       )}
@@ -254,9 +337,12 @@ export default async function ConnectionPage({
       {/* Leave — anyone can step away (teen-revocable). */}
       {conn.status !== "archived" && (
         <form action={leave} className="mt-10 border-t border-gray-100 pt-6">
-          <button className="text-sm text-ink-soft/80 hover:text-rose-600">
+          <PendingButton
+            className="text-sm text-ink-soft/80 hover:text-rose-600"
+            pendingLabel="Leaving…"
+          >
             Leave this connection
-          </button>
+          </PendingButton>
         </form>
       )}
     </div>

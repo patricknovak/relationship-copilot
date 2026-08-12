@@ -1,6 +1,36 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
+import type { ConnectionType } from "@/lib/database.types";
+
+type ConnectionRow = { id: string; type: ConnectionType; status: string };
+
+function ConnectionList({ items }: { items: ConnectionRow[] }) {
+  return (
+    <ul className="mt-4 space-y-3">
+      {items.map((c) => (
+        <li key={c.id}>
+          <Link href={`/connections/${c.id}`} className="card card-hover block">
+            <div className="flex items-center justify-between">
+              <span className="font-display text-lg text-ink">
+                {connectionLabel(c.type)}
+              </span>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  c.status === "active"
+                    ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
+                    : "bg-paper-warm text-ink-soft"
+                }`}
+              >
+                {STATUS_LABEL[c.status] ?? c.status}
+              </span>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Waiting to connect",
@@ -41,31 +71,24 @@ export default async function ConnectionsPage() {
           </Link>
         </div>
       ) : (
-        <ul className="mt-8 space-y-3">
-          {connections.map((c) => (
-            <li key={c.id}>
-              <Link
-                href={`/connections/${c.id}`}
-                className="card card-hover block"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-display text-lg text-ink">
-                    {connectionLabel(c.type)}
-                  </span>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      c.status === "active"
-                        ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
-                        : "bg-paper-warm text-ink-soft"
-                    }`}
-                  >
-                    {STATUS_LABEL[c.status] ?? c.status}
-                  </span>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ConnectionList
+            items={connections.filter((c) => c.status !== "archived")}
+          />
+          {connections.some((c) => c.status === "archived") && (
+            <details className="mt-8">
+              <summary className="cursor-pointer text-sm text-ink-soft/70">
+                Archived (
+                {connections.filter((c) => c.status === "archived").length})
+              </summary>
+              <div className="mt-3 opacity-70">
+                <ConnectionList
+                  items={connections.filter((c) => c.status === "archived")}
+                />
+              </div>
+            </details>
+          )}
+        </>
       )}
     </div>
   );

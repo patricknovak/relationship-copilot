@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { startElective } from "@/app/actions/prompts";
+import PendingButton from "@/components/PendingButton";
+import NoticeBanner from "@/components/NoticeBanner";
 
 const KIND_LABEL: Record<string, string> = {
   quiz: "Quiz",
@@ -10,10 +12,13 @@ const KIND_LABEL: Record<string, string> = {
 
 export default async function ExplorePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ notice?: string }>;
 }) {
   const { id } = await params;
+  const { notice } = await searchParams;
   const supabase = await createClient();
 
   const { data: conn } = await supabase
@@ -51,6 +56,27 @@ export default async function ExplorePage({
         Pick one to do together — you&apos;ll each answer, then reveal.
       </p>
 
+      <NoticeBanner
+        tone="info"
+        message={
+          notice === "waiting"
+            ? "Once your person joins, you can start activities together."
+            : notice === "unavailable"
+              ? "That activity isn't available right now — pick another."
+              : null
+        }
+      />
+
+      {(templates ?? []).length === 0 && (
+        <div className="card mt-8 !rounded-3xl border-dashed p-8 text-center">
+          <p className="font-display text-lg text-ink">Nothing here yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+            New quizzes and challenges for this relationship type are on the
+            way — in the meantime, today&apos;s question is always waiting.
+          </p>
+        </div>
+      )}
+
       <Group title="Challenges" items={challenges} connectionId={id} />
       <Group title="Quizzes" items={quizzes} connectionId={id} />
 
@@ -64,7 +90,13 @@ export default async function ExplorePage({
                   href={`/connections/${id}/prompts/${m.id}`}
                   className="flex items-center justify-between rounded-md border border-gray-100 p-3 text-sm hover:border-brand-200"
                 >
-                  <span>{KIND_LABEL[m.kind] ?? m.kind}</span>
+                  <span>
+                    {(templates ?? []).find((t) => t.id === m.template_id)
+                      ?.title ?? (KIND_LABEL[m.kind] ?? m.kind)}
+                    <span className="ml-2 text-xs text-ink-soft/60">
+                      {KIND_LABEL[m.kind] ?? m.kind}
+                    </span>
+                  </span>
                   <span className="text-xs text-ink-soft/80">
                     {m.status === "revealed" ? "Revealed" : "In progress"}
                   </span>
@@ -106,9 +138,12 @@ function Group({
                   )}
                 </div>
                 <form action={start}>
-                  <button className="shrink-0 btn-primary !px-4 !py-1.5">
+                  <PendingButton
+                    className="shrink-0 btn-primary !px-4 !py-1.5"
+                    pendingLabel="Starting…"
+                  >
                     Start
-                  </button>
+                  </PendingButton>
                 </form>
               </div>
             </li>

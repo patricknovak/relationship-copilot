@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 const TYPES = [
   "Romantic partners",
@@ -45,7 +46,12 @@ const FAQS = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div>
       {/* ------------------------------------------------ Hero */}
@@ -63,8 +69,11 @@ export default function Home() {
             grounded in real research, for the whole arc of a relationship.
           </p>
           <div className="mt-9 flex animate-fade-up items-center justify-center gap-3 [animation-delay:200ms]">
-            <Link href="/login" className="btn-primary !px-7 !py-3 !text-base">
-              Start free
+            <Link
+              href={user ? "/connections" : "/login"}
+              className="btn-primary !px-7 !py-3 !text-base"
+            >
+              {user ? "Open your connections" : "Start free"}
             </Link>
             <Link href="/library" className="btn-secondary !px-7 !py-3 !text-base">
               Browse the library
@@ -249,8 +258,11 @@ export default function Home() {
             by Friday.
           </p>
           <div className="mt-7 flex items-center justify-center gap-3">
-            <Link href="/login" className="btn-primary !px-7 !py-3 !text-base">
-              Start free
+            <Link
+              href={user ? "/connections" : "/login"}
+              className="btn-primary !px-7 !py-3 !text-base"
+            >
+              {user ? "Open your connections" : "Start free"}
             </Link>
             <Link href="/pricing" className="btn-ghost">
               See pricing

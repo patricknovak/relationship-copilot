@@ -33,8 +33,16 @@ describe("buildRedactor", () => {
     expect(redact("Anna's mom met Anna")).toBe("P1's mom met P1");
   });
 
-  it("ignores empty/too-short names", () => {
+  it("ignores empty/too-short names but keeps slot numbering", () => {
     const { map } = buildRedactor(["", "A", null, undefined, "Sam"]);
-    expect(map).toEqual([{ name: "Sam", placeholder: "P1" }]);
+    expect(map).toEqual([{ name: "Sam", placeholder: "P5" }]);
+  });
+
+  it("keeps placeholder numbers aligned to participant slots when a name is missing", () => {
+    const { redact, map } = buildRedactor([null, "Sam"]);
+    // Sam is the SECOND participant, so their placeholder must stay P2 even
+    // though the first participant has no name to redact.
+    expect(map).toEqual([{ name: "Sam", placeholder: "P2" }]);
+    expect(redact("I love how Sam listens")).toBe("I love how P2 listens");
   });
 });
