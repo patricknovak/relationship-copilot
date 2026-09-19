@@ -5,15 +5,14 @@ export const metadata: Metadata = {
   title: "Privacy Policy — Relationship Copilot",
 };
 
-// DRAFT — accurate to the app's actual behavior, but requires legal review
-// before real users. Keep this page in sync with what the code really does;
-// it is a description, not aspiration.
+// Keep this page in sync with what the code really does; it is a description,
+// not aspiration.
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
       <h1 className="text-3xl text-ink">Privacy Policy</h1>
       <p className="mt-1 text-xs text-ink-soft/60">
-        Draft — under legal review. Last updated June 2026.
+        Last updated September 19, 2026.
       </p>
 
       <section className="mt-6 space-y-4">

@@ -17,11 +17,13 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
         { href: "/connections", label: "Connections" },
         { href: "/library", label: "Library" },
         { href: "/pricing", label: "Pricing" },
+        { href: "/about", label: "About" },
         { href: "/account", label: "Account" },
       ]
     : [
         { href: "/pricing", label: "Pricing" },
         { href: "/library", label: "Library" },
+        { href: "/about", label: "About" },
       ];
 
   const linkCls = (href: string) =>

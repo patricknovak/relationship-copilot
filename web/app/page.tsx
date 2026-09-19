@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 
 const TYPES = [
@@ -19,7 +20,7 @@ const STAGES = [
   { label: "Grief & endings", note: "remember together" },
 ];
 
-const FAQS = [
+const FAQS: { q: string; a: ReactNode }[] = [
   {
     q: "Can the other person see my answer before I share mine?",
     a: "No — and it's not just a promise in the app. The rule that hides an answer until you've both responded lives in the database itself, so no bug in the app could leak it early. You answer first, then you both see everything at once.",
@@ -43,6 +44,19 @@ const FAQS = [
   {
     q: "What if I'm in an unsafe relationship?",
     a: "Safety comes first and free. The app screens for signs of harm and, when it sees them, withholds AI output and surfaces support resources instead. There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
+  },
+  {
+    q: "Who built this?",
+    a: (
+      <>
+        Relationship Copilot is an independent product founded by Patrick Novak
+        in Vancouver. Learn more on our{" "}
+        <Link href="/about" className="underline">
+          About
+        </Link>{" "}
+        page.
+      </>
+    ),
   },
 ];
 
