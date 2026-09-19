@@ -79,11 +79,6 @@ export default async function PricingPage({
           )}
         </Plan>
       </div>
-
-      <p className="mt-8 text-center text-xs text-ink-soft/70">
-        Safety detection and crisis resources are free for everyone and never
-        behind the paywall.
-      </p>
     </div>
   );
 }
@@ -120,6 +115,20 @@ function Plan({
         ))}
       </ul>
       <div className="mt-7">{children}</div>
+      <p className="mt-5 text-xs leading-relaxed text-ink-soft/70">
+        Safety resources are always free.
+      </p>
+      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft/70">
+        <Link href="/safety" className="underline hover:text-ink-soft">
+          Safety
+        </Link>
+        <Link href="/privacy" className="underline hover:text-ink-soft">
+          Privacy
+        </Link>
+        <Link href="/terms" className="underline hover:text-ink-soft">
+          Terms
+        </Link>
+      </p>
     </div>
   );
 }

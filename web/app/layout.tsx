@@ -86,6 +86,9 @@ export default function RootLayout({
                       Pricing
                     </Link>
                   </li>
+                </ul>
+                <p className="mt-5 font-medium text-white">Trust</p>
+                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
                   <li>
                     <Link href="/privacy" className="hover:text-white">
                       Privacy
@@ -94,6 +97,16 @@ export default function RootLayout({
                   <li>
                     <Link href="/terms" className="hover:text-white">
                       Terms
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/safety" className="hover:text-white">
+                      Safety
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/about" className="hover:text-white">
+                      About
                     </Link>
                   </li>
                 </ul>
