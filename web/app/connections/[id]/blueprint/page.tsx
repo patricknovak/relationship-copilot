@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBlueprint } from "@/app/actions/blueprint";
-import { INLINE_RESOURCES, SAFETY_NOTE } from "@/lib/safety";
+import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 
@@ -203,6 +203,9 @@ function SafetyCard() {
     <div className="mt-6 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-5">
       <h2 className="font-semibold text-rose-800 dark:text-rose-200">You deserve support</h2>
       <p className="mt-1 text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
+      <p className="mt-2 text-sm text-rose-900/90 dark:text-rose-200/90">
+        {SAFETY_PRIVACY_LINE}
+      </p>
       <ul className="mt-3 space-y-1 text-sm">
         {INLINE_RESOURCES.map((r) => (
           <li key={r.name}>

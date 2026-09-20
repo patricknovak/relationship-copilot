@@ -3,13 +3,21 @@ import { createClient } from "@/lib/supabase/server";
 import RevealWatcher from "@/components/RevealWatcher";
 import AnswerForm from "@/components/AnswerForm";
 import DiscussionForm from "@/components/DiscussionForm";
+import SoftPremiumCard from "@/components/SoftPremiumCard";
+import NudgePerson from "@/components/NudgePerson";
+import {
+  EMPTY_STATE,
+  FIRST_REVEAL_UNLOCK,
+  WAITING_ON_THEM,
+  WAITING_ON_YOU,
+} from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 
 type AnswerMap = Record<string, string>;
 
-// Renders a single prompt instance for the current user: the answer/edit form
-// while open, a waiting note once they've answered, and the side-by-side reveal
-// plus discussion once everyone has answered. Shared by onboarding and daily.
+// Renders a single prompt instance for the current user: empty / waiting-on-them
+// / waiting-on-you while open, then the first-reveal unlock + discussion once
+// everyone has answered. Shared by onboarding and daily.
 export default async function PromptInstanceView({
   connectionId,
   instanceId,
@@ -59,8 +67,44 @@ export default async function PromptInstanceView({
     .eq("instance_id", instance.id);
   const myResponse = (responses ?? []).find((r) => r.user_id === user?.id);
   const myAnswers = (myResponse?.answers ?? {}) as AnswerMap;
+  const answered = !!myResponse;
 
-  // ---- Revealed ----
+  // Boolean-only: another member has content (no answer text). Needed when
+  // you haven't answered yet — RLS hides their row until you share too.
+  const { data: othersAnswered } = await supabase.rpc("others_have_answered", {
+    p_instance: instance.id,
+  });
+
+  let myName: string | null = null;
+  if (user) {
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    myName = me?.display_name?.trim() || null;
+  }
+
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const connectionUrl = `${site}/connections/${connectionId}`;
+
+  // Soft Premium only after the connection's first mutual reveal.
+  let isFirstReveal = false;
+  let isPremium = false;
+  if (instance.status === "revealed" && user) {
+    const { data: revealedRows } = await supabase
+      .from("prompt_instances")
+      .select("id")
+      .eq("connection_id", connectionId)
+      .eq("status", "revealed");
+    isFirstReveal = (revealedRows ?? []).length === 1;
+    const { data: premium } = await supabase.rpc("has_premium", {
+      uid: user.id,
+    });
+    isPremium = !!premium;
+  }
+
+  // ---- Revealed (first unlock hero) ----
   if (instance.status === "revealed") {
     const { data: members } = await supabase
       .from("connection_members")
@@ -98,14 +142,35 @@ export default async function PromptInstanceView({
         >
           ← Back
         </Link>
-        <div className="mt-3 flex items-center gap-3">
-          <h1 className="text-3xl">{heading}</h1>
-          <span className="rounded-full bg-brand-100 dark:bg-brand-900/40 px-3 py-1 text-xs font-medium text-brand-800 dark:text-brand-200">
-            ✨ Revealed together
-          </span>
-        </div>
 
-        <ol className="mt-8 space-y-6">
+        <header className="mt-4">
+          <p className="eyebrow">{heading}</p>
+          <h1 className="mt-2 text-3xl sm:text-4xl">
+            {FIRST_REVEAL_UNLOCK.headline}
+          </h1>
+          <p className="mt-2 font-display text-xl text-brand-800 dark:text-brand-200">
+            {FIRST_REVEAL_UNLOCK.subhead}
+          </p>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
+            {FIRST_REVEAL_UNLOCK.body}
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <a href="#answers" className="btn-primary">
+              {FIRST_REVEAL_UNLOCK.primaryCta}
+            </a>
+            <a href="#discussion" className="btn-secondary">
+              {FIRST_REVEAL_UNLOCK.secondaryCta}
+            </a>
+            <Link
+              href={`/connections/${connectionId}`}
+              className="text-sm text-ink-soft/80 hover:text-ink"
+            >
+              {FIRST_REVEAL_UNLOCK.tertiaryCta}
+            </Link>
+          </div>
+        </header>
+
+        <ol id="answers" className="mt-10 scroll-mt-24 space-y-6">
           {questions.map((q, i) => (
             <li key={q.id} className="card animate-fade-up !p-5">
               <p className="eyebrow">Question {i + 1}</p>
@@ -147,7 +212,7 @@ export default async function PromptInstanceView({
           ))}
         </ol>
 
-        <section className="card mt-10 !p-5">
+        <section id="discussion" className="card mt-10 scroll-mt-24 !p-5">
           <h2 className="text-lg">Talk about it</h2>
           <ul className="mt-4 space-y-2.5">
             {(discussion ?? []).map((d) => {
@@ -182,12 +247,94 @@ export default async function PromptInstanceView({
           </ul>
           <DiscussionForm instanceId={instance.id} connectionId={connectionId} />
         </section>
+
+        {isFirstReveal && !isPremium && <SoftPremiumCard />}
       </div>
     );
   }
 
-  // ---- Not revealed: answer / edit ----
-  const answered = !!myResponse;
+  // ---- Waiting on them (you've answered; they haven't) ----
+  if (answered && !othersAnswered) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <RevealWatcher instanceId={instance.id} />
+        <Link
+          href={`/connections/${connectionId}`}
+          className="text-sm text-ink-soft/70 hover:text-ink"
+        >
+          ← Back
+        </Link>
+        <h1 className="mt-3 text-3xl">{WAITING_ON_THEM.headline}</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+          {WAITING_ON_THEM.body}
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <NudgePerson connectionUrl={connectionUrl} inviterName={myName} />
+          <a href="#review-answers" className="btn-secondary">
+            {WAITING_ON_THEM.secondaryCta}
+          </a>
+        </div>
+        <p className="mt-4 text-sm text-ink-soft/70">{WAITING_ON_THEM.helper}</p>
+
+        <div id="review-answers" className="mt-10 scroll-mt-24">
+          <h2 className="text-lg">{heading}</h2>
+          <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
+            <LockIcon />
+            Still private — you can edit until they share too.
+          </p>
+          <AnswerForm
+            instanceId={instance.id}
+            connectionId={connectionId}
+            userId={user?.id ?? "anon"}
+            questions={questions}
+            initialAnswers={myAnswers}
+            answered={answered}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Waiting on you (they've answered; you haven't) ----
+  if (!answered && othersAnswered) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <RevealWatcher instanceId={instance.id} />
+        <Link
+          href={`/connections/${connectionId}`}
+          className="text-sm text-ink-soft/70 hover:text-ink"
+        >
+          ← Back
+        </Link>
+        <h1 className="mt-3 text-3xl">{WAITING_ON_YOU.headline}</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+          {WAITING_ON_YOU.body}
+        </p>
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
+          <LockIcon />
+          {WAITING_ON_YOU.trustLine}
+        </p>
+        <div className="mt-6">
+          <a href="#answer-form" className="btn-primary">
+            {WAITING_ON_YOU.primaryCta}
+          </a>
+        </div>
+        <div id="answer-form" className="mt-10 scroll-mt-24">
+          <h2 className="text-lg">{heading}</h2>
+          <AnswerForm
+            instanceId={instance.id}
+            connectionId={connectionId}
+            userId={user?.id ?? "anon"}
+            questions={questions}
+            initialAnswers={myAnswers}
+            answered={answered}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Empty / start answering (neither finished yet) ----
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <RevealWatcher instanceId={instance.id} />
@@ -197,22 +344,34 @@ export default async function PromptInstanceView({
       >
         ← Back
       </Link>
-      <h1 className="mt-3 text-3xl">{heading}</h1>
-      <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
-        <LockIcon />
-        {answered
-          ? "You've answered — you can tweak it until the other person finishes, then it locks and reveals."
-          : "Your answer stays private until you've both finished."}
+      <h1 className="mt-3 text-3xl">{EMPTY_STATE.headline}</h1>
+      <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+        {EMPTY_STATE.body}
       </p>
+      <p className="mt-3 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <a href="#answer-form" className="btn-primary">
+          {EMPTY_STATE.primaryCta}
+        </a>
+        <Link
+          href={`/connections/${connectionId}`}
+          className="btn-secondary"
+        >
+          {EMPTY_STATE.secondaryCta}
+        </Link>
+      </div>
 
-      <AnswerForm
-        instanceId={instance.id}
-        connectionId={connectionId}
-        userId={user?.id ?? "anon"}
-        questions={questions}
-        initialAnswers={myAnswers}
-        answered={answered}
-      />
+      <div id="answer-form" className="mt-10 scroll-mt-24">
+        <h2 className="text-lg">{heading}</h2>
+        <AnswerForm
+          instanceId={instance.id}
+          connectionId={connectionId}
+          userId={user?.id ?? "anon"}
+          questions={questions}
+          initialAnswers={myAnswers}
+          answered={answered}
+        />
+      </div>
     </div>
   );
 }

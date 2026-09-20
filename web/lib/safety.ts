@@ -1,3 +1,5 @@
+import { SAFETY_INTERRUPT } from "@/lib/firstRevealCopy";
+
 // Safety detection + resource routing. THIS RUNS FOR EVERY USER REGARDLESS OF
 // PLAN — it is never behind the paywall. It is a deliberately conservative,
 // keyword-based first pass that errs toward surfacing help; it does NOT
@@ -67,3 +69,6 @@ export const INLINE_RESOURCES: SafetyResource[] = [
 
 export const SAFETY_NOTE =
   "It sounds like things may be really hard right now. You deserve support from people trained to help — please consider reaching out.";
+
+// Calm interrupt line (always free; never notifies the other person).
+export const SAFETY_PRIVACY_LINE = SAFETY_INTERRUPT.calm;

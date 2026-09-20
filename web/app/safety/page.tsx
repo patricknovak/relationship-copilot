@@ -78,6 +78,10 @@ export default function SafetyPage() {
         crisis service and does not provide therapy — please reach out to the
         people below for real-time help.
       </p>
+      <p className="mt-2 text-sm text-ink-soft">
+        If you need support, Safety is free and private. Viewing resources
+        doesn&apos;t notify anyone.
+      </p>
 
       <ul className="mt-6 space-y-4">
         {RESOURCES.map((r) => (

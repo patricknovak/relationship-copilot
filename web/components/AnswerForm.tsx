@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitResponse } from "@/app/actions/prompts";
+import { MICROCOPY } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 
 type AnswerMap = Record<string, string>;
@@ -103,6 +104,8 @@ export default function AnswerForm({
         </p>
       )}
 
+      <p className="text-sm text-ink-soft">{MICROCOPY.aboveQuestion}</p>
+
       {questions.map((q, i) => (
         <div key={q.id} className="card !p-5">
           <p className="eyebrow">
@@ -119,6 +122,7 @@ export default function AnswerForm({
             value={answers[q.id] ?? ""}
             onChange={(v) => setAnswer(q.id, v)}
           />
+          <p className="mt-2 text-xs text-ink-soft/70">{MICROCOPY.belowQuestion}</p>
         </div>
       ))}
 
@@ -126,7 +130,7 @@ export default function AnswerForm({
         {error && <p className="mb-2 text-sm text-rose-600">{error}</p>}
         {saved && !error && (
           <p className="mb-2 text-sm text-brand-700 dark:text-brand-300">
-            Saved ✓ — it reveals once you&apos;ve both finished.
+            {MICROCOPY.confirmOnSubmit}
           </p>
         )}
         <div className="flex items-center gap-3">
@@ -142,8 +146,8 @@ export default function AnswerForm({
             {pending
               ? "Saving…"
               : answered
-                ? "Update my answers"
-                : "Lock in my answers"}
+                ? MICROCOPY.updateSubmit
+                : MICROCOPY.submit}
           </button>
         </div>
       </div>
