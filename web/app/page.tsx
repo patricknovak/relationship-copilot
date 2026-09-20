@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { ACQUISITION } from "@/lib/firstRevealCopy";
 
 const TYPES = [
   "Romantic partners",
@@ -75,26 +76,27 @@ export default async function Home() {
             For every relationship that matters
           </p>
           <h1 className="mx-auto mt-4 max-w-3xl animate-fade-up text-5xl leading-[1.05] sm:text-7xl">
-            Closer, on purpose.
+            {ACQUISITION.headline}
           </h1>
           <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-lg leading-relaxed text-ink-soft [animation-delay:120ms]">
-            Answer thoughtful questions together — and see each other&apos;s
-            answers only when you&apos;ve both shared. Honest by design,
-            grounded in real research, for the whole arc of a relationship.
+            {ACQUISITION.body}
           </p>
           <div className="mt-9 flex animate-fade-up items-center justify-center gap-3 [animation-delay:200ms]">
             <Link
-              href={user ? "/connections" : "/login"}
+              href={user ? "/connections/new" : "/login"}
               className="btn-primary !px-7 !py-3 !text-base"
             >
-              {user ? "Open your connections" : "Start free"}
+              {ACQUISITION.inviteCta}
             </Link>
-            <Link href="/library" className="btn-secondary !px-7 !py-3 !text-base">
-              Browse the library
+            <Link
+              href={user ? "/connections" : "/login"}
+              className="btn-secondary !px-7 !py-3 !text-base"
+            >
+              {user ? "Open your connections" : ACQUISITION.startCta}
             </Link>
           </div>
           <p className="mt-4 animate-fade-up text-xs text-ink-soft/70 [animation-delay:260ms]">
-            Free for the core experience · Safety resources always free
+            {ACQUISITION.trustLine}
           </p>
 
           {/* The signature moment: mutual reveal, as a living mockup. */}

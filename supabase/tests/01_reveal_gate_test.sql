@@ -43,6 +43,24 @@ begin
   raise notice 'PASS: B cannot see A''s answer before answering';
 end $$;
 
+-- Privacy-safe boolean: B learns that A has answered, without reading content.
+do $$
+declare flag boolean;
+begin
+  set local role authenticated;
+  set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
+  select others_have_answered('44444444-4444-4444-4444-444444444444') into flag;
+  assert flag is true, 'EXPECTED others_have_answered=true for B while A has answered';
+  reset role;
+
+  set local role authenticated;
+  set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
+  select others_have_answered('44444444-4444-4444-4444-444444444444') into flag;
+  assert flag is false, 'EXPECTED others_have_answered=false for A while B has not answered';
+  reset role;
+  raise notice 'PASS: others_have_answered is boolean-only and member-scoped';
+end $$;
+
 -- B answers → reveal trigger should fire.
 set role authenticated;
 set "test.user_id" = '22222222-2222-2222-2222-222222222222';

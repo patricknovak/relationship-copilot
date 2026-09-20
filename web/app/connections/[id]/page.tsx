@@ -13,7 +13,13 @@ import LookingBack from "@/components/LookingBack";
 import RevealWatcher from "@/components/RevealWatcher";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import NudgePerson from "@/components/NudgePerson";
 import { setDisplayName } from "@/app/actions/profile";
+import {
+  EMPTY_STATE,
+  WAITING_ON_THEM,
+  WAITING_ON_YOU,
+} from "@/lib/firstRevealCopy";
 
 const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
   waiting: {
@@ -97,6 +103,7 @@ export default async function ConnectionPage({
     .maybeSingle();
 
   let myResponse = null;
+  let othersAnsweredOnboarding = false;
   if (instance && user) {
     const { data } = await supabase
       .from("prompt_responses")
@@ -105,6 +112,12 @@ export default async function ConnectionPage({
       .eq("user_id", user.id)
       .maybeSingle();
     myResponse = data;
+    if (!myResponse && instance.status !== "revealed") {
+      const { data: others } = await supabase.rpc("others_have_answered", {
+        p_instance: instance.id,
+      });
+      othersAnsweredOnboarding = !!others;
+    }
   }
 
   // Daily streak (gamification) from revealed daily instances.
@@ -222,51 +235,76 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Both joined — onboarding entry */}
+      {/* Both joined — first shared set / mutual-reveal activation */}
       {joinedCount >= 2 && (
         <section className="card mt-6">
-          <h2 className="text-lg">The first 20 questions</h2>
           {!instance ? (
             <>
-              <p className="mt-1 text-sm text-ink-soft">
-                Answer thoughtfully — you&apos;ll each see the other&apos;s
-                answers only after you&apos;ve both finished.
-              </p>
+              <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
+              <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
               <form action={begin} className="mt-3">
                 <PendingButton pendingLabel="Setting up…">
-                  Begin the 20 questions
+                  {EMPTY_STATE.primaryCta}
                 </PendingButton>
               </form>
             </>
           ) : instance.status === "revealed" ? (
-            <p className="mt-1 text-sm">
-              <Link
-                href={`/connections/${id}/onboarding`}
-                className="text-brand-700 underline"
-              >
-                See your answers side by side →
-              </Link>
-            </p>
+            <>
+              <h2 className="text-lg">You revealed together.</h2>
+              <p className="mt-1 text-sm">
+                <Link
+                  href={`/connections/${id}/onboarding`}
+                  className="text-brand-700 underline"
+                >
+                  See your answers side by side →
+                </Link>
+              </p>
+            </>
           ) : myResponse ? (
-            <p className="mt-1 text-sm text-ink-soft">
+            <>
               {instance && <RevealWatcher instanceId={instance.id} />}
-              You&apos;re done — this page updates the moment they finish.{" "}
+              <h2 className="text-lg">{WAITING_ON_THEM.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_THEM.body}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <NudgePerson
+                  connectionUrl={`${base}/connections/${id}`}
+                  inviterName={myName}
+                />
+                <Link
+                  href={`/connections/${id}/onboarding`}
+                  className="btn-secondary !px-4 !py-2 text-sm"
+                >
+                  {WAITING_ON_THEM.secondaryCta}
+                </Link>
+              </div>
+              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_THEM.helper}</p>
+            </>
+          ) : othersAnsweredOnboarding ? (
+            <>
+              {instance && <RevealWatcher instanceId={instance.id} />}
+              <h2 className="text-lg">{WAITING_ON_YOU.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_YOU.body}</p>
+              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_YOU.trustLine}</p>
               <Link
                 href={`/connections/${id}/onboarding`}
-                className="text-brand-700 underline"
+                className="mt-3 inline-flex btn-primary"
               >
-                Review your answers
+                {WAITING_ON_YOU.primaryCta}
               </Link>
-            </p>
+            </>
           ) : (
-            <p className="mt-1 text-sm">
+            <>
+              <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
+              <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
               <Link
                 href={`/connections/${id}/onboarding`}
-                className="text-brand-700 underline"
+                className="mt-3 inline-flex btn-primary"
               >
-                Continue the 20 questions →
+                {EMPTY_STATE.primaryCta}
               </Link>
-            </p>
+            </>
           )}
         </section>
       )}
