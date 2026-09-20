@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ConsentPreferences from "@/components/ConsentPreferences";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Relationship Copilot",
@@ -12,7 +13,7 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
       <h1 className="text-3xl text-ink">Privacy Policy</h1>
       <p className="mt-1 text-xs text-ink-soft/60">
-        Last updated September 19, 2026.
+        Last updated September 20, 2026.
       </p>
 
       <section className="mt-6 space-y-4">
@@ -45,6 +46,29 @@ export default function PrivacyPage() {
           suggesting danger leads us to withhold the AI output and show support
           resources instead. Safety features are free for everyone.
         </p>
+
+        <h2 className="text-lg font-semibold text-ink">
+          Cookies and analytics
+        </h2>
+        <p>
+          On our public pages — the home page, pricing, library, about, and
+          similar — we use Google Analytics, loaded through Google Tag Manager,
+          to see how people find us. It is off by default: analytics cookies are
+          only set after you choose &ldquo;Accept&rdquo; in the banner, and if
+          you decline, nothing is stored or sent. Google acts as our processor
+          for this data.
+        </p>
+        <p>
+          It never runs on the signed-in parts of the app. Your connections,
+          your answers, your account pages, and invite links are excluded at
+          three separate levels, so the addresses of those pages — which can
+          contain connection and invite IDs — are never sent to Google. We use
+          no advertising cookies and no ad personalisation; those signals stay
+          switched off permanently, not merely until you accept. Beyond
+          analytics, we also set a small cookie to remember your light or dark
+          theme, and the cookies needed to keep you signed in.
+        </p>
+        <ConsentPreferences />
 
         <h2 className="text-lg font-semibold text-ink">
           Your data, your controls
