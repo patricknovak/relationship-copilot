@@ -3,6 +3,9 @@ import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import ThemeScript from "@/components/ThemeScript";
+import ConsentDefaults from "@/components/ConsentDefaults";
+import Analytics from "@/components/Analytics";
+import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
 const display = Fraunces({
@@ -47,6 +50,8 @@ export default function RootLayout({
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <head>
         <ThemeScript />
+        {/* Consent Mode v2 defaults must run before GTM loads. */}
+        <ConsentDefaults />
       </head>
       <body className="min-h-screen flex flex-col font-sans">
         <a
@@ -132,6 +137,8 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
+        <Analytics />
+        <CookieConsent />
       </body>
     </html>
   );
