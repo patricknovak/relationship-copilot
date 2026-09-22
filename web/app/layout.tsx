@@ -6,6 +6,7 @@ import ThemeScript from "@/components/ThemeScript";
 import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
+import { CANONICAL_ORIGIN } from "@/lib/site";
 import "./globals.css";
 
 const display = Fraunces({
@@ -20,9 +21,10 @@ const sans = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://relationshipcopilot.com",
-  ),
+  // Prefer the production host so relative metadata (OG URLs, etc.) stay
+  // consistent with rel=canonical even when NEXT_PUBLIC_SITE_URL points at a
+  // preview or localhost. Absolute canonicals on public pages also lock this.
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: {
     default: "Relationship Copilot — Closer, on purpose.",
     template: "%s — Relationship Copilot",

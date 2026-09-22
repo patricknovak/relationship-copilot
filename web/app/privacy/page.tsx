@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ConsentPreferences from "@/components/ConsentPreferences";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Relationship Copilot",
+  alternates: { canonical: canonicalUrl("/privacy") },
 };
 
 // Keep this page in sync with what the code really does; it is a description,

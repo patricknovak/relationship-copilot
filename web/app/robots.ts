@@ -1,7 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://relationshipcopilot.com";
+import { CANONICAL_ORIGIN } from "@/lib/site";
 
 // Index the public marketing surface; keep private app routes out.
 export default function robots(): MetadataRoute.Robots {
@@ -18,6 +16,6 @@ export default function robots(): MetadataRoute.Robots {
         "/invite/",
       ],
     },
-    sitemap: `${SITE}/sitemap.xml`,
+    sitemap: `${CANONICAL_ORIGIN}/sitemap.xml`,
   };
 }

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: "About · Relationship Copilot" },
   description:
     "Closer, on purpose. Relationship Copilot helps people stay close with prompts you answer privately and only share together.",
+  alternates: { canonical: canonicalUrl("/about") },
 };
 
 export default async function AboutPage() {
@@ -22,12 +24,14 @@ export default async function AboutPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
       <p className="eyebrow">About</p>
-      <h1 className="mt-3 text-4xl text-ink sm:text-5xl">Closer, on purpose.</h1>
+      <h1 className="mt-3 text-4xl text-ink sm:text-5xl">
+        About Relationship Copilot
+      </h1>
       <p className="mt-4 text-base leading-relaxed">
-        Relationship Copilot helps people stay close across the whole arc of a
-        relationship — romantic partners, friends, family, siblings, coworkers,
-        mentors, and parent–teen — with prompts you answer privately and only
-        share together.
+        Closer, on purpose. Relationship Copilot helps people stay close across
+        the whole arc of a relationship — romantic partners, friends, family,
+        siblings, coworkers, mentors, and parent–teen — with prompts you answer
+        privately and only share together.
       </p>
       <p className="mt-3 text-base leading-relaxed">
         Free where it matters. Never therapy. Built so safety stays free.
