@@ -9,12 +9,12 @@ export const CANONICAL_ORIGIN = "https://relationshipcopilot.com";
 
 /**
  * Absolute canonical URL for a public path.
- * Home uses a trailing slash; other routes do not (matches sitemap.xml).
+ * No trailing slash (matches Next.js Metadata emission and default routing).
  */
 export function canonicalUrl(path: string = "/"): string {
   const trimmed = path.trim();
   if (trimmed === "" || trimmed === "/") {
-    return `${CANONICAL_ORIGIN}/`;
+    return CANONICAL_ORIGIN;
   }
   const withSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   const noTrailing =

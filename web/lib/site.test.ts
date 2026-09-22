@@ -6,10 +6,10 @@ describe("canonicalUrl", () => {
     expect(CANONICAL_ORIGIN).toBe("https://relationshipcopilot.com");
   });
 
-  it("canonicalizes home with a trailing slash", () => {
-    expect(canonicalUrl()).toBe("https://relationshipcopilot.com/");
-    expect(canonicalUrl("/")).toBe("https://relationshipcopilot.com/");
-    expect(canonicalUrl("")).toBe("https://relationshipcopilot.com/");
+  it("canonicalizes home without a trailing slash", () => {
+    expect(canonicalUrl()).toBe("https://relationshipcopilot.com");
+    expect(canonicalUrl("/")).toBe("https://relationshipcopilot.com");
+    expect(canonicalUrl("")).toBe("https://relationshipcopilot.com");
   });
 
   it("canonicalizes marketing paths without a trailing slash", () => {
