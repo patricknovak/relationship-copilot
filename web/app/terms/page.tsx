@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Relationship Copilot",
+  alternates: { canonical: canonicalUrl("/terms") },
 };
 
 export default function TermsPage() {

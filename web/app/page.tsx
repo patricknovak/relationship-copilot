@@ -1,7 +1,13 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ACQUISITION } from "@/lib/firstRevealCopy";
+import { canonicalUrl } from "@/lib/site";
+
+export const metadata: Metadata = {
+  alternates: { canonical: canonicalUrl("/") },
+};
 
 const TYPES = [
   "Romantic partners",

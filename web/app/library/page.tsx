@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Library",
   description:
     "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
+  alternates: { canonical: canonicalUrl("/library") },
 };
 
 // Evidence-based education. RLS returns free articles to everyone and premium

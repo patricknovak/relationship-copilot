@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import QuickExit from "@/components/QuickExit";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Safety & Support — Relationship Copilot",
   description:
     "Immediate, free support resources. If you are in danger, call your local emergency number.",
+  alternates: { canonical: canonicalUrl("/safety") },
 };
 
 type Resource = {

@@ -4,11 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createCheckout } from "@/app/actions/billing";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
     "Most of Relationship Copilot is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are always free.",
+  alternates: { canonical: canonicalUrl("/pricing") },
 };
 
 const FREE = [
