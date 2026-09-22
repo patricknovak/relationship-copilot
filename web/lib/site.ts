@@ -1,9 +1,14 @@
 /**
- * Production origin for SEO canonicals.
+ * Primary production marketing origin for SEO absolute URLs.
  *
- * Always point rel=canonical at the live marketing host so preview / local
- * deployments (where NEXT_PUBLIC_SITE_URL may differ) do not emit alternate
- * canonical URLs that dilute indexing.
+ * Host strategy (verified 2026-09-22 against live Vercel Domains):
+ * - Primary: apex `https://relationshipcopilot.com`
+ * - `www.relationshipcopilot.com` permanently redirects (308) to apex
+ *
+ * Keep CANONICAL_ORIGIN, metadataBase, sitemap, robots, and Open Graph
+ * absolute URLs on this origin. Do not switch to www without also flipping
+ * the platform redirect. Preview / local NEXT_PUBLIC_SITE_URL must not
+ * dilute indexing via alternate canonical hosts.
  */
 export const CANONICAL_ORIGIN = "https://relationshipcopilot.com";
 
