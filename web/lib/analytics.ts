@@ -1,15 +1,19 @@
 // Analytics boundary for Relationship Copilot.
 //
 // This app holds unusually sensitive material — who someone is close to, and
-// what they said to them. So measurement is deliberately confined to the
-// public marketing surface. Nothing behind auth is ever sent to Google, which
+// what they said to them. So browser measurement is deliberately confined to
+// the public marketing surface. The GTM snippet never loads behind auth, which
 // also means no connection, invite, or account IDs leak through a URL path.
 //
-// Three places encode the same boundary and must stay in step:
+// Three places encode the same browser boundary and must stay in step:
 //   1. this file (decides whether the GTM snippet loads at all),
 //   2. the GTM container's "Marketing Pages" triggers
 //      (Page Path does not match ^/(connections|account|onboarding|auth|invite)),
 //   3. app/robots.ts, which keeps the same routes out of search.
+//
+// The one server-side exception is the anonymous Measurement Protocol ping for
+// `first_mutual_reveal_completed` (see lib/ga4.ts) — no path or identity
+// fields, same GA4 property the GTM container feeds.
 
 export const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 

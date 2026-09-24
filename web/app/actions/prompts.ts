@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ONBOARDING_DATE } from "@/lib/relationships";
 import { detectSafetySignals } from "@/lib/safety";
+import {
+  isConnectionFirstReveal,
+  trackFirstMutualRevealCompleted,
+} from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 
 // Always-free, plan-independent: log a safety event when free-text content
@@ -216,6 +220,20 @@ export async function submitResponse(input: {
       .from("connections")
       .update({ status: "active", onboarding_done: true })
       .eq("id", connectionId);
+  }
+
+  // North-star GA4: fire once when this connection's first mutual reveal
+  // completes. Anonymous Measurement Protocol ping — no user/connection IDs
+  // (GTM never loads on /connections). See docs/ga4-first-mutual-reveal.md.
+  if (revealed) {
+    const { count: revealedCount } = await supabase
+      .from("prompt_instances")
+      .select("id", { count: "exact", head: true })
+      .eq("connection_id", connectionId)
+      .eq("status", "revealed");
+    if (isConnectionFirstReveal(revealedCount ?? 0)) {
+      void trackFirstMutualRevealCompleted();
+    }
   }
 
   revalidatePath(`/connections/${connectionId}/onboarding`);
