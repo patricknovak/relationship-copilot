@@ -5,7 +5,12 @@
 // var; NEXT_PUBLIC_TURNSTILE_SITE_KEY overrides it, and "off"/"none"/
 // "disabled" hides the widget for environments whose Supabase project has
 // captcha protection turned off (e.g. local dev).
-const PRODUCTION_SITE_KEY = "0x4AAAAAAAEMK007CLbb2ryAl";
+//
+// PRODUCTION_SITE_KEY must match the Cloudflare dashboard widget
+// `relationship-copilot` (Managed, hostname relationshipcopilot.com) exactly —
+// an extra/missing character yields Cloudflare errCode 400020
+// (`invalidsitekey`) and the login button stays disabled.
+const PRODUCTION_SITE_KEY = "0x4AAAAAAEMK007CLbb2ryAl";
 const DISABLED_VALUES = new Set(["off", "none", "disabled"]);
 
 export function resolveTurnstileSiteKey(
