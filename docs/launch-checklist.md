@@ -56,13 +56,22 @@ endpoint enforces captcha):
       redirect URL allow-listed).
 - [x] `NEXT_PUBLIC_AUTH_PROVIDERS=google` set in Vercel — only the Google
       button renders on production.
-- [x] **CAPTCHA**: Turnstile widget for `relationshipcopilot.com` enabled in
-      Supabase Attack Protection, and the login form now submits the
-      Turnstile token with magic-link requests
-      (`web/components/Turnstile.tsx`; the production site key is the
-      built-in default, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=off` for local dev).
-- [ ] After this change deploys, send a real magic link end-to-end to
-      confirm Resend delivery and the captcha flow.
+- [x] **CAPTCHA (frontend)**: login form renders Cloudflare Turnstile and
+      submits `captchaToken` with `signInWithOtp`
+      (`web/components/Turnstile.tsx`; production site key is the built-in
+      default in `web/lib/turnstile.ts`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY=off`
+      for local dev). The Aug 10 site-key typo (extra `A` → Cloudflare
+      `invalidsitekey` / errCode 400020) is fixed in-repo; magic-link still
+      needs the dashboard secret + an E2E pass below.
+- [ ] **CAPTCHA (Supabase secret)**: in Supabase → Authentication → Attack
+      Protection, paste the **secret key** from the Cloudflare Turnstile
+      widget named `relationship-copilot` (not a typo / leftover secret).
+      A wrong secret returns `invalid-input-secret` even after the widget
+      renders.
+- [ ] After deploy + secret paste: on https://relationshipcopilot.com/login
+      confirm the Turnstile widget renders (no Troubleshoot), the
+      "Email me a secure link" button enables after the check, a real
+      magic link arrives via Resend, and clicking it signs in.
 - [ ] **Email invites — the one required line** (Authentication → URL
       Configuration): add `https://relationshipcopilot.com/invite/*` to
       Redirect URLs so the invite email can land on the invite page. The
