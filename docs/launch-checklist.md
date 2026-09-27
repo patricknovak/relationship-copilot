@@ -12,16 +12,23 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [x] **Migrations 0012 + 0013 applied to production** (2026-09-27, via the
+- [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
-      empty state; it is live now. 0013 ships the sibling + mentor "first 20"
-      packs and a generic fallback, widens the daily pool to 6–13 questions
-      per type, makes `accept_invite` refuse archived connections, and scopes
-      `has_premium` to the caller. Verified post-apply: 8 onboarding packs,
-      13 shared daily questions, all three RPCs present with
-      authenticated/service_role grants. Do not re-run 0013 (it inserts
-      content).
+      empty state. 0013 ships the sibling + mentor "first 20" packs and a
+      generic fallback, widens the daily pool to 6–13 questions per type,
+      makes `accept_invite` refuse archived connections, and scopes
+      `has_premium` to the caller. 0014 (PR 39) moves creator membership into
+      a DB trigger, adds the `partner_profiles` view and zodiac RPC the
+      deployed app already calls, and gives invites a 14-day expiry — it was
+      merged without being applied, so production was briefly running app
+      code against a schema without it. 0015 adds `regenerate_invite` so an
+      expired link can be replaced from the connection page ("Get a new
+      link"). Do not re-run 0013 (it inserts content).
+- [ ] **Product decision — 14-day invite expiry** (introduced by 0014 with a
+      "confirm with product owner" note). The stranding case is covered
+      (members can mint a new link), so this is now just a question of
+      whether 14 days is the right window.
       Security advisors show only intentional items (SECURITY DEFINER RPCs
       whose grants migration 0009 already tightened; `stripe_events` is
       deny-all by design).

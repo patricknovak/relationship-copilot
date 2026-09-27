@@ -156,6 +156,81 @@ begin
   raise notice 'PASS: accept_invite refuses archived connections';
 end $$;
 
+-- A member can still archive (leave) a pending connection that has an open
+-- invite: the app sends a status-only update, which the 0014 column guard
+-- permits. (Nulling invite_code from the client is blocked — test 04.)
+insert into connections (id, type, status, created_by, invite_code)
+  values ('99999999-9999-9999-9999-999999999999','friend','pending',
+          '11111111-1111-1111-1111-111111111111','LEAVE-ME');
+do $$
+declare st text;
+begin
+  set local role authenticated;
+  set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
+  update connections set status = 'archived'
+   where id = '99999999-9999-9999-9999-999999999999';
+  reset role;
+  select status into st from connections where id = '99999999-9999-9999-9999-999999999999';
+  assert st = 'archived', format('EXPECTED archived after leave, got %s', st);
+  raise notice 'PASS: a member can leave a pending connection with an open invite';
+end $$;
+
+-- regenerate_invite (migration 0015): a joined member of a pending connection
+-- mints a fresh single-use code with a new expiry; strangers and full or
+-- archived connections are refused.
+insert into connections (id, type, status, created_by, invite_code, invite_expires_at)
+  values ('aaaa1111-0000-0000-0000-000000000001','friend','pending',
+          '11111111-1111-1111-1111-111111111111','OLD-CODE', now() - interval '1 day');
+do $$
+declare code text; exp timestamptz; failed boolean;
+begin
+  -- Creator (auto-member via 0014 trigger) regenerates.
+  set local role authenticated;
+  set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
+  code := regenerate_invite('aaaa1111-0000-0000-0000-000000000001');
+  reset role;
+  assert code ~ '^[A-Z0-9]{8}$', format('EXPECTED 8-char alnum code, got %s', code);
+  select invite_expires_at into exp from connections where id = 'aaaa1111-0000-0000-0000-000000000001';
+  assert exp > now() + interval '13 days', 'EXPECTED a fresh 14-day expiry';
+
+  -- The new code is accepted by a stranger; the old one is dead.
+  failed := false;
+  set local role authenticated;
+  set local "test.user_id" = '77777777-7777-7777-7777-777777777777';
+  begin
+    perform accept_invite('OLD-CODE');
+  exception when others then failed := true;
+  end;
+  assert failed, 'EXPECTED the old code to be rejected';
+  perform accept_invite(code);
+  reset role;
+
+  -- Now full: regeneration refused.
+  failed := false;
+  set local role authenticated;
+  set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
+  begin
+    perform regenerate_invite('aaaa1111-0000-0000-0000-000000000001');
+  exception when others then
+    failed := true;
+    assert sqlerrm like '%full%', format('EXPECTED full error, got %s', sqlerrm);
+  end;
+  reset role;
+  assert failed, 'EXPECTED regenerate_invite to refuse a full connection';
+
+  -- A non-member is refused on the archived pending connection from above.
+  failed := false;
+  set local role authenticated;
+  set local "test.user_id" = '55555555-5555-5555-5555-555555555555';
+  begin
+    perform regenerate_invite('99999999-9999-9999-9999-999999999999');
+  exception when others then failed := true;
+  end;
+  reset role;
+  assert failed, 'EXPECTED regenerate_invite to refuse a non-member';
+  raise notice 'PASS: regenerate_invite mints a fresh code for members only';
+end $$;
+
 -- has_premium only answers about the caller (migration 0013). Service-role
 -- style callers (no auth.uid()) still see the truth for anyone.
 insert into subscriptions (user_id, plan, status)

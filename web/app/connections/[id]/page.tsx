@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
-import { leaveConnection } from "@/app/actions/connections";
+import { leaveConnection, regenerateInvite } from "@/app/actions/connections";
 import { computeStreak } from "@/lib/streak";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
@@ -53,6 +53,14 @@ const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
     tone: "error",
     text: "The AI couldn't finish the digest just now — nothing was lost, try again in a moment.",
   },
+  newlink: {
+    tone: "info",
+    text: "Fresh invite link ready — the old one no longer works. Share the new one below.",
+  },
+  linkfailed: {
+    tone: "error",
+    text: "Couldn't create a new link just now — try again in a moment.",
+  },
 };
 
 export default async function ConnectionPage({
@@ -71,7 +79,7 @@ export default async function ConnectionPage({
 
   const { data: conn } = await supabase
     .from("connections")
-    .select("id, type, status, invite_code, created_by")
+    .select("id, type, status, invite_code, invite_expires_at, created_by")
     .eq("id", id)
     .maybeSingle();
   if (!conn) notFound();
@@ -150,7 +158,19 @@ export default async function ConnectionPage({
   const leave = leaveConnection.bind(null, id);
   const isParentTeen = conn.type === "parent_child";
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const inviteUrl = conn.invite_code ? `${base}/invite/${conn.invite_code}` : null;
+  // Invites expire (14 days, set in the DB). An expired code still sits on the
+  // row, so treat it as absent and offer a fresh link instead of a dead one.
+  const inviteExpired =
+    !!conn.invite_expires_at && new Date(conn.invite_expires_at) <= new Date();
+  const inviteUrl =
+    conn.invite_code && !inviteExpired ? `${base}/invite/${conn.invite_code}` : null;
+  const inviteExpiresOn = conn.invite_expires_at
+    ? new Date(conn.invite_expires_at).toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+  const newLink = regenerateInvite.bind(null, id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -229,6 +249,31 @@ export default async function ConnectionPage({
             url={inviteUrl}
             inviterName={myName}
           />
+          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/70">
+            {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
+            <PendingButton
+              className="underline hover:text-ink-soft"
+              pendingLabel="Creating…"
+            >
+              Get a new link
+            </PendingButton>
+          </form>
+        </section>
+      )}
+
+      {/* Invite expired (or never issued) and still waiting on the other person */}
+      {!inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
+        <section className="card mt-6 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
+          <h2 className="text-lg text-amber-900 dark:text-amber-200">
+            Your invite link has expired
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Invite links work for 14 days. Nothing else changes — create a
+            fresh one and send it over.
+          </p>
+          <form action={newLink} className="mt-3">
+            <PendingButton pendingLabel="Creating…">Get a new link</PendingButton>
+          </form>
         </section>
       )}
 
