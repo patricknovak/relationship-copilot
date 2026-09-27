@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { shouldApplySubscriptionEvent } from "@/lib/subscriptionSync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,6 +80,15 @@ async function handleEvent(
       const userId = sub.metadata?.user_id ?? null;
       const active = sub.status === "active" || sub.status === "trialing";
       if (userId) {
+        // Out-of-order / multi-subscription guard: a late event for an older
+        // subscription must not downgrade a newer, still-entitled one.
+        const { data: existing, error: readErr } = await admin
+          .from("subscriptions")
+          .select("stripe_subscription_id, plan, status")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (readErr) throw readErr;
+        if (!shouldApplySubscriptionEvent(existing, sub.id)) break;
         const periodEnd =
           typeof sub.current_period_end === "number"
             ? new Date(sub.current_period_end * 1000).toISOString()

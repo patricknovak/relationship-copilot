@@ -26,6 +26,18 @@ export async function saveProfile(formData: FormData) {
   const values = String(formData.get("values") || "").trim();
 
   if (!displayName) backWithError("name");
+  // A birthday must be a real, past calendar date (the input enforces this in
+  // the browser; this is the server-side equivalent).
+  if (birthdayRaw) {
+    const d = new Date(`${birthdayRaw}T00:00:00Z`);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(birthdayRaw) ||
+      Number.isNaN(d.getTime()) ||
+      d.getTime() > Date.now()
+    ) {
+      backWithError("birthday");
+    }
+  }
 
   // Attachment reflection is optional: only score it when every item was
   // actively answered — an untouched form must not produce a "Secure" label.
@@ -34,10 +46,19 @@ export async function saveProfile(formData: FormData) {
     const v = Number(formData.get(`att_${item.id}`));
     if (Number.isFinite(v) && v >= 1 && v <= 5) answers[item.id] = v;
   }
+  // Skipping the reflection on a later edit must not erase an earlier result
+  // (the form can't pre-fill radios from a stored score), so fall back to
+  // whatever is already saved.
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("intake")
+    .eq("id", user.id)
+    .maybeSingle();
+  const prior = (existing?.intake ?? {}) as { attachment?: unknown };
   const attachment =
     Object.keys(answers).length === ATTACHMENT_ITEMS.length
       ? scoreAttachment(answers)
-      : null;
+      : (prior.attachment ?? null);
   const intake = { goals, values, attachment } as unknown as Json;
 
   const { error } = await supabase

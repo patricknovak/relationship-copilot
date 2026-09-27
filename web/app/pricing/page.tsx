@@ -5,6 +5,7 @@ import { createCheckout } from "@/app/actions/billing";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import { canonicalUrl } from "@/lib/site";
+import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 
 const FREE = [
   "All relationship types",
+  `Up to ${FREE_CONNECTION_CAP} connections`,
   "20-question onboarding + mutual reveal",
   "Daily questions, reveal & discussion",
   "Quizzes & challenges",

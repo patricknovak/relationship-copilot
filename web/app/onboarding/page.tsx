@@ -7,7 +7,11 @@ import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 
-type Intake = { goals?: string; values?: string };
+type Intake = {
+  goals?: string;
+  values?: string;
+  attachment?: { style?: string } | null;
+};
 
 export default async function OnboardingPage({
   searchParams,
@@ -43,7 +47,9 @@ export default async function OnboardingPage({
         message={
           error === "name"
             ? "Please tell us your name — it's how your person sees you."
-            : error
+            : error === "birthday"
+              ? "That birthday doesn't look right — it needs to be a real date in the past."
+              : error
               ? "Couldn't save just now — your entries below are untouched, try again."
               : null
         }
@@ -74,6 +80,7 @@ export default async function OnboardingPage({
             id="birthday"
             name="birthday"
             type="date"
+            max={new Date().toISOString().slice(0, 10)}
             defaultValue={profile?.birthday ?? ""}
             className="input mt-1.5 !w-auto"
           />
@@ -112,7 +119,10 @@ export default async function OnboardingPage({
           </legend>
           <p className="text-xs text-ink-soft/80">
             How much do you agree? (1 = not at all, 5 = very much) — educational,
-            not a diagnosis. Answer all four or skip it entirely.
+            not a diagnosis. Answer all four or skip it entirely
+            {!isFirstRun && intake.attachment?.style
+              ? ` — skipping keeps your current result (${intake.attachment.style}).`
+              : "."}
           </p>
           <div className="mt-4 space-y-4">
             {ATTACHMENT_ITEMS.map((item) => (

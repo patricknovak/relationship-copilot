@@ -129,6 +129,59 @@ begin
   raise notice 'PASS: accept_invite adds member, advances status, burns code';
 end $$;
 
+-- accept_invite refuses a connection the creator already left (migration
+-- 0013): archiving happens app-side, but a stale link must die in the RPC too.
+insert into auth.users (id, email) values
+  ('77777777-7777-7777-7777-777777777777', 'd@example.com');
+insert into connections (id, type, status, created_by, invite_code)
+  values ('88888888-8888-8888-8888-888888888888','friend','archived',
+          '11111111-1111-1111-1111-111111111111','DEAD-CODE');
+insert into connection_members (connection_id, user_id, role, joined_at)
+  values ('88888888-8888-8888-8888-888888888888',
+          '11111111-1111-1111-1111-111111111111','creator', now());
+do $$
+declare cnt int; failed boolean := false;
+begin
+  set local role authenticated;
+  set local "test.user_id" = '77777777-7777-7777-7777-777777777777';
+  begin
+    perform accept_invite('DEAD-CODE');
+  exception when others then
+    failed := true;
+    assert sqlerrm like '%invalid or expired invite%',
+      format('EXPECTED invalid/expired error, got %s', sqlerrm);
+  end;
+  reset role;
+  assert failed, 'EXPECTED accept_invite to refuse an archived connection';
+  select count(*) into cnt from connection_members
+    where connection_id = '88888888-8888-8888-8888-888888888888';
+  assert cnt = 1, format('EXPECTED no new member on archived connection, got %s', cnt);
+  raise notice 'PASS: accept_invite refuses archived connections';
+end $$;
+
+-- has_premium only answers about the caller (migration 0013). Service-role
+-- style callers (no auth.uid()) still see the truth for anyone.
+insert into subscriptions (user_id, plan, status)
+  values ('22222222-2222-2222-2222-222222222222', 'premium', 'active');
+do $$
+declare mine boolean; theirs boolean; svc boolean;
+begin
+  set local role authenticated;
+  set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
+  select has_premium('22222222-2222-2222-2222-222222222222') into mine;
+  reset role;
+  set local role authenticated;
+  set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
+  select has_premium('22222222-2222-2222-2222-222222222222') into theirs;
+  reset role;
+  set local "test.user_id" = '';
+  select has_premium('22222222-2222-2222-2222-222222222222') into svc;
+  assert mine is true, 'EXPECTED has_premium true for the subscriber themself';
+  assert theirs is false, 'PLAN LEAK: another user could read B''s premium status';
+  assert svc is true, 'EXPECTED service-role (no auth.uid) to still read entitlement';
+  raise notice 'PASS: has_premium is scoped to the caller';
+end $$;
+
 -- Blank submissions must not count as answering (migration 0010): an empty
 -- response neither unlocks the partner's answers nor triggers the reveal;
 -- filling it in later (the upsert/UPDATE path) completes the reveal.

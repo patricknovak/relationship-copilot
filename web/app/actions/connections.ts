@@ -39,10 +39,13 @@ export async function createConnection(formData: FormData) {
     uid: user.id,
   });
   if (!isPremium) {
+    // Only live connections count toward the cap — leaving one archives it,
+    // and an archived space must not block starting a new one forever. RLS
+    // scopes this read to the caller's own connections.
     const { count } = await supabase
-      .from("connection_members")
-      .select("connection_id", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .from("connections")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "archived");
     if ((count ?? 0) >= FREE_CONNECTION_CAP) {
       redirect("/connections/new?error=cap");
     }
@@ -79,9 +82,12 @@ export async function leaveConnection(connectionId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Also retire any still-open invite: nobody should be able to tap a stale
+  // link and land in a space the other person already left (accept_invite
+  // refuses archived connections too — this keeps the link itself dead).
   const { error } = await supabase
     .from("connections")
-    .update({ status: "archived" })
+    .update({ status: "archived", invite_code: null })
     .eq("id", connectionId);
   if (error) throw new Error(error.message);
 
