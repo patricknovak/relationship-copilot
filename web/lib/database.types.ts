@@ -318,6 +318,7 @@ export interface Database {
         Args: { p_conn: string };
         Returns: Json;
       };
+      regenerate_invite: { Args: { p_conn: string }; Returns: string };
     };
     Enums: {
       connection_type: ConnectionType;

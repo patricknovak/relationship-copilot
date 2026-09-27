@@ -76,12 +76,12 @@ export async function leaveConnection(connectionId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Also retire any still-open invite: nobody should be able to tap a stale
-  // link and land in a space the other person already left (accept_invite
-  // refuses archived connections too — this keeps the link itself dead).
+  // Status-only: the 0014 column guard rejects client writes to invite_code,
+  // and accept_invite already refuses archived connections, so any still-open
+  // link dies with the archive without touching the code here.
   const { error } = await supabase
     .from("connections")
-    .update({ status: "archived", invite_code: null })
+    .update({ status: "archived" })
     .eq("id", connectionId);
   if (error) throw new Error(error.message);
 
@@ -121,6 +121,27 @@ export async function acceptInvite(
   await logAudit(user.id, "connection.join", data);
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
+}
+
+// Mint a fresh single-use invite link (invites expire after 14 days). Runs
+// through a SECURITY DEFINER RPC because clients cannot write invite columns.
+export async function regenerateInvite(connectionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/login?next=/connections/${connectionId}`);
+
+  const { error } = await supabase.rpc("regenerate_invite", {
+    p_conn: connectionId,
+  });
+  if (error) {
+    redirect(`/connections/${connectionId}?notice=linkfailed`);
+  }
+
+  await logAudit(user.id, "connection.invite_regenerate", connectionId);
+  revalidatePath(`/connections/${connectionId}`);
+  redirect(`/connections/${connectionId}?notice=newlink`);
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
