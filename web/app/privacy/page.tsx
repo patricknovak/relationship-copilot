@@ -67,8 +67,8 @@ export default function PrivacyPage() {
           contain connection and invite IDs — are never sent to Google. We use
           no advertising cookies and no ad personalisation; those signals stay
           switched off permanently, not merely until you accept. Beyond
-          analytics, we also set a small cookie to remember your light or dark
-          theme, and the cookies needed to keep you signed in.
+          analytics, your browser stores a small preference for light or dark
+          theme, and we set the cookies needed to keep you signed in.
         </p>
         <ConsentPreferences />
 

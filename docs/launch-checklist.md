@@ -8,10 +8,17 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
 
 - [x] **Code** — MVP complete on `main`; CI runs typecheck, 54 vitest tests,
       build, and the SQL/RLS reveal-gate tests. Local run: all green.
-- [x] **Database** — all 9 migrations applied to the `relationship-copilot`
+- [x] **Database** — migrations 0001–0012 applied to the `relationship-copilot`
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
-      `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded
-      (35 prompt templates, 9 library articles); RLS enabled on every table.
+      `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
+      RLS enabled on every table.
+- [ ] **Apply migration `0013_content_coverage_and_hardening.sql`** (added
+      2026-09-27). It ships the missing sibling + mentor "first 20" packs and a
+      generic fallback (sibling/mentor connections previously dead-ended on
+      "question pack isn't ready"), widens the daily pool from 1–2 questions
+      per type to 6–13, makes `accept_invite` refuse archived connections, and
+      scopes `has_premium` to the caller. Idempotent-safe to apply once; do not
+      re-run (it inserts content).
       Security advisors show only intentional items (SECURITY DEFINER RPCs
       whose grants migration 0009 already tightened; `stripe_events` is
       deny-all by design).
@@ -42,8 +49,20 @@ Provisioned 2026-08-10 in the **Relationship** account
       redeployed 2026-08-10 — billing is connected.
 - [ ] Confirm the account is fully **activated** for live charges (Stripe
       Dashboard shows a banner if business/bank details are incomplete).
+- [ ] **Customer portal configuration** (Stripe Dashboard → Settings →
+      Billing → Customer portal, live mode): save a configuration with
+      "cancel subscription" and "update payment method" enabled. `/account`
+      now has a **Manage billing** button (`createBillingPortal`) that opens
+      the portal; without a saved default configuration Stripe rejects the
+      session and the page shows a "couldn't open billing" notice. This is
+      how the Terms' "cancel anytime" promise is actually kept — before this
+      there was no cancellation path in the product at all. Note: the Stripe
+      MCP connector in Claude is linked to a different account (Lil Learning),
+      so this has to be done in the Dashboard for the Relationship account.
 - [ ] Test checkout with a live card, confirm the `subscriptions` row flips
-      and `/account` shows Premium; then cancel and confirm it downgrades.
+      and `/account` shows Premium; open Manage billing → cancel → confirm
+      the row downgrades at period end (`customer.subscription.updated` →
+      `deleted`).
 
 ### 2. Supabase Auth configuration (dashboard)
 
@@ -107,6 +126,8 @@ escalation uses the same client; the regex fast path still gates).
 ## Final smoke test (after the above)
 
 - [ ] Two fresh accounts → create connection → invite link → accept.
+- [ ] Repeat once with a **sibling** or **mentor** connection to confirm the
+      new 0013 onboarding pack loads (this was the broken path).
 - [ ] 20-question onboarding both sides → mutual reveal fires live
       (Realtime) → discussion thread.
 - [ ] Daily prompt appears; cron fires 08:05 UTC next day.

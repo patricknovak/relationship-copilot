@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createBillingPortal } from "@/app/actions/billing";
+import PendingButton from "@/components/PendingButton";
 import { sunSign, ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import { ATTACHMENT_BLURB } from "@/lib/attachment";
 import DeleteAccount from "@/components/DeleteAccount";
@@ -14,9 +16,9 @@ type Intake = {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ upgraded?: string }>;
+  searchParams: Promise<{ upgraded?: string; error?: string }>;
 }) {
-  const { upgraded } = await searchParams;
+  const { upgraded, error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,7 +31,7 @@ export default async function AccountPage({
     .maybeSingle();
   const { data: sub } = await supabase
     .from("subscriptions")
-    .select("plan, status")
+    .select("plan, status, current_period_end, stripe_customer_id")
     .eq("user_id", user!.id)
     .maybeSingle();
 
@@ -37,6 +39,16 @@ export default async function AccountPage({
   const sign = sunSign(profile?.birthday);
   const isPremium =
     sub?.plan === "premium" && ["active", "trialing"].includes(sub?.status ?? "");
+  // Anyone who has ever paid has a Stripe customer and can reach the portal
+  // (invoices, card, cancel/resume) even after downgrading.
+  const hasBilling = !!sub?.stripe_customer_id;
+  const renews = sub?.current_period_end
+    ? new Date(sub.current_period_end).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
@@ -58,18 +70,45 @@ export default async function AccountPage({
             : null
         }
       />
+      <NoticeBanner
+        message={
+          error === "portal"
+            ? "Couldn't open billing just now — try again in a moment, or email privacy@relationshipcopilot.com and we'll sort it out."
+            : error === "nobilling"
+              ? "There's no billing history on this account yet."
+              : null
+        }
+      />
 
       <dl className="mt-6 space-y-4">
         <div className="card !p-4">
           <dt className="text-sm font-medium">Plan</dt>
           <dd className="mt-1 text-sm text-ink-soft">
             {isPremium ? "Premium" : "Free"}
+            {isPremium && sub?.status === "trialing" && " (trial)"}
+            {isPremium && renews && (
+              <span className="ml-2 text-ink-soft/70">· renews {renews}</span>
+            )}
             {!isPremium && (
               <Link href="/pricing" className="ml-2 text-brand-700 underline">
                 Unlock the AI Blueprint with Premium →
               </Link>
             )}
           </dd>
+          {hasBilling && (
+            <form action={createBillingPortal} className="mt-3">
+              <PendingButton
+                className="btn-secondary !px-4 !py-2 text-sm"
+                pendingLabel="Opening billing…"
+              >
+                Manage billing
+              </PendingButton>
+              <p className="mt-1.5 text-xs text-ink-soft/60">
+                Update your card, see invoices, or cancel anytime — cancellation
+                takes effect at the end of the billing period.
+              </p>
+            </form>
+          )}
         </div>
 
         {intake.attachment?.style && (
