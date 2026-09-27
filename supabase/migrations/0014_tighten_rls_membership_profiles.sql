@@ -67,15 +67,15 @@ security definer
 stable
 set search_path = public
 as $$
-  select case
-    when auth.uid() is not null and uid is distinct from auth.uid() then false
-    else exists (
-      select 1 from subscriptions s
-      where s.user_id = uid
-        and s.plan = 'premium'
-        and s.status in ('active', 'trialing')
-    )
-  end;
+  -- Authenticated callers may only query themselves; service role (no
+  -- auth.uid()) may still check any uid for billing/webhook paths.
+  select (auth.uid() is null or uid = auth.uid())
+     and exists (
+       select 1 from subscriptions s
+       where s.user_id = uid
+         and s.plan = 'premium'
+         and s.status in ('active', 'trialing')
+     );
 $$;
 
 -- ---------------------------------------------------------------------------
@@ -201,6 +201,11 @@ begin
   if not found then raise exception 'invalid or expired invite'; end if;
 
   if conn.created_by = uid then raise exception 'cannot accept your own invite'; end if;
+
+  -- Someone left before the invitee arrived: the space is closed.
+  if conn.status in ('archived', 'blocked') then
+    raise exception 'invalid or expired invite';
+  end if;
 
   select count(*) into member_count
     from connection_members

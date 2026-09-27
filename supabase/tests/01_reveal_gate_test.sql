@@ -135,9 +135,7 @@ insert into auth.users (id, email) values
 insert into connections (id, type, status, created_by, invite_code)
   values ('88888888-8888-8888-8888-888888888888','friend','archived',
           '11111111-1111-1111-1111-111111111111','DEAD-CODE');
-insert into connection_members (connection_id, user_id, role, joined_at)
-  values ('88888888-8888-8888-8888-888888888888',
-          '11111111-1111-1111-1111-111111111111','creator', now());
+-- Creator membership comes from the insert trigger.
 do $$
 declare cnt int; failed boolean := false;
 begin
@@ -185,26 +183,26 @@ end $$;
 -- response neither unlocks the partner's answers nor triggers the reveal;
 -- filling it in later (the upsert/UPDATE path) completes the reveal.
 insert into connections (id, type, status, created_by, onboarding_done)
-  values ('77777777-7777-7777-7777-777777777777', 'friend', 'active',
+  values ('aaaaaaaa-7777-7777-7777-777777777777', 'friend', 'active',
           '11111111-1111-1111-1111-111111111111', false);
 insert into connection_members (connection_id, user_id, role, joined_at) values
-  ('77777777-7777-7777-7777-777777777777','22222222-2222-2222-2222-222222222222','member',  now());
+  ('aaaaaaaa-7777-7777-7777-777777777777','22222222-2222-2222-2222-222222222222','member',  now());
 insert into prompt_instances (id, connection_id, kind, questions, status)
-  values ('88888888-8888-8888-8888-888888888888',
-          '77777777-7777-7777-7777-777777777777','daily',
+  values ('99999999-9999-9999-9999-999999999999',
+          'aaaaaaaa-7777-7777-7777-777777777777','daily',
           '[{"id":"q1","text":"How are you today?"}]'::jsonb, 'open');
 
 -- A answers for real; B submits only whitespace.
 set role authenticated;
 set "test.user_id" = '11111111-1111-1111-1111-111111111111';
 insert into prompt_responses (instance_id, user_id, answers)
-  values ('88888888-8888-8888-8888-888888888888',
+  values ('99999999-9999-9999-9999-999999999999',
           '11111111-1111-1111-1111-111111111111', '{"q1":"grateful"}'::jsonb);
 reset role;
 set role authenticated;
 set "test.user_id" = '22222222-2222-2222-2222-222222222222';
 insert into prompt_responses (instance_id, user_id, answers)
-  values ('88888888-8888-8888-8888-888888888888',
+  values ('99999999-9999-9999-9999-999999999999',
           '22222222-2222-2222-2222-222222222222', '{"q1":"   "}'::jsonb);
 reset role;
 
@@ -215,14 +213,14 @@ begin
   set local role authenticated;
   set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
   select count(*) into n from prompt_responses
-    where instance_id = '88888888-8888-8888-8888-888888888888'
+    where instance_id = '99999999-9999-9999-9999-999999999999'
       and user_id = '11111111-1111-1111-1111-111111111111';
   assert n = 0, format('REVEAL LEAK: blank submit exposed %s partner response(s)', n);
   reset role;
 
   -- …and the instance must still be open.
   select status into st from prompt_instances
-    where id = '88888888-8888-8888-8888-888888888888';
+    where id = '99999999-9999-9999-9999-999999999999';
   assert st = 'open', format('EXPECTED open after blank submit, got %s', st);
   raise notice 'PASS: a blank submission neither unlocks nor reveals';
 end $$;
@@ -231,7 +229,7 @@ end $$;
 set role authenticated;
 set "test.user_id" = '22222222-2222-2222-2222-222222222222';
 update prompt_responses set answers = '{"q1":"tired but happy"}'::jsonb
-  where instance_id = '88888888-8888-8888-8888-888888888888'
+  where instance_id = '99999999-9999-9999-9999-999999999999'
     and user_id = '22222222-2222-2222-2222-222222222222';
 reset role;
 
@@ -239,13 +237,13 @@ do $$
 declare st text; n int;
 begin
   select status into st from prompt_instances
-    where id = '88888888-8888-8888-8888-888888888888';
+    where id = '99999999-9999-9999-9999-999999999999';
   assert st = 'revealed', format('EXPECTED revealed after B added content, got %s', st);
 
   set local role authenticated;
   set local "test.user_id" = '22222222-2222-2222-2222-222222222222';
   select count(*) into n from prompt_responses
-    where instance_id = '88888888-8888-8888-8888-888888888888';
+    where instance_id = '99999999-9999-9999-9999-999999999999';
   assert n = 2, format('EXPECTED both responses visible after reveal, got %s', n);
   reset role;
   raise notice 'PASS: adding content to a blank response completes the reveal';
