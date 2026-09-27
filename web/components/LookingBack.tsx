@@ -51,7 +51,7 @@ export default async function LookingBack({
   const otherId = (members ?? []).map((m) => m.user_id).find((u) => u !== user.id);
   const { data: otherProfile } = otherId
     ? await supabase
-        .from("profiles")
+        .from("partner_profiles")
         .select("display_name")
         .eq("id", otherId)
         .maybeSingle()

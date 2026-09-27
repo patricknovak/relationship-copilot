@@ -5,7 +5,6 @@ import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
 import { leaveConnection } from "@/app/actions/connections";
 import { computeStreak } from "@/lib/streak";
-import { zodiacCompatibility } from "@/lib/compat";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
 import WeeklyDigest from "@/components/WeeklyDigest";
@@ -135,18 +134,16 @@ export default async function ConnectionPage({
     streak = computeStreak(dates);
   }
 
-  // Zodiac compatibility (entertainment only).
-  const memberIds = (members ?? []).map((m) => m.user_id);
-  let compat: ReturnType<typeof zodiacCompatibility> = null;
-  if (memberIds.length >= 2) {
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("id, birthday")
-      .in("id", memberIds);
-    const birthdays = memberIds.map(
-      (uid) => profs?.find((p) => p.id === uid)?.birthday ?? null,
-    );
-    compat = zodiacCompatibility(birthdays[0], birthdays[1]);
+  // Zodiac compatibility (entertainment only). Computed server-side so
+  // partner birth dates are never readable through profiles RLS.
+  let compat: { level: string; blurb: string; signs: string[] } | null = null;
+  if (joinedCount >= 2) {
+    const { data } = await supabase.rpc("connection_zodiac_compat", {
+      p_conn: id,
+    });
+    if (data && typeof data === "object" && "blurb" in (data as object)) {
+      compat = data as { level: string; blurb: string; signs: string[] };
+    }
   }
 
   const begin = startOnboarding.bind(null, id);

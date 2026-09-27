@@ -77,7 +77,7 @@ export async function generateBlueprint(connectionId: string) {
   // Sorted so which participant is P1 is stable across regenerations.
   const ids = responses!.map((r) => r.user_id).sort();
   const { data: profiles } = await supabase
-    .from("profiles")
+    .from("partner_profiles")
     .select("id, display_name")
     .in("id", ids);
   const nameFor = (uid: string) =>

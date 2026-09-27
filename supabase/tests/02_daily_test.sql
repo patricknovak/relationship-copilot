@@ -9,7 +9,6 @@ insert into connections (id, type, status, created_by)
   values ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'friend', 'active',
           'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
 insert into connection_members (connection_id, user_id, role, joined_at) values
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa','creator', now()),
   ('cccccccc-cccc-cccc-cccc-cccccccccccc','bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb','member',  now());
 
 do $$
