@@ -90,7 +90,7 @@ export async function generateWeeklyDigest(connectionId: string) {
   const [m1, m2] = ids;
 
   const { data: profiles } = await supabase
-    .from("profiles")
+    .from("partner_profiles")
     .select("id, display_name")
     .in("id", ids);
   const nameFor = (uid: string) =>

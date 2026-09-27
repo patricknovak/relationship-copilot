@@ -31,6 +31,8 @@ echo "running daily-loop test"
 run -f "$ROOT/supabase/tests/02_daily_test.sql"
 echo "running account-lifecycle test"
 run -f "$ROOT/supabase/tests/03_account_lifecycle_test.sql"
+echo "running membership/profile RLS test"
+run -f "$ROOT/supabase/tests/04_rls_membership_profiles_test.sql"
 
 psql -h "$HOST" -p "$PORT" -U "$USER" -d postgres -q -c "drop database if exists $DB;"
 echo "OK"

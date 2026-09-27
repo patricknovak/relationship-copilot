@@ -292,7 +292,17 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: { [_ in never]: never };
+    Views: {
+      partner_profiles: {
+        Row: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          username: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
@@ -303,6 +313,10 @@ export interface Database {
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
         Returns: string;
+      };
+      connection_zodiac_compat: {
+        Args: { p_conn: string };
+        Returns: Json;
       };
     };
     Enums: {

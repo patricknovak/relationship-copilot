@@ -51,6 +51,8 @@ export async function createConnection(formData: FormData) {
     }
   }
 
+  // Creator membership is attached by a DB trigger; clients cannot insert
+  // into connection_members directly. Invite expiry is set server-side.
   const { data: conn, error } = await supabase
     .from("connections")
     .insert({ type, created_by: user.id, invite_code: newInviteCode() })
@@ -59,14 +61,6 @@ export async function createConnection(formData: FormData) {
   if (error || !conn) {
     redirect("/connections/new?error=save");
   }
-
-  const { error: memErr } = await supabase.from("connection_members").insert({
-    connection_id: conn!.id,
-    user_id: user.id,
-    role: "creator",
-    joined_at: new Date().toISOString(),
-  });
-  if (memErr) redirect("/connections/new?error=save");
 
   await logAudit(user.id, "connection.create", conn.id);
   revalidatePath("/connections");
@@ -116,7 +110,11 @@ export async function acceptInvite(
       ? "This is your own invite link — send it to the person you want to connect with."
       : error.message.includes("invalid or expired invite")
         ? "This invite has already been used or has expired. Ask for a fresh link."
-        : "Something went wrong on our end — tap Try again in a moment.";
+        : error.message.includes("connection is full")
+          ? "This connection already has two people."
+          : error.message.includes("already a member")
+            ? "You're already in this connection."
+            : "Something went wrong on our end — tap Try again in a moment.";
     return { error: msg };
   }
 

@@ -11,7 +11,6 @@ insert into connections (id, type, status, created_by)
   values ('bbbbbbbb-0000-0000-0000-000000000001', 'romantic', 'active',
           'aaaaaaaa-0000-0000-0000-000000000001');
 insert into connection_members (connection_id, user_id, role, joined_at) values
-  ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','creator', now()),
   ('bbbbbbbb-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000002','member',  now());
 insert into prompt_instances (id, connection_id, kind, questions, status)
   values ('cccccccc-0000-0000-0000-000000000001',

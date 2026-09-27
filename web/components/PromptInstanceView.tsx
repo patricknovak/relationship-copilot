@@ -112,7 +112,7 @@ export default async function PromptInstanceView({
       .eq("connection_id", connectionId);
     const ids = (members ?? []).map((m) => m.user_id);
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("partner_profiles")
       .select("id, display_name, username")
       .in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const nameOf = (uid: string) => {
