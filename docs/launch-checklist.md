@@ -12,13 +12,16 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Apply migration `0013_content_coverage_and_hardening.sql`** (added
-      2026-09-27). It ships the missing sibling + mentor "first 20" packs and a
-      generic fallback (sibling/mentor connections previously dead-ended on
-      "question pack isn't ready"), widens the daily pool from 1–2 questions
-      per type to 6–13, makes `accept_invite` refuse archived connections, and
-      scopes `has_premium` to the caller. Idempotent-safe to apply once; do not
-      re-run (it inserts content).
+- [x] **Migrations 0012 + 0013 applied to production** (2026-09-27, via the
+      Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
+      the "they've answered, your turn" state was silently falling back to the
+      empty state; it is live now. 0013 ships the sibling + mentor "first 20"
+      packs and a generic fallback, widens the daily pool to 6–13 questions
+      per type, makes `accept_invite` refuse archived connections, and scopes
+      `has_premium` to the caller. Verified post-apply: 8 onboarding packs,
+      13 shared daily questions, all three RPCs present with
+      authenticated/service_role grants. Do not re-run 0013 (it inserts
+      content).
       Security advisors show only intentional items (SECURITY DEFINER RPCs
       whose grants migration 0009 already tightened; `stripe_events` is
       deny-all by design).
