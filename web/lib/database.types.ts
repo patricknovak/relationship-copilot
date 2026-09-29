@@ -293,6 +293,8 @@ export interface Database {
       };
     };
     Views: {
+      // Read-only invoker view over partner_profile_rows(); same columns as
+      // before 0016. Not updatable — do not INSERT/UPDATE/DELETE.
       partner_profiles: {
         Row: {
           id: string;
@@ -319,6 +321,15 @@ export interface Database {
         Returns: Json;
       };
       regenerate_invite: { Args: { p_conn: string }; Returns: string };
+      partner_profile_rows: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          username: string | null;
+        }[];
+      };
     };
     Enums: {
       connection_type: ConnectionType;
