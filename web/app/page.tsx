@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { ACQUISITION } from "@/lib/firstRevealCopy";
+import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -75,6 +76,11 @@ export default async function Home() {
 
   return (
     <div>
+      {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: homepageJsonLdScriptContent() }}
+      />
       {/* ------------------------------------------------ Hero */}
       <section className="hero-glow">
         <div className="mx-auto max-w-5xl px-4 pb-20 pt-16 text-center sm:pt-24">
