@@ -9,7 +9,9 @@ import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding questions and mutual reveal, daily questions, discussion, the library, and Safety. Premium ($18/mo) adds the AI Blueprint, unlimited connections, the premium library, and weekly digests.`,
+  // Display price matches Plan price="$18/mo" and homepage JSON-LD offer "18.00"
+  // (no shared display-price constant in the codebase).
+  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the library and Safety. Premium ($18/mo) adds the AI Blueprint and more.`,
   alternates: { canonical: canonicalUrl("/pricing") },
 };
 
@@ -33,7 +35,7 @@ const PREMIUM = [
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free?",
-    a: `Up to ${FREE_CONNECTION_CAP} connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the education library, and Safety resources.`,
+    a: `Up to ${FREE_CONNECTION_CAP} connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the free library articles, and Safety resources.`,
   },
   {
     q: "Can the other person see my answers early?",
