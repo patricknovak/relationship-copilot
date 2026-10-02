@@ -8,7 +8,7 @@ describe("buildInviteMessage", () => {
     const msg = buildInviteMessage("Sam", URL_);
     expect(msg).toMatch(/^Sam invited you/);
     expect(msg).toContain(
-      "We each answer a few questions in private, then reveal together",
+      "We each answer the same questions in private, then reveal together",
     );
     expect(msg).toContain(
       "neither of us sees the other's answers until we've both shared",
@@ -21,7 +21,7 @@ describe("buildInviteMessage", () => {
     for (const name of [null, undefined, "  "]) {
       const msg = buildInviteMessage(name, URL_);
       expect(msg).toMatch(/^Join me/);
-      expect(msg).toContain("We each answer a few questions in private");
+      expect(msg).toContain("We each answer the same questions in private");
       expect(msg).toContain(URL_);
     }
   });

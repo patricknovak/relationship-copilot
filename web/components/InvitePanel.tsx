@@ -42,12 +42,12 @@ export default function InvitePanel({
         setEmail("");
         setNotice({
           tone: "ok",
-          text: "Invitation sent. If it's not in their inbox in a few minutes, ask them to check spam — or text them the link below.",
+          text: "Invitation sent. If it's not in their inbox in a few minutes, ask them to check spam — or text them the link instead.",
         });
       } else {
         setNotice({
           tone: "info",
-          text: "They already have an account — text or share the link below and they'll join when they open it.",
+          text: "They already have an account — text or share the link instead, and they'll join when they open it.",
         });
       }
     });
@@ -70,7 +70,7 @@ export default function InvitePanel({
       /* clipboard unavailable — fall back to selecting the URL via the sms path */
       setNotice({
         tone: "info",
-        text: "Couldn't copy automatically — tap Text it or select the link from Share.",
+        text: "Couldn't copy automatically — tap Text it or WhatsApp instead.",
       });
     }
   }

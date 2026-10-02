@@ -140,14 +140,14 @@ export default async function InvitePage({
       <h1 className="mt-3 text-3xl leading-snug">
         {invite.inviterName
           ? `${invite.inviterName} invited you to connect`
-          : "Someone wants to grow closer to you"}
+          : "You've been invited to connect"}
       </h1>
       <p className="mt-2 text-sm font-medium text-brand-700 dark:text-brand-300">
         {connectionLabel(invite.type)}
         {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-        You&apos;ll each answer a few thoughtful questions in a private space.
+        You&apos;ll each answer the same thoughtful questions in a private space.
         Neither of you sees the other&apos;s answers until you&apos;ve both
         shared — then you reveal together. It&apos;s free, and you can leave
         anytime.
