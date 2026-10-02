@@ -10,7 +10,11 @@
 // `relationship-copilot` (Managed, hostname relationshipcopilot.com) exactly —
 // an extra/missing character yields Cloudflare errCode 400020
 // (`invalidsitekey`) and the login button stays disabled.
-const PRODUCTION_SITE_KEY = "0x4AAAAAAEMK007CLbb2ryAl";
+//
+// The 14th character is the letter O (not digit zero). Copy the key with the
+// dashboard's copy button rather than retyping — 0 vs O typos are easy to miss
+// and ship as a dead key (see PR #36 / Oct 2026 diagnosis).
+const PRODUCTION_SITE_KEY = "0x4AAAAAAEMK0O7CLbb2ryAl";
 const DISABLED_VALUES = new Set(["off", "none", "disabled"]);
 
 export function resolveTurnstileSiteKey(
