@@ -3,7 +3,7 @@ import QuickExit from "@/components/QuickExit";
 import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Safety & Support — Relationship Copilot",
+  title: "Safety & Support",
   description:
     "Immediate, free support resources. If you are in danger, call your local emergency number.",
   alternates: { canonical: canonicalUrl("/safety") },

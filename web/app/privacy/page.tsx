@@ -4,7 +4,7 @@ import ConsentPreferences from "@/components/ConsentPreferences";
 import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Relationship Copilot",
+  title: "Privacy Policy",
   alternates: { canonical: canonicalUrl("/privacy") },
 };
 

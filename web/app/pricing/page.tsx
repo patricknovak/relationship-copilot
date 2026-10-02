@@ -10,14 +10,14 @@ import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Most of Relationship Copilot is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are always free.",
+    "Free: up to 3 connections, onboarding questions and mutual reveal, daily questions, discussion, the library, and Safety. Premium ($18/mo) adds the AI Blueprint, unlimited connections, the premium library, and weekly digests.",
   alternates: { canonical: canonicalUrl("/pricing") },
 };
 
 const FREE = [
   "All relationship types",
   `Up to ${FREE_CONNECTION_CAP} connections`,
-  "20-question onboarding + mutual reveal",
+  "Onboarding questions + mutual reveal (10–20, depending on the relationship)",
   "Daily questions, reveal & discussion",
   "Quizzes & challenges",
   "Education library",
@@ -28,6 +28,27 @@ const PREMIUM = [
   "Unlimited connections",
   "Premium education library",
   "Weekly AI digests",
+];
+
+// Verifiable claims only. AI FAQ ships because Privacy + homepage FAQ already
+// commit to redacted inputs and no training on intimate answers.
+const FAQS: { q: string; a: string }[] = [
+  {
+    q: "What's free?",
+    a: "Up to 3 connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the education library, and Safety resources.",
+  },
+  {
+    q: "Can the other person see my answers early?",
+    a: "No. The rule that hides an answer until you've both shared lives in the database itself, not just the app.",
+  },
+  {
+    q: "Do you train AI on my answers?",
+    a: "No. Optional AI features use redacted inputs, and we don't train models on your intimate answers.",
+  },
+  {
+    q: "Is Safety ever paywalled?",
+    a: "No. Safety resources are free for everyone, always.",
+  },
 ];
 
 export default async function PricingPage({
@@ -83,6 +104,28 @@ export default async function PricingPage({
           )}
         </Plan>
       </div>
+
+      <section className="mt-14">
+        <h2 className="text-center font-display text-2xl text-ink">
+          Good questions
+        </h2>
+        <div className="mt-6 space-y-3">
+          {FAQS.map((f) => (
+            <details key={f.q} className="card group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+                {f.q}
+                <span
+                  aria-hidden
+                  className="text-brand-500 transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

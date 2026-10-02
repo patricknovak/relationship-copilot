@@ -72,3 +72,41 @@ export function homepageJsonLd() {
 export function homepageJsonLdScriptContent(): string {
   return JSON.stringify(homepageJsonLd());
 }
+
+export type ArticleJsonLdInput = {
+  headline: string;
+  description: string | null;
+  url: string;
+  /** ISO timestamp from education_articles.created_at when available. */
+  datePublished?: string | null;
+};
+
+/**
+ * Article JSON-LD for public library pages. Reuses the homepage Organization
+ * `@id`. Evidence stars are display-only — never mapped to AggregateRating.
+ */
+export function articleJsonLd(input: ArticleJsonLdInput) {
+  const orgId = `${CANONICAL_ORIGIN}/#organization`;
+  const node: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: input.headline,
+    url: input.url,
+    inLanguage: "en",
+    author: { "@id": orgId },
+    publisher: { "@id": orgId },
+    isPartOf: { "@id": `${CANONICAL_ORIGIN}/#website` },
+  };
+  if (input.description) {
+    node.description = input.description;
+  }
+  // Only real columns: education_articles has created_at, no updated_at.
+  if (input.datePublished) {
+    node.datePublished = input.datePublished;
+  }
+  return node;
+}
+
+export function articleJsonLdScriptContent(input: ArticleJsonLdInput): string {
+  return JSON.stringify(articleJsonLd(input));
+}

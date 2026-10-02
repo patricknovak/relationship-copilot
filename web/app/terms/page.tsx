@@ -3,7 +3,7 @@ import Link from "next/link";
 import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Relationship Copilot",
+  title: "Terms of Service",
   alternates: { canonical: canonicalUrl("/terms") },
 };
 
