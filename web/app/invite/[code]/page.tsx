@@ -1,10 +1,34 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECTION_TYPES, connectionLabel } from "@/lib/relationships";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
+
+// Static for every code — never look up the invite in generateMetadata.
+// Unfurl caches and search indexes must not see inviter names, relationship
+// types, or whether a code is valid.
+export const metadata: Metadata = {
+  title: {
+    absolute: "You're invited — Relationship Copilot",
+  },
+  description:
+    "Answer in private. Reveal together — only when you've both shared. Free to start.",
+  robots: { index: false, follow: false },
+  openGraph: {
+    title: "You're invited to a private space on Relationship Copilot",
+    description:
+      "Answer in private. Reveal together — only when you've both shared. Free to start.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "You're invited to a private space on Relationship Copilot",
+    description:
+      "Answer in private. Reveal together — only when you've both shared. Free to start.",
+  },
+};
 
 // The invite landing page. Possession of the (unguessable, single-use) code
 // is the authorization to see the preview, so the lookup uses the admin
@@ -116,16 +140,17 @@ export default async function InvitePage({
       <h1 className="mt-3 text-3xl leading-snug">
         {invite.inviterName
           ? `${invite.inviterName} invited you to connect`
-          : "Someone wants to grow closer to you"}
+          : "You've been invited to connect"}
       </h1>
       <p className="mt-2 text-sm font-medium text-brand-700 dark:text-brand-300">
         {connectionLabel(invite.type)}
         {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-        You&apos;ll answer questions together in a private space — neither of
-        you can see the other&apos;s answer until you&apos;ve both shared.
-        It&apos;s free.
+        You&apos;ll each answer the same thoughtful questions in a private space.
+        Neither of you sees the other&apos;s answers until you&apos;ve both
+        shared — then you reveal together. It&apos;s free, and you can leave
+        anytime.
       </p>
 
       {user ? (
@@ -139,8 +164,7 @@ export default async function InvitePage({
             Accept &amp; join free
           </Link>
           <p className="mt-3 text-xs text-ink-soft/70">
-            Continue with Google or a one-tap email link — no password to
-            invent.
+            Continue with Google — no password to invent.
           </p>
         </>
       )}

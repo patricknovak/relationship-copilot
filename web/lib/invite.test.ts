@@ -7,6 +7,13 @@ describe("buildInviteMessage", () => {
   it("leads with the inviter's name when known", () => {
     const msg = buildInviteMessage("Sam", URL_);
     expect(msg).toMatch(/^Sam invited you/);
+    expect(msg).toContain(
+      "We each answer the same questions in private, then reveal together",
+    );
+    expect(msg).toContain(
+      "neither of us sees the other's answers until we've both shared",
+    );
+    expect(msg).toContain("It's free");
     expect(msg).toContain(URL_);
   });
 
@@ -14,8 +21,14 @@ describe("buildInviteMessage", () => {
     for (const name of [null, undefined, "  "]) {
       const msg = buildInviteMessage(name, URL_);
       expect(msg).toMatch(/^Join me/);
+      expect(msg).toContain("We each answer the same questions in private");
       expect(msg).toContain(URL_);
     }
+  });
+
+  it("does not embed relationship type or invite code as metadata", () => {
+    const msg = buildInviteMessage("Sam", URL_);
+    expect(msg).not.toMatch(/romantic|coworker|parent/i);
   });
 });
 

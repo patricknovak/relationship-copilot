@@ -4,9 +4,9 @@ import { useEffect, useState, useTransition } from "react";
 import { sendEmailInvite } from "@/app/actions/connections";
 import { buildInviteMessage, smsHref, whatsappHref } from "@/lib/invite";
 
-// The one place an inviter gets their person in: email an invite (creates the
-// account and signs them in from the email itself), text/share the link, or
-// copy it. Replaces the old copy-only InviteShare.
+// The one place an inviter gets their person in: text/share the link first
+// (proven path), with email invite as a secondary option until deliverability
+// is confirmed. Replaces the old copy-only InviteShare.
 export default function InvitePanel({
   connectionId,
   url,
@@ -42,12 +42,12 @@ export default function InvitePanel({
         setEmail("");
         setNotice({
           tone: "ok",
-          text: "Invitation sent ✨ One tap on the email signs them in and connects you.",
+          text: "Invitation sent. If it's not in their inbox in a few minutes, ask them to check spam — or text them the link instead.",
         });
       } else {
         setNotice({
           tone: "info",
-          text: "They already have an account — text or share the link below and they'll join in one tap.",
+          text: "They already have an account — text or share the link instead, and they'll join when they open it.",
         });
       }
     });
@@ -67,12 +67,38 @@ export default function InvitePanel({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard unavailable */
+      /* clipboard unavailable — fall back to selecting the URL via the sms path */
+      setNotice({
+        tone: "info",
+        text: "Couldn't copy automatically — tap Text it or WhatsApp instead.",
+      });
     }
   }
 
   return (
     <div className="mt-4 space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <a href={smsHref(message)} className="btn-primary">
+          Text it
+        </a>
+        {canShare ? (
+          <button onClick={share} className="btn-primary">
+            Share…
+          </button>
+        ) : null}
+        <a
+          href={whatsappHref(message)}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary"
+        >
+          WhatsApp
+        </a>
+        <button onClick={copy} className="btn-secondary">
+          {copied ? "Copied ✓" : "Copy link"}
+        </button>
+      </div>
+
       <form onSubmit={submitEmail} className="flex gap-2">
         <input
           type="email"
@@ -83,7 +109,10 @@ export default function InvitePanel({
           aria-label="Their email address"
           className="input flex-1"
         />
-        <button disabled={sending} className="btn-primary shrink-0 disabled:opacity-60">
+        <button
+          disabled={sending}
+          className="btn-secondary shrink-0 disabled:opacity-60"
+        >
           {sending ? "Sending…" : "Email invite"}
         </button>
       </form>
@@ -101,28 +130,6 @@ export default function InvitePanel({
           {notice.text}
         </p>
       )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <a href={smsHref(message)} className="btn-secondary">
-          💬 Text it
-        </a>
-        <a
-          href={whatsappHref(message)}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secondary"
-        >
-          WhatsApp
-        </a>
-        {canShare && (
-          <button onClick={share} className="btn-secondary">
-            Share…
-          </button>
-        )}
-        <button onClick={copy} className="btn-secondary">
-          {copied ? "Copied ✓" : "Copy link"}
-        </button>
-      </div>
 
       <p className="text-xs text-ink-soft/60">
         The link works once — whoever taps it first becomes your person here.
