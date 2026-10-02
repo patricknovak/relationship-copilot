@@ -181,11 +181,23 @@ export async function sendEmailInvite(
     return { error: "This connection is no longer accepting invites." };
   }
 
+  // Inviter display name only — never relationship type. Empty when unset so
+  // the email template falls back to "Someone you know".
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const inviterName = profile?.display_name?.trim() ?? "";
+
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const { error } = await createAdminClient().auth.admin.inviteUserByEmail(
     address,
-    { redirectTo: `${site}/invite/${conn.invite_code}` },
+    {
+      redirectTo: `${site}/invite/${conn.invite_code}`,
+      data: { inviter_name: inviterName },
+    },
   );
 
   if (error) {

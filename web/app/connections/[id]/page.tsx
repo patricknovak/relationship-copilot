@@ -23,7 +23,7 @@ import {
 const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
   waiting: {
     tone: "info",
-    text: "Once your person joins, the 20 questions unlock for you both.",
+    text: "Once your person joins, your first questions unlock for you both.",
   },
   nopack: {
     tone: "error",
@@ -241,8 +241,8 @@ export default async function ConnectionPage({
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Email it, text it, or share the link — one tap gets them in, and
-            then you can both start the 20 questions.
+            Email it, text it, or share the link — once they join, you can both
+            start your first questions.
           </p>
           <InvitePanel
             connectionId={id}
