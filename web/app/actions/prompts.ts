@@ -225,12 +225,20 @@ export async function submitResponse(input: {
   // North-star GA4: once-only claim in DB (survives concurrent final submits),
   // then schedule MP send via after() so serverless does not drop it.
   // Anonymous payload — no user/connection IDs. See docs/ga4-first-mutual-reveal.md.
+  // Rollout: apply migration 0017 before this code ships — if the RPC is
+  // missing, claimed stays null and the event silently does not fire.
   if (revealed) {
-    const { data: claimed } = await supabase.rpc(
+    const { data: claimed, error: claimError } = await supabase.rpc(
       "claim_first_mutual_reveal_ga4",
       { p_connection_id: connectionId },
     );
-    if (shouldTrackFirstMutualReveal(claimed === true)) {
+    if (claimError) {
+      // No connection/user IDs — surfaces a missing 0017 migration in Vercel logs.
+      console.error(
+        "[ga4] claim_first_mutual_reveal_ga4 failed",
+        claimError.message,
+      );
+    } else if (shouldTrackFirstMutualReveal(claimed === true)) {
       scheduleFirstMutualRevealCompleted();
     }
   }
