@@ -9,7 +9,9 @@
 When a connection’s **first** mutual reveal completes (both members have shared;
 `prompt_instances.status` flips to `revealed` and it is that connection’s only
 revealed instance), the server sends this event once via the GA4 Measurement
-Protocol.
+Protocol. The send is scheduled with Next.js `after()` so it survives the
+serverless response, and a DB claim (`claim_first_mutual_reveal_ga4`) ensures
+concurrent final submits produce **at most one** event per connection.
 
 It does **not** fire for:
 

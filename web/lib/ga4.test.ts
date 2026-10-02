@@ -1,8 +1,18 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const afterMock = vi.fn<(task: () => unknown | Promise<unknown>) => void>();
+
+vi.mock("next/server", () => ({
+  after: (task: () => unknown | Promise<unknown>) => afterMock(task),
+}));
+
 import {
   FIRST_MUTUAL_REVEAL_COMPLETED,
   isConnectionFirstReveal,
+  scheduleFirstMutualRevealCompleted,
+  scheduleGa4Event,
   sendGa4Event,
+  shouldTrackFirstMutualReveal,
   trackFirstMutualRevealCompleted,
 } from "./ga4";
 
@@ -11,6 +21,13 @@ describe("isConnectionFirstReveal", () => {
     expect(isConnectionFirstReveal(0)).toBe(false);
     expect(isConnectionFirstReveal(1)).toBe(true);
     expect(isConnectionFirstReveal(2)).toBe(false);
+  });
+});
+
+describe("shouldTrackFirstMutualReveal", () => {
+  it("is true only when the DB claim was granted", () => {
+    expect(shouldTrackFirstMutualReveal(true)).toBe(true);
+    expect(shouldTrackFirstMutualReveal(false)).toBe(false);
   });
 });
 
@@ -24,6 +41,7 @@ describe("sendGa4Event", () => {
   const originalFetch = globalThis.fetch;
   const originalMeasurement = process.env.GA4_MEASUREMENT_ID;
   const originalSecret = process.env.GA4_API_SECRET;
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
@@ -31,7 +49,8 @@ describe("sendGa4Event", () => {
     else process.env.GA4_MEASUREMENT_ID = originalMeasurement;
     if (originalSecret === undefined) delete process.env.GA4_API_SECRET;
     else process.env.GA4_API_SECRET = originalSecret;
-    vi.restoreAllMocks();
+    errorSpy.mockClear();
+    vi.clearAllMocks();
   });
 
   it("no-ops when Measurement Protocol credentials are unset", async () => {
@@ -82,5 +101,61 @@ describe("sendGa4Event", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
 
     await expect(trackFirstMutualRevealCompleted()).resolves.toBe(false);
+    expect(errorSpy).toHaveBeenCalled();
+  });
+});
+
+describe("scheduleGa4Event / after()", () => {
+  const originalFetch = globalThis.fetch;
+  const originalMeasurement = process.env.GA4_MEASUREMENT_ID;
+  const originalSecret = process.env.GA4_API_SECRET;
+  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+  beforeEach(() => {
+    afterMock.mockImplementation((task) => {
+      void Promise.resolve().then(() => task());
+    });
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    if (originalMeasurement === undefined) delete process.env.GA4_MEASUREMENT_ID;
+    else process.env.GA4_MEASUREMENT_ID = originalMeasurement;
+    if (originalSecret === undefined) delete process.env.GA4_API_SECRET;
+    else process.env.GA4_API_SECRET = originalSecret;
+    errorSpy.mockClear();
+    afterMock.mockReset();
+  });
+
+  it("registers the send with next/server after()", async () => {
+    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
+    process.env.GA4_API_SECRET = "test-secret";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    scheduleFirstMutualRevealCompleted();
+
+    expect(afterMock).toHaveBeenCalledOnce();
+    // Flush the mocked after() microtask.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
+    ) as { events: { name: string }[] };
+    expect(body.events[0].name).toBe("first_mutual_reveal_completed");
+  });
+
+  it("swallows errors from the after() task", async () => {
+    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
+    process.env.GA4_API_SECRET = "test-secret";
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
+
+    expect(() => scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED)).not.toThrow();
+    expect(afterMock).toHaveBeenCalledOnce();
+    await Promise.resolve();
+    await Promise.resolve();
+    // sendGa4Event logs; after wrapper must not rethrow into the request.
+    expect(errorSpy).toHaveBeenCalled();
   });
 });

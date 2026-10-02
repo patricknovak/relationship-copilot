@@ -8,6 +8,11 @@
 //
 // If GA4_MEASUREMENT_ID or GA4_API_SECRET is unset, tracking is a no-op
 // (local/preview default).
+//
+// Sends that must outlive the HTTP response (Vercel serverless) go through
+// `scheduleGa4Event` → Next.js `after()`. Failures never affect reveal UX.
+
+import { after } from "next/server";
 
 /** Exact north-star event name — must match GA4 Admin key-event toggle. */
 export const FIRST_MUTUAL_REVEAL_COMPLETED = "first_mutual_reveal_completed";
@@ -17,10 +22,19 @@ export function isConnectionFirstReveal(revealedInstanceCount: number): boolean 
   return revealedInstanceCount === 1;
 }
 
+/**
+ * True only when the DB granted this request the once-only GA4 claim
+ * (`claim_first_mutual_reveal_ga4`). Keeps the send decision explicit in
+ * app code while the race is resolved in Postgres.
+ */
+export function shouldTrackFirstMutualReveal(claimGranted: boolean): boolean {
+  return claimGranted === true;
+}
+
 type Ga4EventParams = Record<string, string | number | boolean>;
 
 /**
- * Fire-and-forget GA4 event via Measurement Protocol.
+ * GA4 event via Measurement Protocol.
  * Never throws; never includes user/connection identifiers.
  */
 export async function sendGa4Event(
@@ -57,16 +71,43 @@ export async function sendGa4Event(
           },
         ],
       }),
-      // Don't let a hung GA endpoint stall the reveal response.
+      // Don't let a hung GA endpoint stall the reveal response / after() task.
       signal: AbortSignal.timeout(4_000),
     });
+    if (!res.ok) {
+      console.error("[ga4] Measurement Protocol non-OK", res.status);
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.error("[ga4] Measurement Protocol send failed", err);
     return false;
   }
+}
+
+/**
+ * Schedule a GA4 MP send to run after the response is sent so Vercel
+ * serverless does not drop the fetch when the action returns.
+ * Errors are swallowed and logged; never rethrown into the request.
+ */
+export function scheduleGa4Event(
+  name: string,
+  params: Ga4EventParams = {},
+): void {
+  after(async () => {
+    try {
+      await sendGa4Event(name, params);
+    } catch (err) {
+      console.error("[ga4] after() send failed", err);
+    }
+  });
 }
 
 /** North-star: first time both partners have shared on a connection. */
 export async function trackFirstMutualRevealCompleted(): Promise<boolean> {
   return sendGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED);
+}
+
+/** Schedule the north-star event after the response (preferred on reveal). */
+export function scheduleFirstMutualRevealCompleted(): void {
+  scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED);
 }
