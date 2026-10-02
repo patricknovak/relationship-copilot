@@ -29,8 +29,7 @@ const PREMIUM = [
   "Weekly AI digests",
 ];
 
-// Verifiable claims only. AI FAQ ships because Privacy + homepage FAQ already
-// commit to redacted inputs and no training on intimate answers.
+// Verifiable claims only. The "train AI" item is held until P11 confirms an xAI no-training agreement.
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free?",
@@ -39,10 +38,6 @@ const FAQS: { q: string; a: string }[] = [
   {
     q: "Can the other person see my answers early?",
     a: "No. The rule that hides an answer until you've both shared lives in the database itself, not just the app.",
-  },
-  {
-    q: "Do you train AI on my answers?",
-    a: "No. Optional AI features use redacted inputs, and we don't train models on your intimate answers.",
   },
   {
     q: "Is Safety ever paywalled?",
@@ -106,7 +101,7 @@ export default async function PricingPage({
 
       <section className="mt-14">
         <h2 className="text-center font-display text-2xl text-ink">
-          Good questions
+          Common questions
         </h2>
         <div className="mt-6 space-y-3">
           {FAQS.map((f) => (
