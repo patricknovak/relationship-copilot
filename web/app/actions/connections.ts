@@ -10,6 +10,7 @@ import {
   FREE_CONNECTION_CAP,
 } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
+import { ensureOnboardingInstance } from "@/lib/onboarding";
 
 function newInviteCode(): string {
   return randomBytes(9)
@@ -119,6 +120,16 @@ export async function acceptInvite(
   }
 
   await logAudit(user.id, "connection.join", data);
+
+  // Create the onboarding set as soon as the second person joins so the
+  // both-joined state can show the real question count. Failure must not
+  // break the join — Start answering remains the fallback.
+  try {
+    await ensureOnboardingInstance(supabase, data);
+  } catch (err) {
+    console.error("ensureOnboardingInstance after join failed", data, err);
+  }
+
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
 }

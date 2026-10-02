@@ -13,12 +13,16 @@ import RevealWatcher from "@/components/RevealWatcher";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import NudgePerson from "@/components/NudgePerson";
+import AddReminder from "@/components/AddReminder";
 import { setDisplayName } from "@/app/actions/profile";
 import {
+  BOTH_JOINED,
+  bothJoinedBody,
   EMPTY_STATE,
   WAITING_ON_THEM,
   WAITING_ON_YOU,
 } from "@/lib/firstRevealCopy";
+import type { PromptQuestion } from "@/lib/database.types";
 
 const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
   waiting: {
@@ -104,10 +108,14 @@ export default async function ConnectionPage({
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("id, status")
+    .select("id, status, questions")
     .eq("connection_id", id)
     .eq("kind", "onboarding")
     .maybeSingle();
+
+  const questionCount = Array.isArray(instance?.questions)
+    ? (instance.questions as PromptQuestion[]).length
+    : 0;
 
   let myResponse = null;
   let othersAnsweredOnboarding = false;
@@ -282,6 +290,7 @@ export default async function ConnectionPage({
         <section className="card mt-6">
           {!instance ? (
             <>
+              {/* Fallback if ensureOnboardingInstance failed at join time */}
               <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
               <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
@@ -312,6 +321,7 @@ export default async function ConnectionPage({
                 <NudgePerson
                   connectionUrl={`${base}/connections/${id}`}
                   inviterName={myName}
+                  variant="finish"
                 />
                 <Link
                   href={`/connections/${id}/onboarding`}
@@ -337,15 +347,26 @@ export default async function ConnectionPage({
             </>
           ) : (
             <>
-              <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
-              <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
-              <Link
-                href={`/connections/${id}/onboarding`}
-                className="mt-3 inline-flex btn-primary"
-              >
-                {EMPTY_STATE.primaryCta}
-              </Link>
+              <h2 className="text-lg">{BOTH_JOINED.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                {bothJoinedBody(questionCount)}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Link
+                  href={`/connections/${id}/onboarding`}
+                  className="inline-flex btn-primary"
+                >
+                  {BOTH_JOINED.primaryCta}
+                </Link>
+                <NudgePerson
+                  connectionUrl={`${base}/connections/${id}`}
+                  inviterName={myName}
+                  variant="start"
+                />
+              </div>
+              <div className="mt-3">
+                <AddReminder connectionUrl={`${base}/connections/${id}`} />
+              </div>
             </>
           )}
         </section>

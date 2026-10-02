@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ONBOARDING_DATE } from "@/lib/relationships";
 import { detectSafetySignals } from "@/lib/safety";
 import {
   isConnectionFirstReveal,
   trackFirstMutualRevealCompleted,
 } from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
+import { ensureOnboardingInstance } from "@/lib/onboarding";
 
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
@@ -49,44 +49,9 @@ export async function startOnboarding(connectionId: string) {
     redirect(`/connections/${connectionId}?notice=waiting`);
   }
 
-  const { data: existing } = await supabase
-    .from("prompt_instances")
-    .select("id")
-    .eq("connection_id", connectionId)
-    .eq("kind", "onboarding")
-    .maybeSingle();
-
-  if (!existing) {
-    const { data: conn } = await supabase
-      .from("connections")
-      .select("type")
-      .eq("id", connectionId)
-      .single();
-    if (!conn) redirect("/connections");
-
-    // Prefer a type-specific onboarding pack, else a generic one.
-    const { data: tmpl } = await supabase
-      .from("prompt_templates")
-      .select("id, questions, relationship_type")
-      .eq("kind", "onboarding")
-      .eq("active", true)
-      .or(`relationship_type.eq.${conn.type},relationship_type.is.null`)
-      .order("relationship_type", { nullsFirst: false })
-      .limit(1)
-      .maybeSingle();
-    if (!tmpl) redirect(`/connections/${connectionId}?notice=nopack`);
-
-    await supabase.from("prompt_instances").upsert(
-      {
-        connection_id: connectionId,
-        kind: "onboarding",
-        template_id: tmpl.id,
-        questions: tmpl.questions,
-        scheduled_for: ONBOARDING_DATE,
-        status: "open",
-      },
-      { onConflict: "connection_id,kind,scheduled_for", ignoreDuplicates: true },
-    );
+  const instanceId = await ensureOnboardingInstance(supabase, connectionId);
+  if (!instanceId) {
+    redirect(`/connections/${connectionId}?notice=nopack`);
   }
 
   redirect(`/connections/${connectionId}/onboarding`);
