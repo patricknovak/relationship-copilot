@@ -1,16 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WAITING_ON_THEM } from "@/lib/firstRevealCopy";
+import {
+  nudgeFinishMessage,
+  nudgeStartMessage,
+  WAITING_ON_THEM,
+  BOTH_JOINED,
+} from "@/lib/firstRevealCopy";
 
-// Opens the native share sheet (or copies) so you can nudge your person to
-// finish their private answers — never exposes answer content.
+// Opens the native share sheet (or copies) so you can nudge your person —
+// never exposes answer content. variant "finish" = waiting on them after you
+// answered; "start" = both joined, neither has answered yet.
 export default function NudgePerson({
   connectionUrl,
   inviterName,
+  variant = "finish",
 }: {
   connectionUrl: string;
   inviterName: string | null;
+  variant?: "start" | "finish";
 }) {
   const [canShare, setCanShare] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -19,8 +27,13 @@ export default function NudgePerson({
     setCanShare(typeof navigator !== "undefined" && !!navigator.share);
   }, []);
 
-  const who = inviterName?.trim() || "I";
-  const message = `${who === "I" ? "I've" : `${who} has`} answered on Relationship Copilot — when you're ready, finish yours so we can reveal together. No peeking either way.\n\n${connectionUrl}`;
+  const message =
+    variant === "start"
+      ? nudgeStartMessage(connectionUrl)
+      : nudgeFinishMessage(inviterName, connectionUrl);
+
+  const label =
+    variant === "start" ? BOTH_JOINED.secondaryCta : WAITING_ON_THEM.primaryCta;
 
   async function nudge() {
     if (canShare) {
@@ -45,8 +58,12 @@ export default function NudgePerson({
   }
 
   return (
-    <button type="button" onClick={nudge} className="btn-primary">
-      {copied ? "Copied ✓" : WAITING_ON_THEM.primaryCta}
+    <button
+      type="button"
+      onClick={nudge}
+      className={variant === "start" ? "btn-secondary" : "btn-primary"}
+    >
+      {copied ? "Copied ✓" : label}
     </button>
   );
 }

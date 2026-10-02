@@ -64,7 +64,7 @@ export default async function ConnectionsPage() {
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-ink-soft">
             Create one and invite someone — partner, friend, family — to start
-            the 20 questions together.
+            your first questions together.
           </p>
           <Link href="/connections/new" className="btn-primary mt-5">
             Start a connection

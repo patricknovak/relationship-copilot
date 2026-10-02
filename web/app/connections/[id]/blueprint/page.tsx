@@ -10,7 +10,7 @@ const ERRORS: Record<string, string> = {
   premium: "The Blueprint is a Premium feature — upgrade to generate one.",
   ratelimit:
     "A Blueprint was generated just now. Give it a few minutes before regenerating.",
-  notready: "Finish the 20 questions together first — then the Blueprint unlocks.",
+  notready: "Finish your first questions together first — then the Blueprint unlocks.",
   ai: "The AI couldn't finish just now. Nothing was lost — try again in a moment.",
 };
 
@@ -144,7 +144,7 @@ export default async function BlueprintPage({
             </>
           ) : (
             <p className="text-sm text-ink-soft">
-              Finish the 20 questions together first, then your Blueprint will be
+              Finish your first questions together, then your Blueprint will be
               available here.
             </p>
           )}

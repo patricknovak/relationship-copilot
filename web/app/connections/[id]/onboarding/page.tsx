@@ -22,7 +22,7 @@ export default async function OnboardingPage({
     <PromptInstanceView
       connectionId={id}
       instanceId={instance.id}
-      title="The first 20 questions"
+      title="Your first questions"
     />
   );
 }

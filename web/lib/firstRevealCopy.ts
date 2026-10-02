@@ -10,6 +10,41 @@ export const EMPTY_STATE = {
   trustLine: "Safety resources are always free.",
 } as const;
 
+// Both members joined, onboarding instance ready, nobody has answered yet.
+// `{n}` is the real question count for this connection's pack — never hardcode.
+export const BOTH_JOINED = {
+  headline: "You're both here.",
+  primaryCta: "Start answering",
+  secondaryCta: "Nudge them",
+  reminderLink: "Not now? Add a reminder",
+} as const;
+
+export function bothJoinedBody(questionCount: number): string {
+  // Never render "Your first 0 questions" if the pack is missing/empty.
+  if (!Number.isFinite(questionCount) || questionCount < 1) {
+    return "Your first questions are ready. Answer in private — your person can't see your answers until you've both shared.";
+  }
+  return `Your first ${questionCount} questions are ready. Answer in private — your person can't see your answers until you've both shared.`;
+}
+
+export function nudgeStartMessage(connectionUrl: string): string {
+  return `We're both in on Relationship Copilot — want to answer our first questions this week? Neither of us sees the other's answers until we've both shared.\n\n${connectionUrl}`;
+}
+
+export function nudgeFinishMessage(
+  inviterName: string | null | undefined,
+  connectionUrl: string,
+): string {
+  const who = inviterName?.trim() || "I";
+  return `${who === "I" ? "I've" : `${who} has`} answered on Relationship Copilot — when you're ready, finish yours so we can reveal together. No peeking either way.\n\n${connectionUrl}`;
+}
+
+export const REMINDER_ICS = {
+  title: "Answer our questions",
+  description: (connectionUrl: string) =>
+    `Your answers stay private until you've both shared. ${connectionUrl}`,
+} as const;
+
 export const WAITING_ON_THEM = {
   headline: "You're done. Waiting on them.",
   body: "Your answers stay hidden until they share too. No peeking — for either of you.",
