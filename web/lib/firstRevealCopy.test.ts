@@ -50,6 +50,15 @@ describe("firstRevealCopy", () => {
     );
   });
 
+  it("falls back when question count is missing or zero", () => {
+    const fallback =
+      "Your first questions are ready. Answer in private — your person can't see your answers until you've both shared.";
+    expect(bothJoinedBody(0)).toBe(fallback);
+    expect(bothJoinedBody(-1)).toBe(fallback);
+    expect(bothJoinedBody(Number.NaN)).toBe(fallback);
+    expect(bothJoinedBody(0)).not.toMatch(/first 0/);
+  });
+
   it("builds nudge start and finish messages without answer content", () => {
     const url = "https://relationshipcopilot.com/connections/abc";
     expect(nudgeStartMessage(url)).toBe(

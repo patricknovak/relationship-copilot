@@ -20,6 +20,10 @@ export const BOTH_JOINED = {
 } as const;
 
 export function bothJoinedBody(questionCount: number): string {
+  // Never render "Your first 0 questions" if the pack is missing/empty.
+  if (!Number.isFinite(questionCount) || questionCount < 1) {
+    return "Your first questions are ready. Answer in private — your person can't see your answers until you've both shared.";
+  }
   return `Your first ${questionCount} questions are ready. Answer in private — your person can't see your answers until you've both shared.`;
 }
 
