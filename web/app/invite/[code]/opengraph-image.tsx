@@ -39,7 +39,7 @@ export default function InviteOgImage() {
             display: "flex",
           }}
         >
-          You're invited.
+          {"You're invited."}
         </div>
         <div
           style={{
