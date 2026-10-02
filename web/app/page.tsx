@@ -43,7 +43,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Is it really free?",
-    a: "The core experience — every relationship type, the 20 questions, daily prompts, reveals, discussions, and the library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
+    a: "The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
   },
   {
     q: "Is it only for couples?",

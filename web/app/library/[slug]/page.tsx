@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { renderArticleBlocks, type Span } from "@/lib/markdown";
+import { articleJsonLdScriptContent } from "@/lib/jsonLd";
+import { canonicalUrl } from "@/lib/site";
 
 // Per-article title + description so sharing a specific library link unfurls
 // with that article's own title and summary (falls back to the OG card).
@@ -20,10 +22,12 @@ export async function generateMetadata({
     .maybeSingle();
   if (!article) return { title: "Library" };
   const description = article.summary ?? undefined;
+  const url = canonicalUrl(`/library/${slug}`);
   return {
     title: article.title,
     description,
-    openGraph: { title: article.title, description },
+    alternates: { canonical: url },
+    openGraph: { title: article.title, description, url },
   };
 }
 
@@ -38,15 +42,26 @@ export default async function ArticlePage({
   // list page only links to what they can read).
   const { data: article } = await supabase
     .from("education_articles")
-    .select("title, summary, body, framework, evidence_rating")
+    .select("title, summary, body, framework, evidence_rating, created_at")
     .eq("slug", slug)
     .maybeSingle();
   if (!article) notFound();
 
   const blocks = renderArticleBlocks(article.body);
+  const url = canonicalUrl(`/library/${slug}`);
+  const jsonLd = articleJsonLdScriptContent({
+    headline: article.title,
+    description: article.summary,
+    url,
+    datePublished: article.created_at,
+  });
 
   return (
     <article className="mx-auto max-w-2xl px-4 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLd }}
+      />
       <Link
         href="/library"
         className="text-sm text-ink-soft/70 hover:text-ink"
