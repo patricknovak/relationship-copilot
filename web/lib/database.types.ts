@@ -240,6 +240,20 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      connection_first_reveal_ga4: {
+        Row: {
+          connection_id: string;
+          claimed_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          claimed_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["connection_first_reveal_ga4"]["Insert"]
+        >;
+        Relationships: [];
+      };
       stripe_events: {
         Row: {
           id: string;
@@ -321,6 +335,10 @@ export interface Database {
         Returns: Json;
       };
       regenerate_invite: { Args: { p_conn: string }; Returns: string };
+      claim_first_mutual_reveal_ga4: {
+        Args: { p_connection_id: string };
+        Returns: boolean;
+      };
       partner_profile_rows: {
         Args: Record<string, never>;
         Returns: {

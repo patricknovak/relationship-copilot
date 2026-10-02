@@ -7,8 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ONBOARDING_DATE } from "@/lib/relationships";
 import { detectSafetySignals } from "@/lib/safety";
 import {
-  isConnectionFirstReveal,
-  trackFirstMutualRevealCompleted,
+  scheduleFirstMutualRevealCompleted,
+  shouldTrackFirstMutualReveal,
 } from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 
@@ -222,17 +222,24 @@ export async function submitResponse(input: {
       .eq("id", connectionId);
   }
 
-  // North-star GA4: fire once when this connection's first mutual reveal
-  // completes. Anonymous Measurement Protocol ping — no user/connection IDs
-  // (GTM never loads on /connections). See docs/ga4-first-mutual-reveal.md.
+  // North-star GA4: once-only claim in DB (survives concurrent final submits),
+  // then schedule MP send via after() so serverless does not drop it.
+  // Anonymous payload — no user/connection IDs. See docs/ga4-first-mutual-reveal.md.
+  // Rollout: apply migration 0017 before this code ships — if the RPC is
+  // missing, claimed stays null and the event silently does not fire.
   if (revealed) {
-    const { count: revealedCount } = await supabase
-      .from("prompt_instances")
-      .select("id", { count: "exact", head: true })
-      .eq("connection_id", connectionId)
-      .eq("status", "revealed");
-    if (isConnectionFirstReveal(revealedCount ?? 0)) {
-      void trackFirstMutualRevealCompleted();
+    const { data: claimed, error: claimError } = await supabase.rpc(
+      "claim_first_mutual_reveal_ga4",
+      { p_connection_id: connectionId },
+    );
+    if (claimError) {
+      // No connection/user IDs — surfaces a missing 0017 migration in Vercel logs.
+      console.error(
+        "[ga4] claim_first_mutual_reveal_ga4 failed",
+        claimError.message,
+      );
+    } else if (shouldTrackFirstMutualReveal(claimed === true)) {
+      scheduleFirstMutualRevealCompleted();
     }
   }
 
