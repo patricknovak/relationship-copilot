@@ -40,7 +40,7 @@ export function nudgeFinishMessage(
 }
 
 export const REMINDER_ICS = {
-  title: "Relationship Copilot: answer our questions",
+  title: "Answer our questions",
   description: (connectionUrl: string) =>
     `Your answers stay private until you've both shared. ${connectionUrl}`,
 } as const;

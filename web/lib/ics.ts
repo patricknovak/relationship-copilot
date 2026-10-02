@@ -30,6 +30,48 @@ export function escapeIcsText(value: string): string {
     .replace(/\r\n|\n|\r/g, "\\n");
 }
 
+const utf8 = new TextEncoder();
+
+/**
+ * Fold a single content line to ≤75 UTF-8 octets per RFC 5545 §3.1.
+ * Inserts CRLF + a single SPACE; never splits a multi-byte character.
+ * Continuation lines count the leading SPACE toward the 75-octet limit.
+ */
+export function foldIcsLine(line: string): string {
+  const totalBytes = utf8.encode(line).length;
+  if (totalBytes <= 75) return line;
+
+  const parts: string[] = [];
+  let offset = 0;
+  let first = true;
+
+  while (offset < line.length) {
+    const budget = first ? 75 : 74; // leading SPACE on continuations
+    let end = offset;
+    let used = 0;
+    while (end < line.length) {
+      const cp = line.codePointAt(end)!;
+      const ch = String.fromCodePoint(cp);
+      const n = utf8.encode(ch).length;
+      if (used + n > budget) break;
+      used += n;
+      end += ch.length;
+    }
+    if (end === offset) {
+      // Single code point larger than budget (shouldn't happen for ≤4-byte UTF-8
+      // within a 74-byte budget) — advance one code point to avoid a hang.
+      const cp = line.codePointAt(offset)!;
+      end = offset + String.fromCodePoint(cp).length;
+    }
+    const chunk = line.slice(offset, end);
+    parts.push(first ? chunk : ` ${chunk}`);
+    first = false;
+    offset = end;
+  }
+
+  return parts.join("\r\n");
+}
+
 export type ReminderIcsInput = {
   title: string;
   description: string;
@@ -77,7 +119,7 @@ export function buildReminderIcs(input: ReminderIcsInput): string {
     "END:VEVENT",
     "END:VCALENDAR",
   ];
-  return lines.join("\r\n") + "\r\n";
+  return lines.map(foldIcsLine).join("\r\n") + "\r\n";
 }
 
 /** Default reminder start: tomorrow at 7:00 PM local. */

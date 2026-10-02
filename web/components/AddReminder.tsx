@@ -90,8 +90,8 @@ export default function AddReminder({
         </button>
       </div>
       <p className="text-xs text-ink-soft/70">
-        Set for tomorrow at 7:00 PM, for 15 minutes. Change it here or in your
-        calendar. It&apos;s saved to your own calendar — we don&apos;t send
+        Defaults to tomorrow at 7:00 PM, for 15 minutes. Change it here or in
+        your calendar. It&apos;s saved to your own calendar — we don&apos;t send
         reminders.
       </p>
     </div>

@@ -68,9 +68,8 @@ describe("firstRevealCopy", () => {
       "I've answered on Relationship Copilot — when you're ready, finish yours so we can reveal together. No peeking either way.\n\nhttps://relationshipcopilot.com/connections/abc",
     );
     expect(nudgeFinishMessage("Sam", url)).toContain("Sam has answered");
-    expect(REMINDER_ICS.title).toBe(
-      "Relationship Copilot: answer our questions",
-    );
+    expect(REMINDER_ICS.title).toBe("Answer our questions");
+    expect(REMINDER_ICS.title).not.toMatch(/Relationship Copilot/i);
     expect(REMINDER_ICS.description(url)).toBe(
       "Your answers stay private until you've both shared. https://relationshipcopilot.com/connections/abc",
     );
