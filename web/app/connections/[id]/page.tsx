@@ -23,6 +23,7 @@ import {
   WAITING_ON_YOU,
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
+import { ensureOnboardingInstance } from "@/lib/onboarding";
 
 const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
   waiting: {
@@ -106,12 +107,31 @@ export default async function ConnectionPage({
     myName = me?.display_name?.trim() || null;
   }
 
-  const { data: instance } = await supabase
+  let { data: instance } = await supabase
     .from("prompt_instances")
     .select("id, status, questions")
     .eq("connection_id", id)
     .eq("kind", "onboarding")
     .maybeSingle();
+
+  // Lazy backfill for pairs who joined before acceptInvite started creating
+  // the instance. Idempotent; failure keeps the EMPTY_STATE Start answering
+  // fallback. Does not change startOnboarding's both-joined gate or the reveal.
+  if (joinedCount >= 2 && !instance) {
+    try {
+      const ensuredId = await ensureOnboardingInstance(supabase, id);
+      if (ensuredId) {
+        const { data: created } = await supabase
+          .from("prompt_instances")
+          .select("id, status, questions")
+          .eq("id", ensuredId)
+          .maybeSingle();
+        instance = created;
+      }
+    } catch (err) {
+      console.error("lazy ensureOnboardingInstance failed", id, err);
+    }
+  }
 
   const questionCount = Array.isArray(instance?.questions)
     ? (instance.questions as PromptQuestion[]).length

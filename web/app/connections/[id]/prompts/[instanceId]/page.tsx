@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import PromptInstanceView from "@/components/PromptInstanceView";
 
 const TITLES: Record<string, string> = {
-  onboarding: "The first 20 questions",
+  onboarding: "Your first questions",
   daily: "Today's question",
   quiz: "Quiz",
   challenge: "Challenge",

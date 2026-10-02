@@ -68,7 +68,7 @@ export default function AddReminder({
   return (
     <div className="mt-1 space-y-2 text-sm text-ink-soft">
       <label htmlFor={inputId} className="block">
-        Remind me at
+        Reminder time
       </label>
       <input
         id={inputId}
@@ -90,8 +90,9 @@ export default function AddReminder({
         </button>
       </div>
       <p className="text-xs text-ink-soft/70">
-        Defaults to tomorrow at 7:00 PM for 15 minutes. You can change the time
-        here, or edit it in your calendar after opening the file.
+        Set for tomorrow at 7:00 PM, for 15 minutes. Change it here or in your
+        calendar. It&apos;s saved to your own calendar — we don&apos;t send
+        reminders.
       </p>
     </div>
   );

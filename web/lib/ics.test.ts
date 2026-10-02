@@ -57,6 +57,20 @@ describe("ics builders", () => {
       "DESCRIPTION:Your answers stay private until you've both shared. https://relationshipcopilot.com/connections/abc",
     );
     expect(ics).not.toMatch(/answer content|Q1:|my answers/i);
+    expect(ics).toContain("BEGIN:VALARM");
+    expect(ics).toContain("ACTION:DISPLAY");
+    expect(ics).toContain(
+      "DESCRIPTION:Relationship Copilot: answer our questions",
+    );
+    expect(ics).toContain("TRIGGER:-PT0M");
+    expect(ics).toContain("END:VALARM");
+    // VALARM sits inside VEVENT
+    const vevent = ics.slice(
+      ics.indexOf("BEGIN:VEVENT"),
+      ics.indexOf("END:VEVENT") + "END:VEVENT".length,
+    );
+    expect(vevent).toContain("BEGIN:VALARM");
+    expect(vevent).toContain("END:VALARM");
     expect(ics).toContain("END:VEVENT");
     expect(ics).toContain("END:VCALENDAR");
   });

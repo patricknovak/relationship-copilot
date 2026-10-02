@@ -69,6 +69,11 @@ export function buildReminderIcs(input: ReminderIcsInput): string {
     `DTEND:${formatIcsLocalDateTime(end)}`,
     `SUMMARY:${escapeIcsText(input.title)}`,
     `DESCRIPTION:${escapeIcsText(input.description)}`,
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${escapeIcsText(input.title)}`,
+    "TRIGGER:-PT0M",
+    "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
   ];
