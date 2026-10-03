@@ -27,13 +27,13 @@ export default async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-100/70 dark:border-surface-line bg-paper/80 backdrop-blur-md">
-      <nav className="relative mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
+      <nav className="relative mx-auto flex h-16 max-w-5xl min-w-0 items-center justify-between gap-2 px-4">
         <Link
           href="/"
-          className="flex items-center gap-2 font-display text-base text-ink sm:text-lg"
+          className="flex min-w-0 items-center gap-2 font-display text-sm text-ink sm:text-lg"
         >
           <LogoMark />
-          Relationship&nbsp;Copilot
+          <span className="truncate">Relationship&nbsp;Copilot</span>
         </Link>
         <HeaderNav signedIn={!!user} />
       </nav>

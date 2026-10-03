@@ -23,6 +23,14 @@
 }
 
 @layer base {
+  /* Clip rather than expand the document when a sticky header or decoration
+     briefly paints past the viewport — horizontal page scroll on phones is
+     almost always a layout bug, not a feature. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-paper text-ink antialiased;
   }

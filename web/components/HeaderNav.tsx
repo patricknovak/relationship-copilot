@@ -34,7 +34,7 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
     }`;
 
   return (
-    <div className="flex items-center gap-1 text-sm sm:gap-2">
+    <div className="flex shrink-0 items-center gap-0.5 text-sm sm:gap-2">
       {/* Safety must be reachable from every screen, at every width. */}
       <Link
         href="/safety"
@@ -65,15 +65,8 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
         )}
       </div>
 
-      {/* Mobile: primary CTA + hamburger */}
-      {!signedIn && (
-        <Link
-          href="/login"
-          className="btn-primary whitespace-nowrap !px-3.5 !py-1.5 sm:hidden"
-        >
-          Sign in
-        </Link>
-      )}
+      {/* Mobile: hamburger only — Sign in lives in the panel so the sticky
+          bar never forces horizontal page scroll at ~360–390px. */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
@@ -111,6 +104,15 @@ export default function HeaderNav({ signedIn }: { signedIn: boolean }) {
                 {l.label}
               </Link>
             ))}
+            {!signedIn && (
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="btn-primary mt-1 w-full !px-3 !py-2.5"
+              >
+                Sign in
+              </Link>
+            )}
             {signedIn && (
               <form action={signOut} className="border-t border-brand-100/70 dark:border-surface-line pt-2">
                 <button className="block w-full rounded-xl px-3 py-2.5 text-left text-base text-ink-soft hover:bg-surface-line/60">

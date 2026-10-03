@@ -99,7 +99,10 @@ export default function InvitePanel({
         </button>
       </div>
 
-      <form onSubmit={submitEmail} className="flex gap-2">
+      <form
+        onSubmit={submitEmail}
+        className="flex min-w-0 flex-col gap-2 sm:flex-row"
+      >
         <input
           type="email"
           required
@@ -107,11 +110,11 @@ export default function InvitePanel({
           onChange={(e) => setEmail(e.target.value)}
           placeholder="their@email.com"
           aria-label="Their email address"
-          className="input flex-1"
+          className="input min-w-0 flex-1"
         />
         <button
           disabled={sending}
-          className="btn-secondary shrink-0 disabled:opacity-60"
+          className="btn-secondary w-full disabled:opacity-60 sm:w-auto sm:shrink-0"
         >
           {sending ? "Sending…" : "Email invite"}
         </button>
