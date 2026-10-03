@@ -97,5 +97,6 @@ export async function setDisplayName(formData: FormData) {
     .eq("id", user.id);
 
   revalidatePath(next);
-  redirect(next);
+  const sep = next.includes("?") ? "&" : "?";
+  redirect(`${next}${sep}notice=named`);
 }

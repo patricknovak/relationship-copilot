@@ -25,7 +25,10 @@ import {
 import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 
-const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
+const NOTICES: Record<
+  string,
+  { tone: "info" | "error" | "success"; text: string }
+> = {
   waiting: {
     tone: "info",
     text: "Once your person joins, your first questions unlock for you both.",
@@ -65,6 +68,10 @@ const NOTICES: Record<string, { tone: "info" | "error"; text: string }> = {
   linkfailed: {
     tone: "error",
     text: "Couldn't create a new link just now — try again in a moment.",
+  },
+  named: {
+    tone: "success",
+    text: "Name saved. Your person will see that name next to your answers.",
   },
 };
 
@@ -223,9 +230,28 @@ export default async function ConnectionPage({
         />
       )}
 
+      {/* Partner left or account deleted — connection stays readable but quiet. */}
+      {conn.status === "archived" && (
+        <section className="card mt-6">
+          <h2 className="text-lg">This connection is archived</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            The other person left or deleted their account. Nothing new can be
+            started here.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link href="/connections" className="btn-secondary !px-4 !py-2 text-sm">
+              All connections
+            </Link>
+            <Link href="/connections/new" className="btn-primary !px-4 !py-2 text-sm">
+              Invite someone new
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* Invitees who signed in straight from an email have no name yet —
           their partner would see them as "Them". One field fixes it. */}
-      {user && !myName && (
+      {user && !myName && conn.status !== "archived" && (
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">
             What should we call you?
@@ -306,7 +332,7 @@ export default async function ConnectionPage({
       )}
 
       {/* Both joined — first shared set / mutual-reveal activation */}
-      {joinedCount >= 2 && (
+      {joinedCount >= 2 && conn.status !== "archived" && (
         <section className="card mt-6">
           {!instance ? (
             <>

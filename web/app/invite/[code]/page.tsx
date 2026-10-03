@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECTION_TYPES, connectionLabel } from "@/lib/relationships";
+import { isInviteCodeFormat } from "@/lib/invite";
+import type { ConnectionType } from "@/lib/database.types";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
 
@@ -30,21 +32,41 @@ export const metadata: Metadata = {
   },
 };
 
+type InvitePreview =
+  | {
+      status: "ok";
+      connectionId: string;
+      type: ConnectionType;
+      createdBy: string | null;
+      inviterName: string | null;
+    }
+  | { status: "invalid" }
+  | { status: "used" }
+  | { status: "expired" };
+
 // The invite landing page. Possession of the (unguessable, single-use) code
 // is the authorization to see the preview, so the lookup uses the admin
 // client read-only for the minimal fields shown: who invited you and what
 // kind of connection it is. The reveal gate and membership writes stay
 // entirely behind RLS / the accept_invite RPC.
-async function loadInvitePreview(code: string) {
+//
+// Without a migration we can't tell "used" from "never existed" for burned
+// codes (invite_code is cleared). Best-effort discriminant:
+//   invalid — fails the expected 8-char alphanumeric format
+//   expired — row found by invite_code but invite_expires_at <= now
+//   used    — well-formed code not found (burned, regenerated, or typo)
+async function loadInvitePreview(code: string): Promise<InvitePreview> {
+  if (!isInviteCodeFormat(code)) return { status: "invalid" };
+
   const admin = createAdminClient();
   const { data: conn } = await admin
     .from("connections")
     .select("id, type, created_by, invite_expires_at")
-    .eq("invite_code", code)
+    .eq("invite_code", code.toUpperCase())
     .maybeSingle();
-  if (!conn) return null;
+  if (!conn) return { status: "used" };
   if (conn.invite_expires_at && new Date(conn.invite_expires_at) <= new Date()) {
-    return null;
+    return { status: "expired" };
   }
   // created_by can be null if the creator's account was since deleted.
   let inviterName: string | null = null;
@@ -57,12 +79,31 @@ async function loadInvitePreview(code: string) {
     inviterName = inviter?.display_name?.trim() || null;
   }
   return {
+    status: "ok",
     connectionId: conn.id,
     type: conn.type,
     createdBy: conn.created_by,
     inviterName,
   };
 }
+
+const UNAVAILABLE: Record<
+  "invalid" | "used" | "expired",
+  { title: string; body: string }
+> = {
+  invalid: {
+    title: "This invite link isn't valid",
+    body: "Check the link and try again, or ask your person for a fresh invite.",
+  },
+  used: {
+    title: "This invite has already been used",
+    body: "Invite links work once. Ask your person for a fresh link, or sign in if you've already joined.",
+  },
+  expired: {
+    title: "This invite has expired",
+    body: "Invite links work for a limited time. Ask your person for a fresh link.",
+  },
+};
 
 export default async function InvitePage({
   params,
@@ -77,17 +118,18 @@ export default async function InvitePage({
 
   const invite = await loadInvitePreview(code);
 
-  if (!invite) {
+  if (invite.status !== "ok") {
+    const copy = UNAVAILABLE[invite.status];
+    // Soften the "used" body when already signed in — no need to suggest sign-in.
+    const body =
+      invite.status === "used" && user
+        ? "Invite links work once. Ask your person for a fresh link if you still need to join."
+        : copy.body;
     return (
       <Shell>
         <p className="eyebrow">Invitation</p>
-        <h1 className="mt-3 text-3xl leading-snug">
-          This invite has already been used or expired
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-          Invite links work once and then retire themselves. Ask your person
-          for a fresh link{user ? "" : ", or sign in if you've already joined"}.
-        </p>
+        <h1 className="mt-3 text-3xl leading-snug">{copy.title}</h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink-soft">{body}</p>
         <Link
           href={user ? "/connections" : "/login"}
           className="btn-primary mt-8 !px-8 !py-3"

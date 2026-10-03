@@ -1,7 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { buildInviteMessage, smsHref, whatsappHref } from "./invite";
+import {
+  buildInviteMessage,
+  isInviteCodeFormat,
+  smsHref,
+  whatsappHref,
+} from "./invite";
 
 const URL_ = "https://relationshipcopilot.com/invite/ABC123";
+
+describe("isInviteCodeFormat", () => {
+  it("accepts 8-char alphanumeric codes, either case", () => {
+    expect(isInviteCodeFormat("ABC12345")).toBe(true);
+    expect(isInviteCodeFormat("abc12345")).toBe(true);
+    expect(isInviteCodeFormat("Ab12Cd34")).toBe(true);
+  });
+
+  it("rejects wrong length, punctuation, or empty", () => {
+    expect(isInviteCodeFormat("")).toBe(false);
+    expect(isInviteCodeFormat("ABC1234")).toBe(false);
+    expect(isInviteCodeFormat("ABC123456")).toBe(false);
+    expect(isInviteCodeFormat("ABC-1234")).toBe(false);
+    expect(isInviteCodeFormat("ABC_1234")).toBe(false);
+    expect(isInviteCodeFormat("invite!!")).toBe(false);
+  });
+});
 
 describe("buildInviteMessage", () => {
   it("leads with the inviter's name when known", () => {
