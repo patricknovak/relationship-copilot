@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { safeNextPath } from "@/lib/redirect";
@@ -23,31 +23,43 @@ const TURNSTILE_SITE_KEY = resolveTurnstileSiteKey(
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 );
 
+export const AUTH_LINK_FAILED_MESSAGE =
+  "That sign-in link didn't work. It must be opened on the same device and browser that requested it, or it may already have been used. Request a fresh one below.";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   // Set in an effect (not at render) so server and client HTML agree.
   const [inviteContext, setInviteContext] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authLinkFailed, setAuthLinkFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   // Turnstile tokens are single-use; bumping the key remounts a fresh widget
   // after each attempt.
   const [captchaKey, setCaptchaKey] = useState(0);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setInviteContext(!!params.get("next")?.startsWith("/invite/"));
     if (params.get("error") === "auth") {
-      setError(
-        "That sign-in link didn't work — it may have expired or already been used. Request a fresh one below.",
-      );
+      // Failed confirm/callback: never leave them on a dead-end or inbox state.
+      setSent(false);
+      setAuthLinkFailed(true);
+      setError(AUTH_LINK_FAILED_MESSAGE);
+      requestAnimationFrame(() => {
+        emailInputRef.current?.focus();
+      });
     }
   }, []);
 
   // Carry the post-login destination (set by the auth middleware) through the
   // magic link / OAuth round-trip. Validated here and again in the callback.
+  // emailRedirectTo stays on /auth/callback for PKCE (same-browser). Cross-
+  // device email templates should use /auth/confirm with token_hash instead.
   const redirectTo =
     typeof window !== "undefined"
       ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(
@@ -63,6 +75,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError(null);
+    setAuthLinkFailed(false);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -80,10 +93,37 @@ export default function LoginPage() {
     else setSent(true);
   }
 
+  function focusResendForm() {
+    setSent(false);
+    setAuthLinkFailed(true);
+    if (!error) setError(AUTH_LINK_FAILED_MESSAGE);
+    // Focus after paint so the form is visible (not stuck on inbox success).
+    requestAnimationFrame(() => {
+      emailInputRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      emailInputRef.current?.focus();
+    });
+  }
+
+  // One-tap resend: focus the email field; if email + captcha are ready, submit.
+  function sendNewLink() {
+    focusResendForm();
+    if (
+      email.trim() &&
+      (!TURNSTILE_SITE_KEY || captchaToken) &&
+      formRef.current
+    ) {
+      requestAnimationFrame(() => formRef.current?.requestSubmit());
+    }
+  }
+
   // One account either way: Supabase creates the account on first sign-in,
   // so these buttons cover both sign-up and sign-in.
   async function signInWith(provider: OAuthProvider) {
     setError(null);
+    setAuthLinkFailed(false);
     setOauthLoading(provider);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
@@ -160,19 +200,45 @@ export default function LoginPage() {
             <div className="mt-6" />
           )}
 
+          {error && (
+            <div className="mb-4 space-y-2">
+              <p className="text-sm text-rose-600">{error}</p>
+              {authLinkFailed && !sent && (
+                <button
+                  type="button"
+                  onClick={sendNewLink}
+                  className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900"
+                >
+                  Send a new link
+                </button>
+              )}
+            </div>
+          )}
+
           {sent ? (
-            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:text-brand-200">
-              Check your inbox for a sign-in link. ✨
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:text-brand-200">
+                Check your inbox for a sign-in link. ✨
+              </div>
+              <button
+                type="button"
+                onClick={focusResendForm}
+                className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900"
+              >
+                Send a new link
+              </button>
             </div>
           ) : (
-            <form onSubmit={sendMagicLink} className="space-y-3">
+            <form ref={formRef} onSubmit={sendMagicLink} className="space-y-3">
               <input
+                ref={emailInputRef}
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="input"
+                autoComplete="email"
               />
               {TURNSTILE_SITE_KEY && (
                 <Turnstile
@@ -186,12 +252,14 @@ export default function LoginPage() {
                 disabled={loading || (!!TURNSTILE_SITE_KEY && !captchaToken)}
                 className="btn-secondary w-full disabled:opacity-60"
               >
-                {loading ? "Sending…" : "Email me a secure link"}
+                {loading
+                  ? "Sending…"
+                  : authLinkFailed
+                    ? "Email me a new link"
+                    : "Email me a secure link"}
               </button>
             </form>
           )}
-
-          {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
         </div>
         <p className="mt-6 text-center text-xs text-ink-soft/70">
           By continuing you agree to our{" "}

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { safeNextPath } from "@/lib/redirect";
+import { normalizeAuthNextParam } from "@/lib/authConfirm";
 
 // Establishes a session from either auth flow, then sends the user on:
 // - `code`       — PKCE exchange (magic link / OAuth started in this browser)
 // - `token_hash` — server-side OTP verification (admin invite emails, or any
 //                  email template pointed at this route; works without the
 //                  PKCE verifier cookie, which invite clicks never have)
+// Prefer /auth/confirm for cross-device magic-link / signup emails — that
+// path is verifyOtp-only and does not rely on a PKCE cookie.
 // `next` is attacker-influenceable (it round-trips through email), so it is
 // validated to a same-origin path before redirecting. An explicit `next`
 // (e.g. an invite deep link) wins even for brand-new users — the invite page
@@ -20,9 +22,10 @@ export async function GET(request: Request) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
 
-  let rawNext = searchParams.get("next");
-  if (rawNext?.startsWith(`${origin}/`)) rawNext = rawNext.slice(origin.length);
-  const explicitNext = rawNext ? safeNextPath(rawNext, "") : "";
+  const explicitNext = normalizeAuthNextParam(
+    searchParams.get("next"),
+    origin,
+  );
 
   const supabase = await createClient();
   let authed = false;
