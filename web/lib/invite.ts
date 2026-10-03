@@ -2,6 +2,12 @@
 // text/share/WhatsApp, and the platform-quirky share hrefs. Kept framework-
 // free and unit-tested.
 
+// Invite codes are 8-char uppercase alphanumeric (see newInviteCode in
+// connections.ts). Accept either case so pasted/typed links still validate.
+export function isInviteCodeFormat(code: string): boolean {
+  return /^[A-Z0-9]{8}$/i.test(code);
+}
+
 export function buildInviteMessage(
   inviterName: string | null | undefined,
   url: string,
