@@ -332,7 +332,7 @@ export default async function ConnectionPage({
       )}
 
       {/* Both joined — first shared set / mutual-reveal activation */}
-      {joinedCount >= 2 && (
+      {joinedCount >= 2 && conn.status !== "archived" && (
         <section className="card mt-6">
           {!instance ? (
             <>
