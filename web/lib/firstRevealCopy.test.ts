@@ -62,7 +62,7 @@ describe("firstRevealCopy", () => {
   it("builds nudge start and finish messages without answer content", () => {
     const url = "https://relationshipcopilot.com/connections/abc";
     expect(nudgeStartMessage(url)).toBe(
-      "We're both in on Relationship Copilot — want to answer our first questions this week? Neither of us sees the other's answers until we've both shared.\n\nhttps://relationshipcopilot.com/connections/abc",
+      "We're both in on Relationship Copilot — want to answer our first questions this week? Designed so neither of us sees the other's answers until we've both shared.\n\nhttps://relationshipcopilot.com/connections/abc",
     );
     expect(nudgeFinishMessage(null, url)).toBe(
       "I've answered on Relationship Copilot — when you're ready, finish yours so we can reveal together. No peeking either way.\n\nhttps://relationshipcopilot.com/connections/abc",
@@ -79,6 +79,7 @@ describe("firstRevealCopy", () => {
     expect(EMPTY_STATE.trustLine.toLowerCase()).toContain("safety");
     expect(EMPTY_STATE.trustLine.toLowerCase()).toContain("free");
     expect(SOFT_PREMIUM.body).toMatch(/Reveals.*stay free/i);
+    expect(SOFT_PREMIUM.body).toMatch(/core library/i);
     expect(SOFT_PREMIUM.body).toMatch(/Safety stay free/i);
     expect(SOFT_PREMIUM.body).toMatch(/\$18\/mo/);
     expect(ACQUISITION.trustLine.toLowerCase()).toContain("safety always free");
@@ -88,7 +89,7 @@ describe("firstRevealCopy", () => {
 
   it("preserves mutual-reveal enforcement language", () => {
     expect(EMPTY_STATE.body).toMatch(/lives in the product/i);
-    expect(ACQUISITION.body).toMatch(/enforced in the product/i);
+    expect(ACQUISITION.body).toMatch(/built into how the product works/i);
     expect(WAITING_ON_THEM.body).toMatch(/no peeking/i);
     expect(WAITING_ON_YOU.trustLine).toMatch(/neither of you can see/i);
     expect(MICROCOPY.belowQuestion).toMatch(/private until mutual reveal/i);

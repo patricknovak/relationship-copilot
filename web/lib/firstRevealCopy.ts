@@ -28,7 +28,7 @@ export function bothJoinedBody(questionCount: number): string {
 }
 
 export function nudgeStartMessage(connectionUrl: string): string {
-  return `We're both in on Relationship Copilot — want to answer our first questions this week? Neither of us sees the other's answers until we've both shared.\n\n${connectionUrl}`;
+  return `We're both in on Relationship Copilot — want to answer our first questions this week? Designed so neither of us sees the other's answers until we've both shared.\n\n${connectionUrl}`;
 }
 
 export function nudgeFinishMessage(
@@ -72,7 +72,7 @@ export const FIRST_REVEAL_UNLOCK = {
 
 export const SOFT_PREMIUM = {
   headline: "Want a deeper reflection?",
-  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the library, and Safety stay free. Optional AI uses redacted inputs — we don't train models on your intimate answers.",
+  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI uses redacted inputs — we don't train models on your intimate answers.",
   primaryCta: "See Premium",
   dismiss: "Not now",
 } as const;
@@ -92,7 +92,7 @@ export const SAFETY_INTERRUPT = {
 
 export const ACQUISITION = {
   headline: "Closer, on purpose.",
-  body: "Answer thoughtful questions in private. Reveal together — only when you've both shared. One mutual reveal is enough to feel the difference: honesty without peeking, enforced in the product, not just promised in the app.",
+  body: "Answer thoughtful questions in private. Reveal together — only when you've both shared. One mutual reveal is enough to feel the difference: honesty without peeking, built into how the product works, not just promised in the app.",
   trustLine:
     "Free for the core experience. Safety always free. Premium ($18/mo) is optional for Blueprint and digests.",
   inviteCta: "Invite your person",

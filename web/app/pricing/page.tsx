@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "Pricing",
   // Display price matches Plan price="$18/mo" and homepage JSON-LD offer "18.00"
   // (no shared display-price constant in the codebase).
-  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the library and Safety. Premium ($18/mo) adds the AI Blueprint and more.`,
+  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the core library and Safety. Premium ($18/mo) adds the AI Blueprint and more.`,
   alternates: { canonical: canonicalUrl("/pricing") },
 };
 
@@ -21,7 +21,7 @@ const FREE = [
   "Onboarding questions + mutual reveal (10–20, depending on the relationship)",
   "Daily questions, reveal & discussion",
   "Quizzes & challenges",
-  "Education library",
+  "Core education library",
   "Safety resources — always free",
 ];
 const PREMIUM = [
@@ -35,11 +35,11 @@ const PREMIUM = [
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free?",
-    a: `Up to ${FREE_CONNECTION_CAP} connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the free library articles, and Safety resources.`,
+    a: `Up to ${FREE_CONNECTION_CAP} connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the core library articles, and Safety resources.`,
   },
   {
     q: "Can the other person see my answers early?",
-    a: "No. The rule that hides an answer until you've both shared lives in the database itself, not just the app.",
+    a: "No. The rule that hides an answer until you've both shared is built into how the product works, not just the app.",
   },
   {
     q: "Is Safety ever paywalled?",

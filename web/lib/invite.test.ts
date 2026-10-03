@@ -11,7 +11,7 @@ describe("buildInviteMessage", () => {
       "We each answer the same questions in private, then reveal together",
     );
     expect(msg).toContain(
-      "neither of us sees the other's answers until we've both shared",
+      "designed so neither of us sees the other's answers until we've both shared",
     );
     expect(msg).toContain("It's free");
     expect(msg).toContain(URL_);

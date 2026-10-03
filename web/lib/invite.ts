@@ -10,7 +10,7 @@ export function buildInviteMessage(
   const opener = who
     ? `${who} invited you to connect on Relationship Copilot.`
     : `Join me on Relationship Copilot.`;
-  return `${opener} We each answer the same questions in private, then reveal together — neither of us sees the other's answers until we've both shared. It's free. Tap to join: ${url}`;
+  return `${opener} We each answer the same questions in private, then reveal together — designed so neither of us sees the other's answers until we've both shared. It's free. Tap to join: ${url}`;
 }
 
 // The `?&body=` form is the one that works across both iOS and Android;

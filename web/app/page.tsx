@@ -21,7 +21,7 @@ const TYPES = [
 ];
 
 const STAGES = [
-  { label: "New love", note: "the first 20 questions" },
+  { label: "New love", note: "start with 20 questions" },
   { label: "New parents", note: "protect the friendship" },
   { label: "Growing teens", note: "trust, not surveillance" },
   { label: "Caring for parents", note: "share the load" },
@@ -31,11 +31,11 @@ const STAGES = [
 const FAQS: { q: string; a: ReactNode }[] = [
   {
     q: "Can the other person see my answer before I share mine?",
-    a: "No — and it's not just a promise in the app. The rule that hides an answer until you've both responded lives in the database itself, so no bug in the app could leak it early. You answer first, then you both see everything at once.",
+    a: "No — and it's not just a promise in the app. The rule that hides an answer until you've both responded is built into how the product works, designed so answers stay private until you've both shared. You answer first, then you both see everything at once.",
   },
   {
     q: "Is this therapy?",
-    a: "No. Relationship Copilot offers relationship-wellness and coaching-style prompts grounded in research, but it isn't therapy, counseling, or medical advice, and it never diagnoses. If you're in crisis, our Safety page lists free, confidential support — always one tap away.",
+    a: "No. Relationship Copilot offers relationship-wellness and coaching-style prompts grounded in research, but it isn't therapy, counseling, or medical advice, and it never diagnoses. If you're in crisis, our Safety page lists free, confidential support — always free and easy to reach.",
   },
   {
     q: "What happens to what I write — and what does the AI see?",
@@ -43,7 +43,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Is it really free?",
-    a: "The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
+    a: "The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the core library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
   },
   {
     q: "Is it only for couples?",
@@ -178,7 +178,7 @@ export default async function Home() {
           <Step
             n="2"
             title="Answer in private"
-            body="A daily question and deeper packs, written for your kind of relationship. Neither of you can peek early — it's enforced, not promised."
+            body="A daily question and deeper packs, written for your kind of relationship. Designed so neither of you can peek early — built into the product, not just promised."
           />
           <Step
             n="3"
@@ -195,7 +195,7 @@ export default async function Home() {
             <Feature
               icon={<IconSpark />}
               title="Grounded in research"
-              body="Questions draw on Gottman, attachment theory, and the science of closeness — with the weaker ideas flagged honestly."
+              body="Questions are informed by research traditions like Gottman and attachment theory, and the science of closeness — with weaker ideas flagged honestly."
             />
             <Feature
               icon={<IconArc />}
@@ -210,7 +210,7 @@ export default async function Home() {
             <Feature
               icon={<IconLock />}
               title="Private by architecture"
-              body="The reveal rule lives in the database itself — no app bug can leak an answer early. Your words are yours to export or erase."
+              body="The reveal rule is built into how the product works — designed so answers stay private until both share. Your words are yours to export or erase."
             />
             <Feature
               icon={<IconBook />}
@@ -220,7 +220,7 @@ export default async function Home() {
             <Feature
               icon={<IconHeartHand />}
               title="Safety, never paywalled"
-              body="Crisis resources are free for everyone, always one tap away, with a quick-exit button when privacy matters."
+              body="Crisis resources are free for everyone, always free and easy to reach, with a quick-exit button when privacy matters."
             />
           </div>
         </div>
