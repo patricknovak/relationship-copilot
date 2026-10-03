@@ -9,6 +9,7 @@ import {
   type OAuthProvider,
 } from "@/lib/authProviders";
 import { resolveTurnstileSiteKey } from "@/lib/turnstile";
+import { AUTH_LINK_FAILED_MESSAGE } from "@/lib/authConfirm";
 import Turnstile from "@/components/Turnstile";
 
 // Inlined at build time; only providers enabled in the Supabase dashboard
@@ -22,9 +23,6 @@ const ENABLED_PROVIDERS = parseAuthProviders(
 const TURNSTILE_SITE_KEY = resolveTurnstileSiteKey(
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 );
-
-export const AUTH_LINK_FAILED_MESSAGE =
-  "That sign-in link didn't work. It must be opened on the same device and browser that requested it, or it may already have been used. Request a fresh one below.";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

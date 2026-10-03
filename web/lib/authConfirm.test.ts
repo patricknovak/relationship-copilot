@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  AUTH_LINK_FAILED_MESSAGE,
   normalizeAuthNextParam,
   parseConfirmOtpType,
 } from "@/lib/authConfirm";
+
+describe("AUTH_LINK_FAILED_MESSAGE", () => {
+  it("mentions same device/browser and reuse, not only expiry", () => {
+    expect(AUTH_LINK_FAILED_MESSAGE.toLowerCase()).toContain("same device");
+    expect(AUTH_LINK_FAILED_MESSAGE.toLowerCase()).toContain("browser");
+    expect(AUTH_LINK_FAILED_MESSAGE.toLowerCase()).toMatch(/already.*used|used/);
+    expect(AUTH_LINK_FAILED_MESSAGE.toLowerCase()).not.toMatch(/^.*expired.*$/);
+  });
+});
 
 describe("parseConfirmOtpType", () => {
   it("accepts magiclink, signup, and email", () => {

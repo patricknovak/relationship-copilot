@@ -1,5 +1,11 @@
 import { safeNextPath } from "@/lib/redirect";
 
+// Shown when /auth/confirm or /auth/callback fails (cross-device PKCE miss,
+// already-used link, etc.). Kept out of app/login/page.tsx so Next.js does
+// not treat it as an invalid Page export.
+export const AUTH_LINK_FAILED_MESSAGE =
+  "That sign-in link didn't work. It must be opened on the same device and browser that requested it, or it may already have been used. Request a fresh one below.";
+
 // OTP email types accepted by /auth/confirm. Cross-device magic links and
 // signup confirmation use token_hash + verifyOtp (no PKCE cookie required).
 export const CONFIRM_OTP_TYPES = ["magiclink", "signup", "email"] as const;
