@@ -29,7 +29,8 @@ export default function DeleteAccount() {
       <p className="mt-1 text-sm text-ink-soft">
         This permanently deletes your profile, your answers, and your activity.
         If you share a connection with someone, they keep their own answers and
-        the connection is archived for them; everything you wrote is removed.
+        the connection is archived for them; everything you wrote is removed,
+        and shared AI reflections derived from your answers are removed too.
         This cannot be undone.
       </p>
       <form action={onSubmit} className="mt-3 space-y-2">
