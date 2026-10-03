@@ -93,7 +93,7 @@ export default async function Home() {
           <p className="mx-auto mt-6 max-w-2xl animate-fade-up text-lg leading-relaxed text-ink-soft [animation-delay:120ms]">
             {ACQUISITION.body}
           </p>
-          <div className="mt-9 flex animate-fade-up items-center justify-center gap-3 [animation-delay:200ms]">
+          <div className="mt-9 flex animate-fade-up flex-wrap items-center justify-center gap-3 [animation-delay:200ms]">
             <Link
               href={user ? "/connections/new" : "/login"}
               className="btn-primary !px-7 !py-3 !text-base"
@@ -112,7 +112,7 @@ export default async function Home() {
           </p>
 
           {/* The signature moment: mutual reveal, as a living mockup. */}
-          <div className="relative mx-auto mt-16 max-w-3xl animate-fade-up [animation-delay:340ms]">
+          <div className="relative mx-auto mt-16 max-w-3xl animate-fade-up overflow-x-clip [animation-delay:340ms]">
             <div className="card !rounded-3xl !bg-white/90 dark:!bg-surface !p-6 text-left shadow-lift sm:!p-8">
               <p className="eyebrow">Today&apos;s question</p>
               <p className="mt-2 font-display text-xl text-ink sm:text-2xl">
