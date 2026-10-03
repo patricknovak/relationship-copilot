@@ -285,7 +285,7 @@ export default async function Home() {
             Start free. Invite one person. See what you learn about each other
             by Friday.
           </p>
-          <div className="mt-7 flex items-center justify-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={user ? "/connections" : "/login"}
               className="btn-primary !px-7 !py-3 !text-base"
