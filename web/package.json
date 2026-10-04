@@ -16,7 +16,7 @@
     "next": "^15.5.26",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "stripe": "^17.7.0"
+    "stripe": "^23.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
