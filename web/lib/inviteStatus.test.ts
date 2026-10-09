@@ -103,16 +103,20 @@ describe("loginHeadline / loginSubhead", () => {
     );
     expect(
       loginSubhead({ kind: "invitee", inviteCode: "ABC12345" }, "Sam"),
-    ).toContain("join Sam");
-    expect(
-      loginSubhead({ kind: "invitee", inviteCode: "ABC12345" }, "Sam"),
-    ).toContain("join automatically");
+    ).toBe(
+      "Sign in and you'll come straight back to Sam's invite and join automatically.",
+    );
   });
 
   it("falls back when the inviter name is unknown", () => {
     expect(
       loginHeadline({ kind: "invitee", inviteCode: "ABC12345" }, null),
     ).toBe("You're invited");
+    expect(
+      loginSubhead({ kind: "invitee", inviteCode: "ABC12345" }, null),
+    ).toBe(
+      "Sign in and you'll come straight back to your invite and join automatically.",
+    );
   });
 
   it("uses inviter intent copy for /connections/new", () => {
@@ -126,8 +130,8 @@ describe("loginHeadline / loginSubhead", () => {
 
   it("keeps generic welcome copy without intent", () => {
     expect(loginHeadline({ kind: "generic" }, null)).toBe("Welcome");
-    expect(loginSubhead({ kind: "generic" }, null)).toContain(
-      "same door for both",
+    expect(loginSubhead({ kind: "generic" }, null)).toBe(
+      "Sign in or create your free account. It's the same steps either way.",
     );
   });
 });

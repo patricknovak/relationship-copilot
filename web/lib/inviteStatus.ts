@@ -49,21 +49,21 @@ export const INVITE_FAILURE_COPY: Record<
   invalid: {
     title: "This invite link isn't valid",
     body: "We couldn't find an open invite for that link.",
-    askPartner: "Ask your partner to send a new link.",
+    askPartner: "Ask the person who invited you to send a new link.",
     startOwnLabel: "Start your own connection",
     connectionsLabel: "Go to my connections",
   },
   used: {
     title: "This invite has already been used",
     body: "Invite links work once.",
-    askPartner: "Ask your partner to send a new link.",
+    askPartner: "Ask the person who invited you to send a new link.",
     startOwnLabel: "Start your own connection",
     connectionsLabel: "Go to my connections",
   },
   expired: {
     title: "This invite has expired",
     body: "Invite links work for a limited time.",
-    askPartner: "Ask your partner to send a new link.",
+    askPartner: "Ask the person who invited you to send a new link.",
     startOwnLabel: "Start your own connection",
     connectionsLabel: "Go to my connections",
   },
@@ -109,11 +109,11 @@ export function loginHeadline(intent: LoginIntent, inviterName: string | null): 
 export function loginSubhead(intent: LoginIntent, inviterName: string | null): string {
   if (intent.kind === "invitee") {
     return inviterName
-      ? `Sign in to join ${inviterName} — you'll land right back on your invitation and join automatically.`
-      : "Sign in to join — you'll land right back on your invitation and join automatically.";
+      ? `Sign in and you'll come straight back to ${inviterName}'s invite and join automatically.`
+      : "Sign in and you'll come straight back to your invite and join automatically.";
   }
   if (intent.kind === "inviter") {
     return "After you sign in, you'll create a connection and get a link to share.";
   }
-  return "Sign in or create your free account — same door for both.";
+  return "Sign in or create your free account. It's the same steps either way.";
 }
