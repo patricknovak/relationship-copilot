@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONNECTION_TYPES, connectionLabel } from "@/lib/relationships";
-import { isInviteCodeFormat } from "@/lib/invite";
+import {
+  classifyInviteLookup,
+  INVITE_FAILURE_COPY,
+  type InviteFailureStatus,
+} from "@/lib/inviteStatus";
 import type { ConnectionType } from "@/lib/database.types";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
@@ -40,70 +44,63 @@ type InvitePreview =
       createdBy: string | null;
       inviterName: string | null;
     }
-  | { status: "invalid" }
-  | { status: "used" }
-  | { status: "expired" };
+  | { status: InviteFailureStatus };
 
-// The invite landing page. Possession of the (unguessable, single-use) code
-// is the authorization to see the preview, so the lookup uses the admin
-// client read-only for the minimal fields shown: who invited you and what
-// kind of connection it is. The reveal gate and membership writes stay
-// entirely behind RLS / the accept_invite RPC.
-//
-// Without a migration we can't tell "used" from "never existed" for burned
-// codes (invite_code is cleared). Best-effort discriminant:
-//   invalid — fails the expected 8-char alphanumeric format
-//   expired — row found by invite_code but invite_expires_at <= now
-//   used    — well-formed code not found (burned, regenerated, or typo)
+// Possession of the (unguessable, single-use) code authorizes the preview.
+// Admin client is read-only for the minimal fields shown. Used vs unknown
+// comes from retired_invite_codes (0019); malformed/unknown never say "used".
 async function loadInvitePreview(code: string): Promise<InvitePreview> {
-  if (!isInviteCodeFormat(code)) return { status: "invalid" };
-
   const admin = createAdminClient();
+  const normalized = code.toUpperCase();
+
   const { data: conn } = await admin
     .from("connections")
     .select("id, type, created_by, invite_expires_at")
-    .eq("invite_code", code.toUpperCase())
+    .eq("invite_code", normalized)
     .maybeSingle();
-  if (!conn) return { status: "used" };
-  if (conn.invite_expires_at && new Date(conn.invite_expires_at) <= new Date()) {
-    return { status: "expired" };
+
+  let retiredAsUsed = false;
+  if (!conn) {
+    const { data: retired } = await admin
+      .from("retired_invite_codes")
+      .select("reason")
+      .eq("code", normalized)
+      .maybeSingle();
+    retiredAsUsed = retired?.reason === "used";
   }
+
+  const expired = !!(
+    conn?.invite_expires_at &&
+    new Date(conn.invite_expires_at) <= new Date()
+  );
+
+  const status = classifyInviteLookup({
+    code,
+    foundActive: !!conn,
+    expired,
+    retiredAsUsed,
+  });
+
+  if (status !== "ok") return { status };
+
   // created_by can be null if the creator's account was since deleted.
   let inviterName: string | null = null;
-  if (conn.created_by) {
+  if (conn!.created_by) {
     const { data: inviter } = await admin
       .from("profiles")
       .select("display_name")
-      .eq("id", conn.created_by)
+      .eq("id", conn!.created_by)
       .maybeSingle();
     inviterName = inviter?.display_name?.trim() || null;
   }
   return {
     status: "ok",
-    connectionId: conn.id,
-    type: conn.type,
-    createdBy: conn.created_by,
+    connectionId: conn!.id,
+    type: conn!.type,
+    createdBy: conn!.created_by,
     inviterName,
   };
 }
-
-const UNAVAILABLE: Record<
-  "invalid" | "used" | "expired",
-  { title: string; body: string }
-> = {
-  invalid: {
-    title: "This invite link isn't valid",
-    body: "Check the link and try again, or ask your person for a fresh invite.",
-  },
-  used: {
-    title: "This invite has already been used",
-    body: "Invite links work once. Ask your person for a fresh link, or sign in if you've already joined.",
-  },
-  expired: {
-    title: "This invite has expired",
-    body: "Invite links work for a limited time. Ask your person for a fresh link.",
-  },
-};
 
 export default async function InvitePage({
   params,
@@ -119,23 +116,32 @@ export default async function InvitePage({
   const invite = await loadInvitePreview(code);
 
   if (invite.status !== "ok") {
-    const copy = UNAVAILABLE[invite.status];
-    // Soften the "used" body when already signed in — no need to suggest sign-in.
-    const body =
-      invite.status === "used" && user
-        ? "Invite links work once. Ask your person for a fresh link if you still need to join."
-        : copy.body;
+    const copy = INVITE_FAILURE_COPY[invite.status];
     return (
       <Shell>
         <p className="eyebrow">Invitation</p>
         <h1 className="mt-3 text-3xl leading-snug">{copy.title}</h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-soft">{body}</p>
-        <Link
-          href={user ? "/connections" : "/login"}
-          className="btn-primary mt-8 !px-8 !py-3"
-        >
-          {user ? "Go to my connections" : "Sign in"}
-        </Link>
+        <p className="mt-3 text-sm leading-relaxed text-ink-soft">{copy.body}</p>
+        <p className="mt-2 text-sm font-medium text-ink">{copy.askPartner}</p>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          {user ? (
+            <Link href="/connections" className="btn-primary !px-8 !py-3">
+              {copy.connectionsLabel}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login?next=/connections/new"
+                className="btn-primary !px-8 !py-3"
+              >
+                {copy.startOwnLabel}
+              </Link>
+              <Link href="/login" className="btn-ghost !px-4 !py-2 text-sm">
+                Sign in
+              </Link>
+            </>
+          )}
+        </div>
       </Shell>
     );
   }

@@ -270,6 +270,22 @@ export interface Database {
         >;
         Relationships: [];
       };
+      retired_invite_codes: {
+        Row: {
+          code: string;
+          reason: "used" | "regenerated";
+          retired_at: string;
+        };
+        Insert: {
+          code: string;
+          reason: "used" | "regenerated";
+          retired_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["retired_invite_codes"]["Insert"]
+        >;
+        Relationships: [];
+      };
       stripe_events: {
         Row: {
           id: string;
