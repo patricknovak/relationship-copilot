@@ -46,6 +46,23 @@ describe("normalizeAuthNextParam", () => {
     );
   });
 
+  it("preserves invite and inviter next through callback/confirm", () => {
+    // /auth/callback and /auth/confirm both call normalizeAuthNextParam so an
+    // invite deep link and the inviter start path survive Google + magic-link.
+    expect(normalizeAuthNextParam("/invite/ABC12345", origin)).toBe(
+      "/invite/ABC12345",
+    );
+    expect(normalizeAuthNextParam("/connections/new", origin)).toBe(
+      "/connections/new",
+    );
+    expect(
+      normalizeAuthNextParam(
+        "https://app.example.com/invite/ABC12345",
+        origin,
+      ),
+    ).toBe("/invite/ABC12345");
+  });
+
   it("strips a same-origin absolute URL prefix", () => {
     expect(
       normalizeAuthNextParam("https://app.example.com/invite/XYZ", origin),
@@ -64,5 +81,9 @@ describe("normalizeAuthNextParam", () => {
     ).toBe("");
     expect(normalizeAuthNextParam("//evil.example/phish", origin)).toBe("");
     expect(normalizeAuthNextParam("javascript:alert(1)", origin)).toBe("");
+    // Open-redirect guard: empty fallback (not the evil path) for auth routes.
+    expect(
+      normalizeAuthNextParam("https://evil.example/invite/ABC12345", origin),
+    ).toBe("");
   });
 });

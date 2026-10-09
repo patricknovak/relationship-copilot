@@ -5,12 +5,15 @@ describe("safeNextPath", () => {
   it("allows ordinary internal paths", () => {
     expect(safeNextPath("/connections/abc")).toBe("/connections/abc");
     expect(safeNextPath("/invite/XYZ123?a=1")).toBe("/invite/XYZ123?a=1");
+    expect(safeNextPath("/connections/new")).toBe("/connections/new");
+    expect(safeNextPath("/invite/ABC12345", "")).toBe("/invite/ABC12345");
   });
 
   it("falls back when missing", () => {
     expect(safeNextPath(null)).toBe("/connections");
     expect(safeNextPath(undefined, "/")).toBe("/");
     expect(safeNextPath("")).toBe("/connections");
+    expect(safeNextPath(null, "")).toBe("");
   });
 
   it("rejects absolute URLs and scheme-relative URLs", () => {

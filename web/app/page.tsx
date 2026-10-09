@@ -95,7 +95,7 @@ export default async function Home() {
           </p>
           <div className="mt-9 flex animate-fade-up flex-wrap items-center justify-center gap-3 [animation-delay:200ms]">
             <Link
-              href={user ? "/connections/new" : "/login"}
+              href={user ? "/connections/new" : "/login?next=/connections/new"}
               className="btn-primary !px-7 !py-3 !text-base"
             >
               {ACQUISITION.inviteCta}
