@@ -1,4 +1,4 @@
-// Hand-maintained subset of the Supabase schema (migrations 0001–0003).
+// Hand-maintained subset of the Supabase schema (migrations 0001–0018).
 // Replace with `supabase gen types typescript` output once a project exists.
 // Shape matches what supabase-js expects (Tables with Relationships, plus
 // Views/Functions/Enums/CompositeTypes) so query results type correctly.
@@ -254,6 +254,22 @@ export interface Database {
         >;
         Relationships: [];
       };
+      connection_funnel_steps: {
+        Row: {
+          connection_id: string;
+          step: "invite_sent" | "partner_joined";
+          claimed_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          step: "invite_sent" | "partner_joined";
+          claimed_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["connection_funnel_steps"]["Insert"]
+        >;
+        Relationships: [];
+      };
       stripe_events: {
         Row: {
           id: string;
@@ -337,6 +353,13 @@ export interface Database {
       regenerate_invite: { Args: { p_conn: string }; Returns: string };
       claim_first_mutual_reveal_ga4: {
         Args: { p_connection_id: string };
+        Returns: boolean;
+      };
+      claim_funnel_step: {
+        Args: {
+          p_connection_id: string;
+          p_step: "invite_sent" | "partner_joined";
+        };
         Returns: boolean;
       };
       partner_profile_rows: {

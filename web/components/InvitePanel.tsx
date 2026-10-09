@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { sendEmailInvite } from "@/app/actions/connections";
+import { markInviteShared, sendEmailInvite } from "@/app/actions/connections";
 import { buildInviteMessage, smsHref, whatsappHref } from "@/lib/invite";
 
 // The one place an inviter gets their person in: text/share the link first
@@ -31,6 +31,11 @@ export default function InvitePanel({
 
   const message = buildInviteMessage(inviterName, url);
 
+  // Fire-and-forget funnel mark — never blocks or changes the share UI.
+  function noteShared() {
+    void markInviteShared(connectionId);
+  }
+
   function submitEmail(e: React.FormEvent) {
     e.preventDefault();
     setNotice(null);
@@ -56,6 +61,7 @@ export default function InvitePanel({
   async function share() {
     try {
       await navigator.share({ title: "Relationship Copilot", text: message, url });
+      noteShared();
     } catch {
       /* user dismissed the share sheet */
     }
@@ -65,6 +71,7 @@ export default function InvitePanel({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      noteShared();
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard unavailable — fall back to selecting the URL via the sms path */
@@ -78,7 +85,11 @@ export default function InvitePanel({
   return (
     <div className="mt-4 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <a href={smsHref(message)} className="btn-primary">
+        <a
+          href={smsHref(message)}
+          className="btn-primary"
+          onClick={noteShared}
+        >
           Text it
         </a>
         {canShare ? (
@@ -91,6 +102,7 @@ export default function InvitePanel({
           target="_blank"
           rel="noreferrer"
           className="btn-secondary"
+          onClick={noteShared}
         >
           WhatsApp
         </a>

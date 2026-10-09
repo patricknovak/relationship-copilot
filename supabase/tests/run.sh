@@ -37,6 +37,8 @@ echo "running security-advisor cleanup test"
 run -f "$ROOT/supabase/tests/05_security_advisor_cleanup_test.sql"
 echo "running GA4 first-reveal claim test"
 run -f "$ROOT/supabase/tests/06_ga4_first_reveal_claim_test.sql"
+echo "running funnel step claims test"
+run -f "$ROOT/supabase/tests/07_funnel_step_claims_test.sql"
 
 psql -h "$HOST" -p "$PORT" -U "$USER" -d postgres -q -c "drop database if exists $DB;"
 echo "OK"

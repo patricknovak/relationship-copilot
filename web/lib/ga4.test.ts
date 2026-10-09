@@ -8,11 +8,16 @@ vi.mock("next/server", () => ({
 
 import {
   FIRST_MUTUAL_REVEAL_COMPLETED,
+  INVITE_SENT,
+  PARTNER_JOINED,
   isConnectionFirstReveal,
   scheduleFirstMutualRevealCompleted,
   scheduleGa4Event,
+  scheduleInviteSent,
+  schedulePartnerJoined,
   sendGa4Event,
   shouldTrackFirstMutualReveal,
+  shouldTrackFunnelStep,
   trackFirstMutualRevealCompleted,
 } from "./ga4";
 
@@ -31,9 +36,23 @@ describe("shouldTrackFirstMutualReveal", () => {
   });
 });
 
+describe("shouldTrackFunnelStep", () => {
+  it("is true only when the DB claim was granted", () => {
+    expect(shouldTrackFunnelStep(true)).toBe(true);
+    expect(shouldTrackFunnelStep(false)).toBe(false);
+  });
+});
+
 describe("FIRST_MUTUAL_REVEAL_COMPLETED", () => {
   it("uses the exact GA4 event name from the brief", () => {
     expect(FIRST_MUTUAL_REVEAL_COMPLETED).toBe("first_mutual_reveal_completed");
+  });
+});
+
+describe("funnel event names", () => {
+  it("uses the exact invite_sent and partner_joined names", () => {
+    expect(INVITE_SENT).toBe("invite_sent");
+    expect(PARTNER_JOINED).toBe("partner_joined");
   });
 });
 
@@ -157,5 +176,57 @@ describe("scheduleGa4Event / after()", () => {
     await Promise.resolve();
     // sendGa4Event logs; after wrapper must not rethrow into the request.
     expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("schedules invite_sent with an anonymous payload (no IDs)", async () => {
+    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
+    process.env.GA4_API_SECRET = "test-secret";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    scheduleInviteSent();
+    expect(afterMock).toHaveBeenCalledOnce();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
+    ) as {
+      client_id: string;
+      user_id?: string;
+      events: { name: string; params: Record<string, unknown> }[];
+    };
+    expect(body.events[0].name).toBe("invite_sent");
+    expect(body.user_id).toBeUndefined();
+    // Event name contains "invite"; assert params/keys carry no entity IDs.
+    expect(Object.keys(body.events[0].params)).toEqual(["engagement_time_msec"]);
+    expect(JSON.stringify(body.events[0].params)).not.toMatch(
+      /user_id|connection_id|invite_code/i,
+    );
+    expect(body.events[0].params.engagement_time_msec).toBe(1);
+  });
+
+  it("schedules partner_joined with an anonymous payload (no IDs)", async () => {
+    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
+    process.env.GA4_API_SECRET = "test-secret";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    schedulePartnerJoined();
+    expect(afterMock).toHaveBeenCalledOnce();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(
+      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
+    ) as {
+      user_id?: string;
+      events: { name: string; params: Record<string, unknown> }[];
+    };
+    expect(body.events[0].name).toBe("partner_joined");
+    expect(body.user_id).toBeUndefined();
+    expect(Object.keys(body.events[0].params)).toEqual(["engagement_time_msec"]);
   });
 });
