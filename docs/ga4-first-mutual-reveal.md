@@ -4,7 +4,19 @@
 **GTM container (marketing pages):** `GTM-NT4DZRHK`  
 **Exact event:** `first_mutual_reveal_completed`
 
-## What fires
+## Funnel (invite → join → reveal)
+
+| Step | Event name | Key event? | Claim RPC | When |
+|---|---|---|---|---|
+| Invite left the product | `invite_sent` | No | `claim_funnel_step(..., 'invite_sent')` | Successful `sendEmailInvite`, or Text/WhatsApp/Copy/Share via `markInviteShared` — **not** on connection create alone |
+| Partner accepted | `partner_joined` | No | `claim_funnel_step(..., 'partner_joined')` | After successful `accept_invite` (covers AutoAcceptInvite) |
+| First mutual reveal | `first_mutual_reveal_completed` | **Yes** | `claim_first_mutual_reveal_ga4` | First revealed instance on the connection |
+
+Claims live in `connection_funnel_steps` (0018) and `connection_first_reveal_ga4` (0017). Each step fires **at most once** per connection. GA4 MP payloads stay anonymous (no user, connection, or invite IDs). Claim/RPC failures log `[ga4]` and never break invite, join, or reveal.
+
+Migration **0018** must be applied on prod before `invite_sent` / `partner_joined` claims succeed (same rollout pattern as 0017).
+
+## What fires (north star)
 
 When a connection’s **first** mutual reveal completes (both members have shared;
 `prompt_instances.status` flips to `revealed` and it is that connection’s only
@@ -13,11 +25,14 @@ Protocol. The send is scheduled with Next.js `after()` so it survives the
 serverless response, and a DB claim (`claim_first_mutual_reveal_ga4`) ensures
 concurrent final submits produce **at most one** event per connection.
 
-It does **not** fire for:
+Funnel siblings `invite_sent` and `partner_joined` are measured the same way
+(MP + `after()` + once-only claim) but are **not** key events.
+
+It does **not** fire the north-star for:
 
 - landing / marketing pageviews
-- invite sent
-- partner joined (before reveal)
+- invite sent alone (`invite_sent` is a separate funnel event)
+- partner joined before reveal (`partner_joined` is a separate funnel event)
 - Premium checkout (separate secondary funnel — not this north star)
 - Rel activation drip email opens/clicks (**drip = NO SEND / drafts only**)
 
@@ -28,9 +43,9 @@ Authenticated routes (`/connections`, `/account`, `/onboarding`, `/auth`,
 `/invite`) never load the container, so connection and invite IDs in the URL
 never reach Google.
 
-The north-star conversion therefore lands in the **same GA4 property**
-(`G-3HE7V5FTSR`) from the server, with an anonymous `client_id` and **no**
-user, connection, or invite identifiers.
+The north-star conversion (and funnel siblings) therefore land in the **same
+GA4 property** (`G-3HE7V5FTSR`) from the server, with an anonymous `client_id`
+and **no** user, connection, or invite identifiers.
 
 Marketing traffic still arrives through GTM `GTM-NT4DZRHK`.
 
@@ -68,7 +83,8 @@ count draft opens/clicks as conversions or digest rows.
 ## Brand QA checklist
 
 - [ ] Event fires **once** when the first mutual reveal completes.
-- [ ] No fire on landing, invite alone, partner join alone, Premium checkout, or drip drafts.
+- [ ] No north-star fire on landing, invite alone, partner join alone, Premium checkout, or drip drafts.
+- [ ] Funnel events `invite_sent` / `partner_joined` fire once each when those steps happen (not key events).
 - [ ] Event name is exactly `first_mutual_reveal_completed`.
 - [ ] Property `G-3HE7V5FTSR` (marketing via GTM `GTM-NT4DZRHK`).
 - [ ] Admin Key event ON; labeled [GA4] counts only after that.

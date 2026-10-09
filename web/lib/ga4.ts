@@ -17,9 +17,23 @@ import { after } from "next/server";
 /** Exact north-star event name — must match GA4 Admin key-event toggle. */
 export const FIRST_MUTUAL_REVEAL_COMPLETED = "first_mutual_reveal_completed";
 
+/** Funnel siblings (not key events) — invite → join → first reveal. */
+export const INVITE_SENT = "invite_sent";
+export const PARTNER_JOINED = "partner_joined";
+
+export type FunnelStep = typeof INVITE_SENT | typeof PARTNER_JOINED;
+
 /** True when this completed reveal is the connection's first. */
 export function isConnectionFirstReveal(revealedInstanceCount: number): boolean {
   return revealedInstanceCount === 1;
+}
+
+/**
+ * True only when the DB granted this request the once-only funnel claim
+ * (`claim_funnel_step`). Mirrors shouldTrackFirstMutualReveal.
+ */
+export function shouldTrackFunnelStep(claimGranted: boolean): boolean {
+  return claimGranted === true;
 }
 
 /**
@@ -110,4 +124,14 @@ export async function trackFirstMutualRevealCompleted(): Promise<boolean> {
 /** Schedule the north-star event after the response (preferred on reveal). */
 export function scheduleFirstMutualRevealCompleted(): void {
   scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED);
+}
+
+/** Schedule invite_sent after a successful share/email (once per connection). */
+export function scheduleInviteSent(): void {
+  scheduleGa4Event(INVITE_SENT);
+}
+
+/** Schedule partner_joined after accept_invite succeeds (once per connection). */
+export function schedulePartnerJoined(): void {
+  scheduleGa4Event(PARTNER_JOINED);
 }

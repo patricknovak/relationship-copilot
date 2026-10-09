@@ -11,6 +11,41 @@ import {
 } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import {
+  INVITE_SENT,
+  PARTNER_JOINED,
+  scheduleInviteSent,
+  schedulePartnerJoined,
+  shouldTrackFunnelStep,
+  type FunnelStep,
+} from "@/lib/ga4";
+
+type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
+
+// Once-only funnel claim + GA4 schedule. Failures never break invite/join —
+// same swallow-and-log pattern as the first-reveal claim in prompts.ts.
+async function claimAndTrackFunnelStep(
+  supabase: SupabaseServer,
+  connectionId: string,
+  step: FunnelStep,
+): Promise<void> {
+  try {
+    const { data: claimed, error } = await supabase.rpc("claim_funnel_step", {
+      p_connection_id: connectionId,
+      p_step: step,
+    });
+    if (error) {
+      console.error("[ga4] claim_funnel_step failed", error.message);
+      return;
+    }
+    if (shouldTrackFunnelStep(claimed === true)) {
+      if (step === INVITE_SENT) scheduleInviteSent();
+      else if (step === PARTNER_JOINED) schedulePartnerJoined();
+    }
+  } catch (err) {
+    console.error("[ga4] claim_funnel_step failed", err);
+  }
+}
 
 function newInviteCode(): string {
   return randomBytes(9)
@@ -121,6 +156,10 @@ export async function acceptInvite(
 
   await logAudit(user.id, "connection.join", data);
 
+  // Funnel: partner_joined once both people are in. Claim failure must not
+  // break the join (covers AutoAcceptInvite). See docs/ga4-first-mutual-reveal.md.
+  await claimAndTrackFunnelStep(supabase, data, PARTNER_JOINED);
+
   // Create the onboarding set as soon as the second person joins so the
   // both-joined state can show the real question count. Failure must not
   // break the join — Start answering remains the fallback.
@@ -222,5 +261,35 @@ export async function sendEmailInvite(
   await logAudit(user.id, "connection.invite_email", connectionId, {
     email_domain: address.split("@")[1] ?? "",
   });
+
+  // Funnel: invite_sent on successful email invite (not on "existing account").
+  // Claim failure must not break the invite response.
+  await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT);
+
   return { status: "sent" };
+}
+
+// Fire-and-forget from InvitePanel when Text / WhatsApp / Copy / Share is
+// tapped. Marks invite_sent once; never throws into the UI.
+export async function markInviteShared(connectionId: string): Promise<void> {
+  if (!connectionId) return;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // RLS scopes the read — non-members find nothing.
+    const { data: conn } = await supabase
+      .from("connections")
+      .select("id")
+      .eq("id", connectionId)
+      .maybeSingle();
+    if (!conn) return;
+
+    await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT);
+  } catch (err) {
+    console.error("[ga4] markInviteShared failed", err);
+  }
 }
