@@ -25,8 +25,66 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
+      # Cloudflare Workers build (vinext); docs/CLOUDFLARE_MIGRATION.md.
+      - name: Build (Cloudflare)
+        run: npm run build:vinext
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+  deploy-cloudflare:
+    # Production deploy to the Cloudflare Worker "relationship-copilot".
+    # Off until the repo variable CLOUDFLARE_DEPLOY is "true"; Vercel keeps
+    # deploying from its Git integration until the cutover.
+    needs: [web, database]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    # A newer push cancels an older deploy so it cannot finish last.
+    concurrency:
+      group: deploy-cloudflare
+      cancel-in-progress: true
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # NEXT_PUBLIC_* values are inlined at build time, so they come from repo
+      # variables; server secrets live in the Worker (wrangler secret put).
+      - name: Build (Cloudflare)
+        run: npm run build:vinext
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://relationshipcopilot.com' }}
+          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: ${{ vars.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM }}
+          NEXT_PUBLIC_AUTH_PROVIDERS: ${{ vars.NEXT_PUBLIC_AUTH_PROVIDERS }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
+      - name: Check Cloudflare credentials
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repo secrets; nothing was deployed."
+            exit 1
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy --config dist/server/wrangler.json --var GIT_COMMIT_SHA:${{ github.sha }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
 
   database:
     runs-on: ubuntu-latest
