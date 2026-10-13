@@ -38,8 +38,11 @@ export async function generateBlueprint(connectionId: string) {
     .maybeSingle();
   if (!conn) redirect("/connections");
 
-  // --- entitlement gate (premium only). No Grok call fires for free users. ---
-  const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
+  // --- entitlement gate: Premium covers the connection (either member's
+  // plan unlocks the shared Blueprint). No Grok call fires otherwise. ---
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: connectionId,
+  });
   if (!isPremium) back("premium");
 
   // Rate limit: one generation per connection per 10 minutes (cost control —

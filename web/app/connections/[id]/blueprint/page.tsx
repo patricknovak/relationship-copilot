@@ -53,8 +53,9 @@ export default async function BlueprintPage({
     .limit(1)
     .maybeSingle();
 
-  const { data: isPremium } = await supabase.rpc("has_premium", {
-    uid: user!.id,
+  // Either member's Premium covers the pair for the shared Blueprint.
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: id,
   });
 
   const { data: instance } = await supabase
@@ -158,8 +159,9 @@ export default async function BlueprintPage({
           <h2 className="font-semibold text-brand-700">A Premium feature</h2>
           <p className="mt-1 text-sm text-ink-soft">
             The AI Relationship Blueprint and weekly digests are part of Premium.
-            Your core experience — questions, daily prompts, and safety resources
-            — stays free.
+            One Premium plan covers both people in a connection. Your core
+            experience — questions, daily prompts, and safety resources — stays
+            free.
           </p>
           <Link
             href="/pricing"

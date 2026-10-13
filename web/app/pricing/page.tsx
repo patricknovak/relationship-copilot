@@ -26,16 +26,25 @@ const FREE = [
 ];
 const PREMIUM = [
   "AI Relationship Blueprint",
+  "Weekly AI digests",
+  "Covers both people in every connection you share",
   "Unlimited connections",
   "Premium education library",
-  "Weekly AI digests",
 ];
+
+// Annual plan appears only once the price exists in Stripe and env.
+const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL;
+const ANNUAL_DISPLAY = process.env.NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY;
 
 // Verifiable claims only. The "train AI" item is held until P11 confirms an xAI no-training agreement.
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free?",
     a: `Up to ${FREE_CONNECTION_CAP} connections, the onboarding questions and mutual reveal, daily questions, discussion, quizzes and challenges, the core library articles, and Safety resources.`,
+  },
+  {
+    q: "Does the other person need to pay too?",
+    a: "No. One Premium plan covers both people in every connection the subscriber is part of: the Blueprint and digests work for the pair, and the other person reads them for free.",
   },
   {
     q: "Can the other person see my answers early?",
@@ -92,11 +101,25 @@ export default async function PricingPage({
               You&apos;re on Premium ✨
             </span>
           ) : (
-            <form action={createCheckout}>
-              <PendingButton className="btn-primary w-full" pendingLabel="Opening checkout…">
-                Upgrade to Premium
-              </PendingButton>
-            </form>
+            <div className="space-y-2">
+              <form action={createCheckout}>
+                <input type="hidden" name="interval" value="month" />
+                <PendingButton className="btn-primary w-full" pendingLabel="Opening checkout…">
+                  Upgrade to Premium
+                </PendingButton>
+              </form>
+              {ANNUAL_PRICE_ID && ANNUAL_DISPLAY && (
+                <form action={createCheckout}>
+                  <input type="hidden" name="interval" value="year" />
+                  <PendingButton
+                    className="btn-secondary w-full !py-2 text-sm"
+                    pendingLabel="Opening checkout…"
+                  >
+                    Or {ANNUAL_DISPLAY}, billed yearly
+                  </PendingButton>
+                </form>
+              )}
+            </div>
           )}
         </Plan>
       </div>

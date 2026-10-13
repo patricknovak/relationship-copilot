@@ -101,8 +101,8 @@ export default async function PromptInstanceView({
       .eq("connection_id", connectionId)
       .eq("status", "revealed");
     isFirstReveal = (revealedRows ?? []).length === 1;
-    const { data: premium } = await supabase.rpc("has_premium", {
-      uid: user.id,
+    const { data: premium } = await supabase.rpc("connection_has_premium", {
+      p_conn: connectionId,
     });
     isPremium = !!premium;
   }

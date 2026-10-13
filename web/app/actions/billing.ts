@@ -7,7 +7,14 @@ import { logAudit } from "@/lib/audit";
 
 // Start a Stripe Checkout subscription for Premium. The webhook flips the
 // `subscriptions` row once payment completes; entitlement is read from there.
-export async function createCheckout() {
+// `interval` picks the monthly price (default) or the annual one when
+// NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL is configured.
+export async function createCheckout(formData?: FormData) {
+  const interval =
+    formData?.get("interval") === "year" &&
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL
+      ? "year"
+      : "month";
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +28,10 @@ export async function createCheckout() {
   });
   if (isPremium) redirect("/account?upgraded=1");
 
-  const price = process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM;
+  const price =
+    interval === "year"
+      ? process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL
+      : process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM;
   if (!price) redirect("/pricing?error=checkout");
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 

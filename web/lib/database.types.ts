@@ -369,6 +369,9 @@ export interface Database {
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
+      // True when any joined member of the connection holds premium and the
+      // caller is a member (migration 0022). Never says who pays.
+      connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
       others_have_answered: {
         Args: { p_instance: string };
         Returns: boolean;

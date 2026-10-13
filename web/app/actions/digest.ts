@@ -44,7 +44,10 @@ export async function generateWeeklyDigest(connectionId: string) {
     .maybeSingle();
   if (!conn || conn.status !== "active") redirect("/connections");
 
-  const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
+  // Premium covers the connection: either member's plan unlocks the digest.
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: connectionId,
+  });
   if (!isPremium) back("digest-premium");
 
   const { data: lastDigest } = await supabase

@@ -43,6 +43,8 @@ echo "running retired-invite-codes test"
 run -f "$ROOT/supabase/tests/08_retired_invite_codes_test.sql"
 echo "running notification-log test"
 run -f "$ROOT/supabase/tests/09_notification_log_test.sql"
+echo "running connection-premium test"
+run -f "$ROOT/supabase/tests/10_connection_premium_test.sql"
 
 psql -h "$HOST" -p "$PORT" -U "$USER" -d postgres -q -c "drop database if exists $DB;"
 echo "OK"
