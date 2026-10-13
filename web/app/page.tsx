@@ -5,20 +5,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ACQUISITION } from "@/lib/firstRevealCopy";
 import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
+import { FOR_PAGES } from "@/lib/forPages";
 
 export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl("/") },
 };
 
-const TYPES = [
-  "Romantic partners",
-  "Friends",
-  "Family",
-  "Coworkers",
-  "Parents & teens",
-  "Siblings",
-  "Mentors",
-];
 
 const STAGES = [
   { label: "New love", note: "start with 20 questions" },
@@ -150,14 +142,15 @@ export default async function Home() {
           </div>
 
           <div className="mt-16 flex flex-wrap justify-center gap-2">
-            {TYPES.map((t, i) => (
-              <span
-                key={t}
-                className="chip animate-fade-up"
+            {FOR_PAGES.map((p, i) => (
+              <Link
+                key={p.slug}
+                href={`/for/${p.slug}`}
+                className="chip animate-fade-up hover:border-brand-400"
                 style={{ animationDelay: `${380 + i * 60}ms` }}
               >
-                {t}
-              </span>
+                {p.label}
+              </Link>
             ))}
           </div>
         </div>

@@ -592,6 +592,17 @@ export default async function ConnectionPage({
       {/* Looking back — free retrospectives once there's history */}
       {conn.status === "active" && <LookingBack connectionId={id} />}
 
+      {conn.status === "active" && (
+        <p className="mt-4 text-sm">
+          <Link
+            href={`/connections/${id}/history`}
+            className="text-brand-700 underline"
+          >
+            Everything you&apos;ve revealed →
+          </Link>
+        </p>
+      )}
+
       {/* Weekly digest (AI; premium generates, both can read) */}
       {conn.status === "active" && <WeeklyDigest connectionId={id} />}
 

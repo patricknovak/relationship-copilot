@@ -165,12 +165,12 @@ or an account action.
     2026-10-13 (0024):** two quizzes and two challenges per non-romantic
     type plus two shared ones; every type now has 6–7 quizzes and 6–9
     challenges available.
-10b. **Public "questions for your…" pages per relationship type (code).**
+10b. **Public "questions for your…" pages per relationship type (code). Shipped 2026-10-13 (`/for/partners`, `/for/friends`, `/for/siblings`, `/for/family`, `/for/parents-and-teens`, `/for/coworkers`, `/for/mentors`).**
     Differentiator 1 has no landing page: searches like "questions to ask my
     sister" or "conversation starters for mentors" are unserved by apps.
     One public page per type with sample questions from the pool, an FAQ
     with schema markup, and the invite CTA; listed in the sitemap.
-10c. **History of past reveals (code).** "Looking back" resurfaces two
+10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
 11. **Web push (code).** Service worker + VAPID keys, same preference

@@ -7,9 +7,13 @@ import NoticeBanner from "@/components/NoticeBanner";
 export default async function NewConnectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; type?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, type } = await searchParams;
+  // Deep links from the public /for pages preselect the type.
+  const preselected = CONNECTION_TYPES.some((t) => t.value === type)
+    ? type
+    : CONNECTION_TYPES[0].value;
   return (
     <div className="mx-auto max-w-xl px-4 py-12">
       <h1 className="text-3xl">Start a new connection</h1>
@@ -39,7 +43,7 @@ export default async function NewConnectionPage({
 
       <form action={createConnection} className="mt-8 space-y-4">
         <fieldset className="space-y-2.5">
-          {CONNECTION_TYPES.map((t, i) => (
+          {CONNECTION_TYPES.map((t) => (
             <label
               key={t.value}
               className="flex cursor-pointer items-start gap-3 rounded-2xl border border-brand-100 dark:border-surface-line bg-white/80 dark:bg-surface/80 p-4 shadow-soft transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 dark:has-[:checked]:bg-brand-900/25 dark:bg-brand-900/25 has-[:checked]:shadow-lift"
@@ -48,7 +52,7 @@ export default async function NewConnectionPage({
                 type="radio"
                 name="type"
                 value={t.value}
-                defaultChecked={i === 0}
+                defaultChecked={t.value === preselected}
                 className="mt-1 accent-brand-700"
               />
               <span>
