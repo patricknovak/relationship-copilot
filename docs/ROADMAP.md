@@ -157,11 +157,22 @@ or an account action.
    the numbers. Recommendation: $9.99/mo or $59.99/yr, one subscription
    covers both people. Keep "cancel anytime" and no auto-converting trial;
    the market's loudest complaint is trial-to-annual surprise charges.
-9. **Reactions on revealed answers (code).** One tap ("❤️", "😂", "🥹") per
-   answer, shown to both, as a lighter step than a discussion reply. Cheap,
-   measurable lift on the loop in competitor apps.
-10. **More quizzes and challenges for the non-romantic types (code).**
-   Friend, family, sibling, coworker and mentor have 1–3 electives each.
+9. **Reactions on revealed answers (code). Shipped 2026-10-13 (0023).** One
+   tap ("❤️", "😂", "🥹", "👀") per answer, shown to both, as a lighter step
+   than a discussion reply. Cheap, measurable lift on the loop in competitor
+   apps.
+10. **More quizzes and challenges for the non-romantic types (code). Shipped
+    2026-10-13 (0024):** two quizzes and two challenges per non-romantic
+    type plus two shared ones; every type now has 6–7 quizzes and 6–9
+    challenges available.
+10b. **Public "questions for your…" pages per relationship type (code).**
+    Differentiator 1 has no landing page: searches like "questions to ask my
+    sister" or "conversation starters for mentors" are unserved by apps.
+    One public page per type with sample questions from the pool, an FAQ
+    with schema markup, and the invite CTA; listed in the sitemap.
+10c. **History of past reveals (code).** "Looking back" resurfaces two
+    moments; there is no way to browse everything a pair has revealed.
+    A per-connection history page, newest first, read under RLS.
 11. **Web push (code).** Service worker + VAPID keys, same preference
     switches as email. Only after email proves the loop; adds a secret.
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the
