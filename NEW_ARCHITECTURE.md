@@ -99,6 +99,15 @@ app in `web/`:
 Safety-critical pure logic (redaction, safety detection, blueprint parsing,
 streak, compatibility) is unit-tested with vitest.
 
+## After the MVP (October 2026)
+
+Later work is tracked in `docs/ROADMAP.md` (market review + priorities) and
+`docs/launch-checklist.md` (go-live state). Shipped since the MVP: invite
+loop + GA4 funnel, security hardening (0014–0016), sibling/mentor packs,
+regenerable invites, a 414-question daily pool (0020), inline "today's
+question" with your-turn state, and transactional notification email with
+per-user preferences (0021, `web/lib/notify.ts`).
+
 ## Before a real launch (not code)
 
 - Safety sign-off + legal/privacy review; an **enterprise xAI DPA**.

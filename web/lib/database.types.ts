@@ -68,6 +68,7 @@ export interface Database {
           life_stage: string | null;
           start_date: string | null;
           metadata: Json;
+          timezone: string;
           created_at: string;
           updated_at: string;
         };
@@ -77,6 +78,7 @@ export interface Database {
           sub_type?: string | null;
           invite_code?: string | null;
           invite_expires_at?: string | null;
+          timezone?: string;
         };
         Update: Partial<
           Database["public"]["Tables"]["connections"]["Insert"]
@@ -314,6 +316,60 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      connection_goals: {
+        Row: {
+          id: string;
+          connection_id: string;
+          created_by: string | null;
+          body: string;
+          done_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          created_by: string;
+          body: string;
+        };
+        Update: { body?: string; done_at?: string | null };
+        Relationships: [];
+      };
+      answer_reactions: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["answer_reactions"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      notification_log: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+          sent_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+        };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;
@@ -354,6 +410,10 @@ export interface Database {
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
+      // True when any joined member of the connection holds premium and the
+      // caller is a member (migration 0022). Never says who pays.
+      connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
+      connection_today: { Args: { p_conn: string }; Returns: string };
       others_have_answered: {
         Args: { p_instance: string };
         Returns: boolean;

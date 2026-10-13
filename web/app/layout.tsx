@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FOR_PAGES } from "@/lib/forPages";
 import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
@@ -93,6 +94,16 @@ export default function RootLayout({
                       Pricing
                     </Link>
                   </li>
+                </ul>
+                <p className="mt-5 font-medium text-white">Questions for</p>
+                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+                  {FOR_PAGES.map((p) => (
+                    <li key={p.slug}>
+                      <Link href={`/for/${p.slug}`} className="hover:text-white">
+                        {p.label}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
                 <p className="mt-5 font-medium text-white">Trust</p>
                 <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">

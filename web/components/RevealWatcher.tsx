@@ -43,6 +43,16 @@ export default function RevealWatcher({ instanceId }: { instanceId: string }) {
         },
         () => router.refresh(),
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "answer_reactions",
+          filter: `instance_id=eq.${instanceId}`,
+        },
+        () => router.refresh(),
+      )
       .subscribe();
 
     // Realtime events missed while the tab was asleep are never replayed, so

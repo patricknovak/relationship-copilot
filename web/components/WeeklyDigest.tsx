@@ -37,8 +37,8 @@ export default async function WeeklyDigest({
     .limit(1)
     .maybeSingle();
 
-  const { data: isPremium } = await supabase.rpc("has_premium", {
-    uid: user.id,
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: connectionId,
   });
 
   const payload = (insight?.payload ?? null) as Payload | null;

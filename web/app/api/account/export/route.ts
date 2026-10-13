@@ -53,6 +53,18 @@ export async function GET() {
         .in("connection_id", connIds)
     : { data: [] };
 
+  const { data: goals } = connIds.length
+    ? await supabase
+        .from("connection_goals")
+        .select("connection_id, body, done_at, created_by, created_at")
+        .in("connection_id", connIds)
+    : { data: [] };
+
+  const { data: reactions } = await supabase
+    .from("answer_reactions")
+    .select("instance_id, target_user_id, question_id, emoji, created_at")
+    .eq("user_id", user.id);
+
   const { data: safetyEvents } = await supabase
     .from("safety_events")
     .select("*")
@@ -74,6 +86,8 @@ export async function GET() {
     memberships,
     prompt_responses: responses,
     discussions,
+    reactions,
+    shared_goals: goals,
     insights,
     safety_events: safetyEvents,
     subscription,

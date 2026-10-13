@@ -11,6 +11,9 @@ import {
 } from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { after } from "next/server";
+import { isReactionEmoji } from "@/lib/reactions";
+import { notifyDiscussionReply, notifyOtherMembersAfterSubmit } from "@/lib/notify";
 
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
@@ -129,10 +132,15 @@ export async function submitResponse(input: {
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("questions, kind, status")
+    .select("questions, kind, status, connection_id")
     .eq("id", instanceId)
     .single();
   if (!instance) return { error: "This question is no longer available." };
+  // The caller's connectionId is only a routing hint; everything that acts
+  // (status update, notifications) uses the instance's own connection.
+  if (instance.connection_id !== connectionId) {
+    return { error: "This question is no longer available." };
+  }
   if (instance.status !== "open") {
     return {
       error:
@@ -187,6 +195,18 @@ export async function submitResponse(input: {
       .eq("id", connectionId);
   }
 
+  // Tell the other person it's their turn (or that the reveal is open), after
+  // the response is sent so a slow mail provider never delays the submit.
+  // Preference- and once-only-checked inside; no answer text leaves.
+  after(() =>
+    notifyOtherMembersAfterSubmit({
+      actorUserId: user.id,
+      instanceId,
+      connectionId: instance.connection_id,
+      revealed,
+    }),
+  );
+
   // North-star GA4: once-only claim in DB (survives concurrent final submits),
   // then schedule MP send via after() so serverless does not drop it.
   // Anonymous payload — no user/connection IDs. See docs/ga4-first-mutual-reveal.md.
@@ -232,6 +252,53 @@ export async function ensureDaily(connectionId: string) {
   redirect(`/connections/${connectionId}/prompts/${data}`);
 }
 
+// React to another member's revealed answer (or clear your reaction with
+// emoji null). The user's own client does the write, so RLS enforces
+// membership, post-reveal only, and not-your-own-answer.
+export async function reactToAnswer(input: {
+  instanceId: string;
+  connectionId: string;
+  targetUserId: string;
+  questionId: string;
+  emoji: string | null;
+}): Promise<{ error?: string }> {
+  const { instanceId, connectionId, targetUserId, questionId, emoji } = input;
+  if (!instanceId || !targetUserId || !questionId) return {};
+  if (emoji !== null && !isReactionEmoji(emoji)) return { error: "Unknown reaction." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (targetUserId === user.id) return {};
+
+  const { error } =
+    emoji === null
+      ? await supabase
+          .from("answer_reactions")
+          .delete()
+          .eq("instance_id", instanceId)
+          .eq("user_id", user.id)
+          .eq("target_user_id", targetUserId)
+          .eq("question_id", questionId)
+      : await supabase.from("answer_reactions").upsert(
+          {
+            instance_id: instanceId,
+            user_id: user.id,
+            target_user_id: targetUserId,
+            question_id: questionId,
+            emoji,
+          },
+          { onConflict: "instance_id,user_id,target_user_id,question_id" },
+        );
+  if (error) return { error: "Couldn't save that reaction." };
+
+  revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);
+  revalidatePath(`/connections/${connectionId}/onboarding`);
+  return {};
+}
+
 export async function postDiscussion(input: {
   instanceId: string;
   connectionId: string;
@@ -247,12 +314,34 @@ export async function postDiscussion(input: {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Resolve the instance's real connection under RLS; the caller-supplied
+  // connectionId is only used for revalidation paths.
+  const { data: instance } = await supabase
+    .from("prompt_instances")
+    .select("connection_id")
+    .eq("id", instanceId)
+    .maybeSingle();
+  if (!instance || instance.connection_id !== connectionId) {
+    return { error: "This discussion is no longer available." };
+  }
+
   const { error } = await supabase
     .from("prompt_discussions")
     .insert({ instance_id: instanceId, user_id: user.id, body });
   if (error) {
     return { error: "Couldn't send that — give it another try." };
   }
+
+  // First reply on this reveal → one email to the other person (never the
+  // message). The insert succeeded under RLS, so the author is a member of
+  // the instance's connection, which is the one notified.
+  after(() =>
+    notifyDiscussionReply({
+      authorUserId: user.id,
+      instanceId,
+      connectionId: instance.connection_id,
+    }),
+  );
 
   revalidatePath(`/connections/${connectionId}/onboarding`);
   revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);

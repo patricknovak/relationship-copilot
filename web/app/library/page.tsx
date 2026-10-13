@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { canonicalUrl } from "@/lib/site";
+import { FOR_PAGES } from "@/lib/forPages";
 
 export const metadata: Metadata = {
   title: "Library",
@@ -60,6 +61,20 @@ export default async function LibraryPage() {
           </li>
         ))}
       </ul>
+
+      <section className="mt-10">
+        <h2 className="text-lg">Questions for your…</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Sample questions and how it works, for each kind of relationship.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {FOR_PAGES.map((p) => (
+            <Link key={p.slug} href={`/for/${p.slug}`} className="chip hover:border-brand-400">
+              {p.label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <p className="mt-8 text-xs text-ink-soft/70">
         More in-depth guides are part of{" "}

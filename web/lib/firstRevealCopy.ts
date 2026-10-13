@@ -70,6 +70,14 @@ export const FIRST_REVEAL_UNLOCK = {
   tertiaryCta: "Continue to today's question",
 } as const;
 
+// Every reveal after the first: same facts, lower volume.
+export const REVEALED = {
+  headline: "Revealed together.",
+  body: "Both answers are below, side by side. Pick up the thread in the discussion if something surprised you.",
+  secondaryCta: "Talk about it",
+  tertiaryCta: "Back to today",
+} as const;
+
 export const SOFT_PREMIUM = {
   headline: "Want a deeper reflection?",
   body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI uses redacted inputs — we don't train models on your intimate answers.",

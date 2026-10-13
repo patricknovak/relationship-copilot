@@ -136,3 +136,28 @@ export function articleJsonLd(input: ArticleJsonLdInput) {
 export function articleJsonLdScriptContent(input: ArticleJsonLdInput): string {
   return serializeJsonLd(articleJsonLd(input));
 }
+
+/**
+ * FAQPage JSON-LD for the public per-relationship pages. Questions and
+ * answers mirror the visible FAQ exactly (Google requires parity).
+ */
+export function faqPageJsonLd(input: { url: string; faqs: { q: string; a: string }[] }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    url: input.url,
+    inLanguage: "en",
+    mainEntity: input.faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+}
+
+export function faqPageJsonLdScriptContent(input: {
+  url: string;
+  faqs: { q: string; a: string }[];
+}): string {
+  return serializeJsonLd(faqPageJsonLd(input));
+}

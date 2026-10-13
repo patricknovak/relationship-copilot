@@ -6,6 +6,8 @@ import { sunSign, ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import { ATTACHMENT_BLURB } from "@/lib/attachment";
 import DeleteAccount from "@/components/DeleteAccount";
 import NoticeBanner from "@/components/NoticeBanner";
+import NotificationPrefs from "@/components/NotificationPrefs";
+import { parseNotificationPrefs } from "@/lib/notifications";
 
 type Intake = {
   goals?: string;
@@ -16,9 +18,9 @@ type Intake = {
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ upgraded?: string; error?: string }>;
+  searchParams: Promise<{ upgraded?: string; error?: string; saved?: string }>;
 }) {
-  const { upgraded, error } = await searchParams;
+  const { upgraded, error, saved } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,7 +28,7 @@ export default async function AccountPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, birthday, intake")
+    .select("display_name, birthday, intake, preferences")
     .eq("id", user!.id)
     .maybeSingle();
   const { data: sub } = await supabase
@@ -36,6 +38,7 @@ export default async function AccountPage({
     .maybeSingle();
 
   const intake = (profile?.intake ?? {}) as Intake;
+  const notificationPrefs = parseNotificationPrefs(profile?.preferences);
   const sign = sunSign(profile?.birthday);
   const isPremium =
     sub?.plan === "premium" && ["active", "trialing"].includes(sub?.status ?? "");
@@ -76,7 +79,9 @@ export default async function AccountPage({
             ? "Couldn't open billing just now — try again in a moment, or email privacy@relationshipcopilot.com and we'll sort it out."
             : error === "nobilling"
               ? "There's no billing history on this account yet."
-              : null
+              : error === "prefs"
+                ? "Couldn't save your notification settings — try again in a moment."
+                : null
         }
       />
 
@@ -156,6 +161,16 @@ export default async function AccountPage({
         <Link href="/connections" className="text-sm text-brand-700 underline">
           Go to your connections →
         </Link>
+      </div>
+
+      <div className="mt-10 space-y-4">
+        <h2 className="text-sm font-semibold text-ink-soft/80 uppercase tracking-wide">
+          Notifications
+        </h2>
+        <NotificationPrefs
+          prefs={notificationPrefs}
+          saved={saved === "notifications"}
+        />
       </div>
 
       <div className="mt-10 space-y-4">

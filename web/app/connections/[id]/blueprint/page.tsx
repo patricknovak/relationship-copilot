@@ -53,17 +53,21 @@ export default async function BlueprintPage({
     .limit(1)
     .maybeSingle();
 
-  const { data: isPremium } = await supabase.rpc("has_premium", {
-    uid: user!.id,
+  // Either member's Premium covers the pair for the shared Blueprint.
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: id,
   });
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("status")
+    .select("status, questions")
     .eq("connection_id", id)
     .eq("kind", "onboarding")
     .maybeSingle();
   const revealed = instance?.status === "revealed";
+  const answerCount = Array.isArray(instance?.questions)
+    ? instance.questions.length
+    : 0;
 
   const payload = (insight?.payload ?? null) as Payload | null;
   const generate = generateBlueprint.bind(null, id);
@@ -134,7 +138,8 @@ export default async function BlueprintPage({
             <>
               <p className="text-sm text-ink-soft">
                 Generate an AI reflection on your strengths, shared goals, and
-                areas to nurture — based on your 20 answers.
+                areas to nurture — based on your{" "}
+                {answerCount > 0 ? `${answerCount} ` : ""}first answers.
               </p>
               <form action={generate} className="mt-3">
                 <PendingButton pendingLabel="Generating — this takes a moment…">
@@ -154,8 +159,9 @@ export default async function BlueprintPage({
           <h2 className="font-semibold text-brand-700">A Premium feature</h2>
           <p className="mt-1 text-sm text-ink-soft">
             The AI Relationship Blueprint and weekly digests are part of Premium.
-            Your core experience — questions, daily prompts, and safety resources
-            — stays free.
+            One Premium plan covers both people in a connection. Your core
+            experience — questions, daily prompts, and safety resources — stays
+            free.
           </p>
           <Link
             href="/pricing"

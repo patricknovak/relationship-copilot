@@ -1,3 +1,4 @@
+import { faqPageJsonLd } from "./jsonLd";
 import { describe, expect, it } from "vitest";
 import {
   articleJsonLd,
@@ -117,5 +118,18 @@ describe("serializeJsonLd", () => {
     const escaped = serializeJsonLd({ a: "<b>x</b>" });
     expect(escaped).toBe('{"a":"\\u003cb>x\\u003c/b>"}');
     expect(JSON.parse(escaped).a).toBe("<b>x</b>");
+  });
+});
+
+describe("faqPageJsonLd", () => {
+  it("mirrors the visible FAQ as Question/Answer pairs", () => {
+    const node = faqPageJsonLd({
+      url: "https://relationshipcopilot.com/for/siblings",
+      faqs: [{ q: "Q1?", a: "A1." }],
+    }) as { "@type": string; mainEntity: { name: string; acceptedAnswer: { text: string } }[] };
+    expect(node["@type"]).toBe("FAQPage");
+    expect(node.mainEntity).toHaveLength(1);
+    expect(node.mainEntity[0].name).toBe("Q1?");
+    expect(node.mainEntity[0].acceptedAnswer.text).toBe("A1.");
   });
 });

@@ -11,7 +11,9 @@ import { grokChat } from "@/lib/grok";
 import {
   blueprintSystemPrompt,
   blueprintUserPrompt,
+  MAX_RECENT_FOR_BLUEPRINT,
   parseBlueprint,
+  type BlueprintQa,
 } from "@/lib/blueprint";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 
@@ -38,8 +40,11 @@ export async function generateBlueprint(connectionId: string) {
     .maybeSingle();
   if (!conn) redirect("/connections");
 
-  // --- entitlement gate (premium only). No Grok call fires for free users. ---
-  const { data: isPremium } = await supabase.rpc("has_premium", { uid: user.id });
+  // --- entitlement gate: Premium covers the connection (either member's
+  // plan unlocks the shared Blueprint). No Grok call fires otherwise. ---
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: connectionId,
+  });
   if (!isPremium) back("premium");
 
   // Rate limit: one generation per connection per 10 minutes (cost control —
@@ -89,10 +94,49 @@ export async function generateBlueprint(connectionId: string) {
   const a1 = (responses!.find((r) => r.user_id === m1)?.answers ?? {}) as Record<string, string>;
   const a2 = (responses!.find((r) => r.user_id === m2)?.answers ?? {}) as Record<string, string>;
 
+  // Recent revealed dailies (both answers visible under RLS by definition of
+  // "revealed"), so the Blueprint reflects the present, not just the start.
+  const { data: recentInstances } = await supabase
+    .from("prompt_instances")
+    .select("id, questions, revealed_at")
+    .eq("connection_id", connectionId)
+    .eq("kind", "daily")
+    .eq("status", "revealed")
+    .order("revealed_at", { ascending: false })
+    .limit(MAX_RECENT_FOR_BLUEPRINT);
+  const recentIds = (recentInstances ?? []).map((i) => i.id);
+  const { data: recentResponses } = recentIds.length
+    ? await supabase
+        .from("prompt_responses")
+        .select("instance_id, user_id, answers")
+        .in("instance_id", recentIds)
+    : { data: [] as { instance_id: string; user_id: string; answers: unknown }[] };
+  const recentRaw: string[] = [];
+  const recentQa: BlueprintQa[] = [];
+  for (const inst of [...(recentInstances ?? [])].reverse()) {
+    const r1 = (recentResponses ?? []).find((r) => r.instance_id === inst.id && r.user_id === m1);
+    const r2 = (recentResponses ?? []).find((r) => r.instance_id === inst.id && r.user_id === m2);
+    if (!r1 || !r2) continue;
+    const b1 = (r1.answers ?? {}) as Record<string, string>;
+    const b2 = (r2.answers ?? {}) as Record<string, string>;
+    for (const q of inst.questions as PromptQuestion[]) {
+      recentRaw.push(`${b1[q.id] ?? ""} ${b2[q.id] ?? ""}`);
+      recentQa.push({
+        question: q.text,
+        p1: redactor.redact(b1[q.id] ?? ""),
+        p2: redactor.redact(b2[q.id] ?? ""),
+        date: inst.revealed_at ? inst.revealed_at.slice(0, 10) : null,
+      });
+    }
+  }
+
   // Safety assessment: regex fast path runs on the RAW text; the model-backed
   // classifier (which catches paraphrase) sees only redacted text and can
   // raise severity but never lower it. Model failure degrades to regex-only.
-  const rawAll = questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`).join("\n");
+  const rawAll = [
+    ...questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`),
+    ...recentRaw,
+  ].join("\n");
   const signal = await assessSafety(rawAll, redactor.redact);
 
   const admin = createAdminClient();
@@ -126,7 +170,7 @@ export async function generateBlueprint(connectionId: string) {
   let bp;
   try {
     const content = await grokChat(
-      [blueprintSystemPrompt(), blueprintUserPrompt(conn!.type, qa)],
+      [blueprintSystemPrompt(), blueprintUserPrompt(conn!.type, qa, recentQa)],
       { json: true },
     );
     bp = parseBlueprint(content);

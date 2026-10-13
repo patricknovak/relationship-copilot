@@ -16,7 +16,8 @@ type Resource = {
   href?: string;
 };
 
-// US-based resources. These are always free and never behind a paywall.
+// Always free and never behind a paywall. US lines first (most visitors),
+// then Canada (where the product is based). Keep numbers verifiable.
 const RESOURCES: Resource[] = [
   {
     name: "988 Suicide & Crisis Lifeline",
@@ -56,6 +57,27 @@ const RESOURCES: Resource[] = [
   },
 ];
 
+const CANADA_RESOURCES: Resource[] = [
+  {
+    name: "9-8-8 Suicide Crisis Helpline (Canada)",
+    contact: "Call or text 9-8-8",
+    detail: "24/7 free, confidential support in English and French, anywhere in Canada.",
+    href: "https://988.ca",
+  },
+  {
+    name: "Kids Help Phone (ages 5–29)",
+    contact: "Call 1-800-668-6868 · Text CONNECT to 686868",
+    detail: "24/7 support for young people, including relationship and family issues.",
+    href: "https://kidshelpphone.ca",
+  },
+  {
+    name: "ShelterSafe",
+    contact: "Find your nearest shelter and crisis line",
+    detail: "Directory of women's shelters and local domestic-violence lines across Canada.",
+    href: "https://www.sheltersafe.ca",
+  },
+];
+
 export default function SafetyPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -64,7 +86,7 @@ export default function SafetyPage() {
       <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-4">
         <p className="font-semibold text-rose-800 dark:text-rose-200">
           If you are in immediate danger, call your local emergency number
-          (911 in the US).
+          (911 in the US and Canada).
         </p>
         <p className="mt-2 text-sm text-rose-900 dark:text-rose-200">
           The <span className="font-medium">Quick exit</span> button (or the
@@ -107,10 +129,33 @@ export default function SafetyPage() {
         ))}
       </ul>
 
+      <h2 className="mt-10 text-xl">In Canada</h2>
+      <ul className="mt-4 space-y-4">
+        {CANADA_RESOURCES.map((r) => (
+          <li key={r.name} className="card !p-4">
+            <h3 className="text-base font-sans font-semibold tracking-normal">
+              {r.name}
+            </h3>
+            <p className="mt-1 font-medium text-brand-700">{r.contact}</p>
+            <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
+            {r.href && (
+              <a
+                href={r.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-block text-sm underline text-ink-soft/80"
+              >
+                {r.href.replace("https://", "")}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+
       <p className="mt-8 text-xs text-ink-soft/80">
-        Resources listed are US-based. Availability and numbers may change; if a
-        number does not work, search for your local equivalent or contact local
-        emergency services.
+        Resources listed are for the US and Canada. Availability and numbers
+        may change; if a number does not work, search for your local
+        equivalent or contact local emergency services.
       </p>
     </div>
   );

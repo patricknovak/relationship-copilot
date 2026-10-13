@@ -21,7 +21,9 @@ Relationship Copilot is built around two ideas:
 - **Grok (xAI)** — question/insight generation and safety classification, server-side only
 - **Stripe** — freemium billing; safety features are never paywalled
 
-See [NEW_ARCHITECTURE.md](NEW_ARCHITECTURE.md) for the design and
+See [NEW_ARCHITECTURE.md](NEW_ARCHITECTURE.md) for the design,
+[docs/ROADMAP.md](docs/ROADMAP.md) for the market review and prioritized plan,
+[docs/launch-checklist.md](docs/launch-checklist.md) for go-live status, and
 [web/README.md](web/README.md) for app-level docs.
 
 ## Repository layout
@@ -66,6 +68,10 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres ./supabase/test
   authorization checks, and sensitive actions are audit-logged.
 - **Your data is yours.** Full JSON export and account deletion are built in.
   Deletion removes everything you wrote; a partner keeps their own answers.
+- **Notifications carry links, never answers.** Email nudges ("your turn",
+  "you both answered", an opt-in daily reminder) are per-user preferences
+  with one-click unsubscribe, and nothing is ever sent about safety
+  resources or leaving a connection.
 
 ## History
 
