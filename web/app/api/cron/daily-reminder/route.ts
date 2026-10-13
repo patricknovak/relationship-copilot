@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
 // CRON_SECRET bearer token (see docs/launch-checklist.md); each connection
 // is emailed only inside its own local sending window, so the run is safe
 // to repeat and zone-aware.
-const MAX_CONNECTIONS = 500;
+const PAGE = 500; // connections per query
+const MAX_CONNECTIONS = 10_000; // hard cap per run, keeps the route bounded
 const SEND_HOUR_FROM = 9; // local hour, inclusive
 const SEND_HOUR_TO = 20; // local hour, inclusive
 
@@ -51,13 +52,25 @@ async function run(req: Request) {
   const now = new Date();
   const counts = { connections: 0, outside_window: 0, sent: 0, skipped: 0, failed: 0 };
 
-  const { data: connections } = await admin
-    .from("connections")
-    .select("id, timezone")
-    .eq("status", "active")
-    .limit(MAX_CONNECTIONS);
+  // Page through active connections in id order so every one is visited.
+  const connections: { id: string; timezone: string }[] = [];
+  let cursor: string | null = null;
+  while (connections.length < MAX_CONNECTIONS) {
+    let q = admin
+      .from("connections")
+      .select("id, timezone")
+      .eq("status", "active")
+      .order("id", { ascending: true })
+      .limit(PAGE);
+    if (cursor) q = q.gt("id", cursor);
+    const { data: page, error } = await q;
+    if (error || !page || page.length === 0) break;
+    connections.push(...page);
+    cursor = page[page.length - 1].id;
+    if (page.length < PAGE) break;
+  }
 
-  for (const conn of connections ?? []) {
+  for (const conn of connections) {
     counts.connections += 1;
     const hour = localHour(conn.timezone, now);
     if (hour < SEND_HOUR_FROM || hour > SEND_HOUR_TO) {

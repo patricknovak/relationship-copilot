@@ -132,10 +132,15 @@ export async function submitResponse(input: {
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("questions, kind, status")
+    .select("questions, kind, status, connection_id")
     .eq("id", instanceId)
     .single();
   if (!instance) return { error: "This question is no longer available." };
+  // The caller's connectionId is only a routing hint; everything that acts
+  // (status update, notifications) uses the instance's own connection.
+  if (instance.connection_id !== connectionId) {
+    return { error: "This question is no longer available." };
+  }
   if (instance.status !== "open") {
     return {
       error:
@@ -197,7 +202,7 @@ export async function submitResponse(input: {
     notifyOtherMembersAfterSubmit({
       actorUserId: user.id,
       instanceId,
-      connectionId,
+      connectionId: instance.connection_id,
       revealed,
     }),
   );
@@ -309,6 +314,17 @@ export async function postDiscussion(input: {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Resolve the instance's real connection under RLS; the caller-supplied
+  // connectionId is only used for revalidation paths.
+  const { data: instance } = await supabase
+    .from("prompt_instances")
+    .select("connection_id")
+    .eq("id", instanceId)
+    .maybeSingle();
+  if (!instance || instance.connection_id !== connectionId) {
+    return { error: "This discussion is no longer available." };
+  }
+
   const { error } = await supabase
     .from("prompt_discussions")
     .insert({ instance_id: instanceId, user_id: user.id, body });
@@ -317,9 +333,14 @@ export async function postDiscussion(input: {
   }
 
   // First reply on this reveal → one email to the other person (never the
-  // message). The insert succeeded under RLS, so the author is a member.
+  // message). The insert succeeded under RLS, so the author is a member of
+  // the instance's connection, which is the one notified.
   after(() =>
-    notifyDiscussionReply({ authorUserId: user.id, instanceId, connectionId }),
+    notifyDiscussionReply({
+      authorUserId: user.id,
+      instanceId,
+      connectionId: instance.connection_id,
+    }),
   );
 
   revalidatePath(`/connections/${connectionId}/onboarding`);

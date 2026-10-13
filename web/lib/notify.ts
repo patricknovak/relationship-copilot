@@ -73,30 +73,44 @@ export async function notifyUser(input: {
       .select("instance_id");
     if (claimError || !claimed || claimed.length === 0) return "skipped_dup";
 
-    const to = await recipientEmail(admin, input.userId);
-    if (!to) return "failed";
-
-    const site = siteUrl();
-    const email = buildNotificationEmail({
-      kind: input.kind,
-      themName: input.themName,
-      questionText: input.questionText ?? null,
-      instanceUrl:
-        input.kind === "partner_joined"
-          ? `${site}/connections/${input.connectionId}`
-          : `${site}/connections/${input.connectionId}/prompts/${input.instanceId}`,
-      unsubscribeUrl: unsubscribeUrl(site, input.userId, secret),
-    });
-    const result = await sendEmail({ to, ...email, unsubscribeUrl: unsubscribeUrl(site, input.userId, secret) });
-    if (!result.sent) {
-      // Release the claim so a later attempt can retry (config/provider
-      // hiccups should not permanently swallow an email).
-      await admin
+    // From here on, any failure before a confirmed send releases the claim
+    // so a later trigger can retry. A send that times out after the provider
+    // accepted it is the one at-least-once case; a rare duplicate beats a
+    // silently lost email.
+    const release = () =>
+      admin
         .from("notification_log")
         .delete()
         .eq("instance_id", input.instanceId)
         .eq("user_id", input.userId)
         .eq("kind", input.kind);
+
+    let result: Awaited<ReturnType<typeof sendEmail>>;
+    try {
+      const to = await recipientEmail(admin, input.userId);
+      if (!to) {
+        await release();
+        return "failed";
+      }
+      const site = siteUrl();
+      const unsub = unsubscribeUrl(site, input.userId, secret);
+      const email = buildNotificationEmail({
+        kind: input.kind,
+        themName: input.themName,
+        questionText: input.questionText ?? null,
+        instanceUrl:
+          input.kind === "partner_joined"
+            ? `${site}/connections/${input.connectionId}`
+            : `${site}/connections/${input.connectionId}/prompts/${input.instanceId}`,
+        unsubscribeUrl: unsub,
+      });
+      result = await sendEmail({ to, ...email, unsubscribeUrl: unsub });
+    } catch (err) {
+      await release();
+      throw err;
+    }
+    if (!result.sent) {
+      await release();
       return "failed";
     }
     // PII-minimal audit: kind and instance only.

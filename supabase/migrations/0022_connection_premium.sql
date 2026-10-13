@@ -15,13 +15,13 @@ returns boolean
 language sql
 security definer
 stable
-set search_path = public
+set search_path = ''
 as $$
-  select (auth.uid() is null or is_connection_member(p_conn))
+  select (auth.uid() is null or public.is_connection_member(p_conn))
      and exists (
        select 1
-       from connection_members m
-       join subscriptions s on s.user_id = m.user_id
+       from public.connection_members m
+       join public.subscriptions s on s.user_id = m.user_id
        where m.connection_id = p_conn
          and m.joined_at is not null
          and s.plan = 'premium'

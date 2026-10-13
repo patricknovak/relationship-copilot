@@ -27,6 +27,12 @@ begin
   assert is_valid_timezone('America/Vancouver'), 'EXPECTED a real zone to validate';
   assert not is_valid_timezone(null), 'EXPECTED null to be invalid';
 
+  -- connection_today is member-gated for app callers.
+  set local "test.user_id" = '99999999-9999-9999-9999-999999999999';
+  assert connection_today('c0000000-aaaa-aaaa-aaaa-aaaaaaaaaaaa') is null,
+    'EXPECTED a non-member to get null from connection_today';
+  reset "test.user_id";
+
   -- Local dates differ across the date line.
   da := connection_today('c0000000-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
   db := connection_today('c0000000-bbbb-bbbb-bbbb-bbbbbbbbbbbb');

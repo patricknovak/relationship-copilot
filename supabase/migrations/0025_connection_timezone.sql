@@ -40,7 +40,8 @@ alter table public.connections
 comment on column public.connections.timezone is
   'IANA zone the daily question and streak day boundaries follow. UTC until a member''s browser sets it.';
 
--- Local calendar date for a connection, right now.
+-- Local calendar date for a connection, right now. Members only (service
+-- role, with no auth.uid(), may ask about any connection); others get null.
 create or replace function public.connection_today(p_conn uuid)
 returns date
 language sql
@@ -48,9 +49,13 @@ stable
 security definer
 set search_path = ''
 as $$
-  select (now() at time zone coalesce(
-    (select c.timezone from public.connections c where c.id = p_conn), 'UTC'
-  ))::date;
+  select case
+    when auth.uid() is null or public.is_connection_member(p_conn)
+    then (now() at time zone coalesce(
+      (select c.timezone from public.connections c where c.id = p_conn), 'UTC'
+    ))::date
+    else null
+  end;
 $$;
 
 revoke all on function public.connection_today(uuid) from public, anon;
