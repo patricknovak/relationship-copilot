@@ -12,7 +12,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0021** (2026-10-13, this branch) are not yet applied;
+- [ ] **Migrations 0020–0022** (2026-10-13, this branch) are not yet applied;
       see §4 below. 0020 is idempotent (skips if batch already seeded).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
@@ -163,8 +163,17 @@ product behaves exactly as before without them.
       server-only key). One-click unsubscribe is at
       `/api/notifications/unsubscribe` and also set as the
       `List-Unsubscribe` header.
-- [ ] Apply migrations **0020** (daily pool, idempotent) and **0021**
-      (`notification_log` + love-languages wording) to production.
+- [ ] Apply migrations **0020** (daily pool, idempotent), **0021**
+      (`notification_log` + love-languages wording) and **0022**
+      (`connection_has_premium`: one plan covers both people) to production.
+      0022 changes behaviour the moment it is applied: a free partner of a
+      subscriber can read and generate the Blueprint/digest for that
+      connection, as the pricing page now says.
+- [ ] **Annual plan (optional, roadmap item 8).** Create a yearly price in
+      Stripe (recommendation in the roadmap: $59.99/yr with a $9.99/mo
+      monthly), then set `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL` and
+      `NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY` (e.g. `$59.99/yr`). The yearly
+      button renders only when both are set; the webhook needs no change.
 
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 

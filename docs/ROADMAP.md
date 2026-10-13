@@ -111,15 +111,15 @@ or an account action.
 
 ### Now
 
-1. **Deep daily pools for every type (code).** Ship 50+ framework-grounded
+1. **Deep daily pools for every type (code). Shipped 2026-10-13 (0020).** Ship 50+ framework-grounded
    daily questions per relationship type plus a larger shared pool so a pair
    goes months without a repeat. Keep the existing format mix (free text,
    scale, choice). Migration-only; no app changes.
-2. **Today's question inline + "your turn" everywhere (code).** The
+2. **Today's question inline + "your turn" everywhere (code). Shipped 2026-10-13.** The
    connection page shows today's question text and its state (answer now /
    waiting on them / revealed, with a link to discuss). The connections list
    shows a "your turn" badge per connection. Both read through RLS as today.
-3. **Transactional email notifications (code, then one env var).** Three
+3. **Transactional email notifications (code, then one env var). Code shipped 2026-10-13; needs `RESEND_API_KEY` and the cron schedule (launch checklist §4).** Three
    emails, none containing answer text: "they answered, your turn", "you both
    revealed, see it side by side", and an opt-in daily "today's question is
    ready". Per-user preferences on `/account` (stored in
@@ -128,7 +128,7 @@ or an account action.
    domain's DKIM is already set up for Resend via Supabase SMTP); the whole
    feature no-ops without `RESEND_API_KEY`, and the daily reminder is a
    secret-protected route handler that pg_cron calls.
-4. **Quick wins from the walk-through (code).** Show the other person's
+4. **Quick wins from the walk-through (code). Shipped 2026-10-13** except the UTC day boundary and quiz scoring, which stay open. Show the other person's
    name on the list and the hub; first-reveal hero only on the first reveal,
    with the continue link going to today's question; correct the "20
    answers" copy; add Canadian safety lines; confirm before leaving a
@@ -145,13 +145,16 @@ or an account action.
 
 ### Next
 
-7. **Premium covers the connection (code).** A `has_premium_connection`
-   helper: if either member is premium, Blueprint and digest work for that
-   connection. Matches Paired and Connected, removes the "I paid, why can't
-   my partner see it" complaint before it happens.
-8. **Annual plan and a market price (Patrick + code).** Add an annual Stripe
-   price, read it from `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL`, and show both
-   on `/pricing`. Recommendation: $9.99/mo or $59.99/yr, one subscription
+7. **Premium covers the connection (code). Shipped 2026-10-13** as
+   `connection_has_premium` (migration 0022): if either member is premium,
+   Blueprint and digest work for that connection. Matches Paired and
+   Connected, removes the "I paid, why can't my partner see it" complaint
+   before it happens.
+8. **Annual plan and a market price (Patrick + code).** Code shipped
+   2026-10-13: checkout takes a monthly or yearly interval and `/pricing`
+   shows the yearly button once `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL` and
+   its display string are set. Still Patrick's: create the price and decide
+   the numbers. Recommendation: $9.99/mo or $59.99/yr, one subscription
    covers both people. Keep "cancel anytime" and no auto-converting trial;
    the market's loudest complaint is trial-to-annual surprise charges.
 9. **Reactions on revealed answers (code).** One tap ("❤️", "😂", "🥹") per
