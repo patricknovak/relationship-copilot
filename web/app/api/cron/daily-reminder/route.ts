@@ -2,18 +2,35 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emailConfigured } from "@/lib/email";
 import { notifyUser } from "@/lib/notify";
-import { todayUtc } from "@/lib/dailyState";
+import { todayIn } from "@/lib/dailyState";
 import type { PromptQuestion } from "@/lib/database.types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Daily "today's question is ready" reminder. Opt-in per user (Account →
-// Notifications), one email per person per connection per day, enforced by
-// notification_log. Called by a scheduler with the CRON_SECRET bearer token
-// (see docs/launch-checklist.md for the pg_cron + pg_net schedule). Safe to
-// call more than once a day: every send is idempotent.
+// Notifications), one email per person per connection per local day,
+// enforced by notification_log. Called hourly by a scheduler with the
+// CRON_SECRET bearer token (see docs/launch-checklist.md); each connection
+// is emailed only inside its own local sending window, so the run is safe
+// to repeat and zone-aware.
 const MAX_CONNECTIONS = 500;
+const SEND_HOUR_FROM = 9; // local hour, inclusive
+const SEND_HOUR_TO = 20; // local hour, inclusive
+
+function localHour(tz: string, now: Date): number {
+  try {
+    const h = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "numeric",
+      hour12: false,
+    }).format(now);
+    const n = Number.parseInt(h, 10);
+    return Number.isFinite(n) ? n % 24 : now.getUTCHours();
+  } catch {
+    return now.getUTCHours();
+  }
+}
 
 function authorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -31,17 +48,23 @@ async function run(req: Request) {
   }
 
   const admin = createAdminClient();
-  const date = todayUtc();
-  const counts = { connections: 0, sent: 0, skipped: 0, failed: 0 };
+  const now = new Date();
+  const counts = { connections: 0, outside_window: 0, sent: 0, skipped: 0, failed: 0 };
 
   const { data: connections } = await admin
     .from("connections")
-    .select("id")
+    .select("id, timezone")
     .eq("status", "active")
     .limit(MAX_CONNECTIONS);
 
   for (const conn of connections ?? []) {
     counts.connections += 1;
+    const hour = localHour(conn.timezone, now);
+    if (hour < SEND_HOUR_FROM || hour > SEND_HOUR_TO) {
+      counts.outside_window += 1;
+      continue;
+    }
+    const date = todayIn(conn.timezone, now);
     // Service role: ensure_daily_prompt skips the membership check when
     // auth.uid() is null, which is the cron contract from migration 0004.
     const { data: instanceId } = await admin.rpc("ensure_daily_prompt", {
@@ -100,7 +123,7 @@ async function run(req: Request) {
     }
   }
 
-  return NextResponse.json({ date, ...counts });
+  return NextResponse.json({ at: now.toISOString(), ...counts });
 }
 
 export async function GET(req: Request) {

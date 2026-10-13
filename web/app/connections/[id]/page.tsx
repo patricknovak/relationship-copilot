@@ -24,7 +24,8 @@ import {
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
-import { dailyCardCopy, dailyState, todayUtc } from "@/lib/dailyState";
+import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
+import TimezoneSync from "@/components/TimezoneSync";
 
 const NOTICES: Record<
   string,
@@ -92,7 +93,7 @@ export default async function ConnectionPage({
 
   const { data: conn } = await supabase
     .from("connections")
-    .select("id, type, status, invite_code, invite_expires_at, created_by")
+    .select("id, type, status, invite_code, invite_expires_at, created_by, timezone")
     .eq("id", id)
     .maybeSingle();
   if (!conn) notFound();
@@ -191,7 +192,7 @@ export default async function ConnectionPage({
     const dates = (dailies ?? [])
       .map((d) => d.scheduled_for)
       .filter((x): x is string => !!x);
-    streak = computeStreak(dates);
+    streak = computeStreak(dates, todayIn(conn.timezone));
   }
 
   // Today's question, inline. The instance is pre-created by cron for active
@@ -204,7 +205,7 @@ export default async function ConnectionPage({
     state: ReturnType<typeof dailyState>;
   } | null = null;
   if (conn.status === "active" && user) {
-    const date = todayUtc();
+    const date = todayIn(conn.timezone);
     let { data: daily } = await supabase
       .from("prompt_instances")
       .select("id, status, questions")
@@ -291,6 +292,9 @@ export default async function ConnectionPage({
       <Link href="/connections" className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← All connections
       </Link>
+      {conn.timezone === "UTC" && conn.status !== "archived" && (
+        <TimezoneSync connectionId={id} />
+      )}
       <p className="eyebrow mt-3">{connectionLabel(conn.type)}</p>
       <h1 className="mt-1 text-3xl">
         {themName ?? (joinedCount >= 2 ? "Your person" : connectionLabel(conn.type))}

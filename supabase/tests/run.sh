@@ -47,6 +47,8 @@ echo "running connection-premium test"
 run -f "$ROOT/supabase/tests/10_connection_premium_test.sql"
 echo "running answer-reactions test"
 run -f "$ROOT/supabase/tests/11_answer_reactions_test.sql"
+echo "running connection-timezone test"
+run -f "$ROOT/supabase/tests/12_connection_timezone_test.sql"
 
 psql -h "$HOST" -p "$PORT" -U "$USER" -d postgres -q -c "drop database if exists $DB;"
 echo "OK"

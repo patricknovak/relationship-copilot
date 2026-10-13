@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { isValidTimeZone } from "@/lib/dailyState";
 import {
   CONNECTION_TYPES,
   FREE_CONNECTION_CAP,
@@ -89,9 +90,14 @@ export async function createConnection(formData: FormData) {
 
   // Creator membership is attached by a DB trigger; clients cannot insert
   // into connection_members directly. Invite expiry is set server-side.
+  // The creator's browser zone sets the daily-question day boundary for this
+  // connection (migration 0025); anything unknown falls back to UTC.
+  const tzRaw = String(formData.get("timezone") || "");
+  const timezone = isValidTimeZone(tzRaw) ? tzRaw : "UTC";
+
   const { data: conn, error } = await supabase
     .from("connections")
-    .insert({ type, created_by: user.id, invite_code: newInviteCode() })
+    .insert({ type, created_by: user.id, invite_code: newInviteCode(), timezone })
     .select("id")
     .single();
   if (error || !conn) {
@@ -105,6 +111,31 @@ export async function createConnection(formData: FormData) {
 
 // Leave a connection — archives it (reversible-friendly, and required for the
 // teen-revocable parent–teen track). RLS allows members to update.
+// Adopt the browser's zone for a connection still on the UTC default. Any
+// member may do this (RLS update policy; the column isn't guarded), and it
+// only ever moves a connection off UTC, never between real zones.
+export async function setConnectionTimezone(
+  connectionId: string,
+  timezone: string,
+): Promise<{ updated: boolean }> {
+  if (!connectionId || !isValidTimeZone(timezone) || timezone === "UTC") {
+    return { updated: false };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { updated: false };
+
+  const { data: updated } = await supabase
+    .from("connections")
+    .update({ timezone })
+    .eq("id", connectionId)
+    .eq("timezone", "UTC")
+    .select("id");
+  return { updated: !!updated && updated.length > 0 };
+}
+
 export async function leaveConnection(connectionId: string) {
   const supabase = await createClient();
   const {

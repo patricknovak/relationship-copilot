@@ -12,7 +12,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0024** (2026-10-13, this branch) are not yet applied;
+- [ ] **Migrations 0020–0025** (2026-10-13, this branch) are not yet applied;
       see §4 below. 0020 is idempotent (skips if batch already seeded).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
@@ -147,7 +147,7 @@ product behaves exactly as before without them.
       ```sql
       select cron.schedule(
         'daily-reminder-email',
-        '15 15 * * *',   -- 15:15 UTC ≈ 8:15 Pacific; after assign-daily-prompts
+        '20 * * * *',    -- hourly; the route emails each connection once, inside its own 9am–8pm local window
         $$ select net.http_post(
              url := 'https://relationshipcopilot.com/api/cron/daily-reminder',
              headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb
@@ -155,9 +155,10 @@ product behaves exactly as before without them.
       );
       ```
 
-      The route is idempotent (one email per person per connection per day,
-      enforced by `notification_log`) and only emails people who opted in to
-      "Today's question is ready". Vercel cron or a Cloudflare scheduled
+      The route is idempotent (one email per person per connection per local
+      day, enforced by `notification_log`), zone-aware (migration 0025 gives
+      each connection a time zone; 9am–8pm local only) and only emails
+      people who opted in to "Today's question is ready". Vercel cron or a Cloudflare scheduled
       handler can call the same URL instead.
 - [ ] Optional `NOTIFY_SECRET` for signing unsubscribe links (falls back to a
       server-only key). One-click unsubscribe is at
@@ -167,7 +168,9 @@ product behaves exactly as before without them.
       (`notification_log` + love-languages wording), **0022**
       (`connection_has_premium`: one plan covers both people), **0023**
       (`answer_reactions`, adds the table to the Realtime publication) and
-      **0024** (electives, idempotent) to production.
+      **0024** (electives, idempotent) and **0025** (connection time zones;
+      also moves the `assign-daily-prompts` pg_cron job from daily to hourly)
+      to production.
       0022 changes behaviour the moment it is applied: a free partner of a
       subscriber can read and generate the Blueprint/digest for that
       connection, as the pricing page now says.

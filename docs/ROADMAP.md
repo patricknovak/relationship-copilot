@@ -128,7 +128,7 @@ or an account action.
    domain's DKIM is already set up for Resend via Supabase SMTP); the whole
    feature no-ops without `RESEND_API_KEY`, and the daily reminder is a
    secret-protected route handler that pg_cron calls.
-4. **Quick wins from the walk-through (code). Shipped 2026-10-13** except the UTC day boundary and quiz scoring, which stay open. Show the other person's
+4. **Quick wins from the walk-through (code). Shipped 2026-10-13**, including the day boundary: each connection now has a time zone (0025) and "today", the streak and the reminder window follow it. Quiz scoring stays open. Show the other person's
    name on the list and the hub; first-reveal hero only on the first reveal,
    with the continue link going to today's question; correct the "20
    answers" copy; add Canadian safety lines; confirm before leaving a

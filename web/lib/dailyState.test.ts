@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyBadge, dailyCardCopy, dailyState, todayUtc } from "./dailyState";
+import { dailyBadge, dailyCardCopy, dailyState, isValidTimeZone, todayIn, todayUtc } from "./dailyState";
 
 describe("dailyState", () => {
   it("is none without an instance", () => {
@@ -81,5 +81,30 @@ describe("todayUtc", () => {
   it("formats the UTC calendar date", () => {
     expect(todayUtc(new Date("2026-10-13T23:30:00-07:00"))).toBe("2026-10-14");
     expect(todayUtc(new Date("2026-10-13T12:00:00Z"))).toBe("2026-10-13");
+  });
+});
+
+describe("todayIn", () => {
+  it("follows the connection's zone", () => {
+    const at = new Date("2026-10-14T01:30:00Z"); // 18:30 the 13th in Vancouver
+    expect(todayIn("America/Vancouver", at)).toBe("2026-10-13");
+    expect(todayIn("UTC", at)).toBe("2026-10-14");
+    expect(todayIn("Pacific/Kiritimati", at)).toBe("2026-10-14");
+  });
+
+  it("falls back to UTC for unknown or missing zones", () => {
+    const at = new Date("2026-10-14T01:30:00Z");
+    expect(todayIn(null, at)).toBe("2026-10-14");
+    expect(todayIn("Not/AZone", at)).toBe("2026-10-14");
+  });
+});
+
+describe("isValidTimeZone", () => {
+  it("accepts IANA names and rejects junk", () => {
+    expect(isValidTimeZone("America/Vancouver")).toBe(true);
+    expect(isValidTimeZone("Europe/London")).toBe(true);
+    expect(isValidTimeZone("Not/AZone")).toBe(false);
+    expect(isValidTimeZone("")).toBe(false);
+    expect(isValidTimeZone(null)).toBe(false);
   });
 });

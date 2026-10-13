@@ -68,6 +68,7 @@ export interface Database {
           life_stage: string | null;
           start_date: string | null;
           metadata: Json;
+          timezone: string;
           created_at: string;
           updated_at: string;
         };
@@ -77,6 +78,7 @@ export interface Database {
           sub_type?: string | null;
           invite_code?: string | null;
           invite_expires_at?: string | null;
+          timezone?: string;
         };
         Update: Partial<
           Database["public"]["Tables"]["connections"]["Insert"]
@@ -393,6 +395,7 @@ export interface Database {
       // True when any joined member of the connection holds premium and the
       // caller is a member (migration 0022). Never says who pays.
       connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
+      connection_today: { Args: { p_conn: string }; Returns: string };
       others_have_answered: {
         Args: { p_instance: string };
         Returns: boolean;

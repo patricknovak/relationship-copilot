@@ -86,8 +86,34 @@ export function dailyCardCopy(
   }
 }
 
-// The daily instance is keyed on the UTC calendar date (ensure_daily_prompt
-// defaults to current_date on the DB server). Keep the app on the same clock.
+// Daily instances are keyed on the connection's local calendar date
+// (migration 0025: `connections.timezone`, UTC until a member's browser sets
+// it). These helpers produce the same YYYY-MM-DD the database would.
 export function todayUtc(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);
+}
+
+export function isValidTimeZone(tz: unknown): tz is string {
+  if (typeof tz !== "string" || !tz || tz.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function todayIn(tz: string | null | undefined, now: Date = new Date()): string {
+  const zone = isValidTimeZone(tz) ? tz : "UTC";
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+  } catch {
+    return todayUtc(now);
+  }
 }

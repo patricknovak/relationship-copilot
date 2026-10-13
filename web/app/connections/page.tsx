@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
-import { dailyBadge, dailyState, todayUtc } from "@/lib/dailyState";
+import { dailyBadge, dailyState, todayIn, todayUtc } from "@/lib/dailyState";
 import type { ConnectionType } from "@/lib/database.types";
 
 type ConnectionRow = {
@@ -76,7 +76,7 @@ export default async function ConnectionsPage() {
   // RLS scopes this to the signed-in user's connections.
   const { data: connections } = await supabase
     .from("connections")
-    .select("id, type, status, created_at")
+    .select("id, type, status, created_at, timezone")
     .order("created_at", { ascending: false });
 
   const ids = (connections ?? []).map((c) => c.id);
@@ -110,12 +110,23 @@ export default async function ConnectionsPage() {
     .filter((c) => c.status === "active")
     .map((c) => c.id);
   if (activeIds.length && user) {
-    const { data: dailies } = await supabase
+    // Each connection has its own local "today"; fetch a three-day window
+    // and keep the instance matching that connection's date.
+    const utc = todayUtc();
+    const from = new Date(`${utc}T00:00:00Z`);
+    from.setUTCDate(from.getUTCDate() - 1);
+    const todayFor = new Map(
+      (connections ?? []).map((c) => [c.id, todayIn(c.timezone)] as const),
+    );
+    const { data: dailiesWindow } = await supabase
       .from("prompt_instances")
-      .select("id, connection_id, status")
+      .select("id, connection_id, status, scheduled_for")
       .in("connection_id", activeIds)
       .eq("kind", "daily")
-      .eq("scheduled_for", todayUtc());
+      .gte("scheduled_for", from.toISOString().slice(0, 10));
+    const dailies = (dailiesWindow ?? []).filter(
+      (d) => d.scheduled_for === todayFor.get(d.connection_id),
+    );
     const dailyIds = (dailies ?? []).map((d) => d.id);
     const { data: mine } = dailyIds.length
       ? await supabase

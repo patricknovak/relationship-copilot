@@ -3,6 +3,7 @@ import { createConnection } from "@/app/actions/connections";
 import { CONNECTION_TYPES, FREE_CONNECTION_CAP } from "@/lib/relationships";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import TimezoneField from "@/components/TimezoneField";
 
 export default async function NewConnectionPage({
   searchParams,
@@ -42,6 +43,7 @@ export default async function NewConnectionPage({
       )}
 
       <form action={createConnection} className="mt-8 space-y-4">
+        <TimezoneField />
         <fieldset className="space-y-2.5">
           {CONNECTION_TYPES.map((t) => (
             <label
