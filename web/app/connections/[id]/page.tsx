@@ -27,6 +27,7 @@ import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
 import TimezoneSync from "@/components/TimezoneSync";
+import SharedGoals from "@/components/SharedGoals";
 
 const NOTICES: Record<
   string,
@@ -75,6 +76,15 @@ const NOTICES: Record<
   named: {
     tone: "success",
     text: "Name saved. Your person will see that name next to your answers.",
+  },
+  "goal-empty": { tone: "info", text: "Write the goal first, then add it." },
+  "goal-full": {
+    tone: "info",
+    text: "Twenty open goals is plenty — tick a few off before adding more.",
+  },
+  "goal-failed": {
+    tone: "error",
+    text: "Couldn't save that goal just now — try again in a moment.",
   },
 };
 
@@ -637,6 +647,11 @@ export default async function ConnectionPage({
             View Blueprint →
           </Link>
         </section>
+      )}
+
+      {/* Shared goals — both-edit, visible immediately */}
+      {conn.status === "active" && (
+        <SharedGoals connectionId={id} themName={themName} />
       )}
 
       {/* Looking back — free retrospectives once there's history */}

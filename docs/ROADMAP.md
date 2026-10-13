@@ -187,8 +187,15 @@ or an account action.
     (goals, values, attachment) in a *shared* Blueprint needs an explicit
     consent step, since intake is collected as private; do not feed it in
     silently.
-14. **Shared goals and rituals.** A small, both-edit list ("things we're
-    trying") that the digest can reference.
+14. **Shared goals and rituals. Shipped 2026-10-13 (0030):** a both-edit
+    "things we're trying" list on the hub (members only, visible
+    immediately, survives a member's deletion), fed to the weekly digest as
+    context.
+14b. **Scheduled weekly digest.** The digest is still a manual button. A
+    cron needs a service-role read of revealed-only responses, which the
+    "never read responses through the admin client" rule currently forbids;
+    decide whether a narrowly scoped `revealed_responses_for_digest`
+    SECURITY DEFINER function is acceptable before building it.
 15. **Parent–teen consent flow (COPPA / GDPR-K)** before under-13 use.
 16. **Native wrapper** (Capacitor) if push + PWA prove insufficient for
     retention on mobile.

@@ -45,6 +45,7 @@ export interface DigestItem {
 export function digestUserPrompt(
   type: ConnectionType,
   items: DigestItem[],
+  goals: string[] = [],
 ): GrokMessage {
   const lines = items
     .map(
@@ -52,9 +53,16 @@ export function digestUserPrompt(
         `${i + 1}. [${x.title}] ${x.question}\n- P1: ${x.p1 || "(no answer)"}\n- P2: ${x.p2 || "(no answer)"}`,
     )
     .join("\n\n");
+  const goalBlock =
+    goals.length > 0
+      ? `\n\nThings they have said they are trying together (their shared list, redacted the same way):\n${goals
+          .slice(0, 10)
+          .map((g) => `- ${g}`)
+          .join("\n")}\nIf the week's answers touch on any of these, say so gently; never scold about ones they didn't get to.`
+      : "";
   return {
     role: "user",
-    content: `Relationship type: ${connectionLabel(type)}.\nHere is what they answered together this week (names redacted as P1/P2):\n\n${lines}\n\nProduce the JSON weekly digest.`,
+    content: `Relationship type: ${connectionLabel(type)}.\nHere is what they answered together this week (names redacted as P1/P2):\n\n${lines}${goalBlock}\n\nProduce the JSON weekly digest.`,
   };
 }
 

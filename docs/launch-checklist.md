@@ -12,7 +12,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0029** (2026-10-13, this branch) are not yet applied;
+- [ ] **Migrations 0020–0030** (2026-10-13, this branch) are not yet applied;
       see §4 below. 0020 is idempotent (skips if batch already seeded).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
@@ -175,8 +175,9 @@ product behaves exactly as before without them.
       notification kinds), and **0028** (four free library articles for
       siblings, coworkers, mentors and parent–teen; idempotent) and
       **0029** (family, coworker and parent–teen onboarding packs extended
-      to 20 questions; idempotent, existing instances unchanged) to
-      production.
+      to 20 questions; idempotent, existing instances unchanged) and
+      **0030** (`connection_goals`, the shared "things we're trying" list)
+      to production.
       0022 changes behaviour the moment it is applied: a free partner of a
       subscriber can read and generate the Blueprint/digest for that
       connection, as the pricing page now says.

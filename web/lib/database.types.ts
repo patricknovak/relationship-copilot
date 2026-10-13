@@ -316,6 +316,24 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      connection_goals: {
+        Row: {
+          id: string;
+          connection_id: string;
+          created_by: string | null;
+          body: string;
+          done_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          created_by: string;
+          body: string;
+        };
+        Update: { body?: string; done_at?: string | null };
+        Relationships: [];
+      };
       answer_reactions: {
         Row: {
           instance_id: string;

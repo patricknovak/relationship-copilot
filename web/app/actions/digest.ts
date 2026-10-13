@@ -130,6 +130,17 @@ export async function generateWeeklyDigest(connectionId: string) {
   if (items.length === 0) back("digest-empty");
   const trimmed = items.slice(0, MAX_ITEMS);
 
+  // Open shared goals, as context only (RLS: members). Redacted like answers.
+  const { data: goalRows } = await supabase
+    .from("connection_goals")
+    .select("body")
+    .eq("connection_id", connectionId)
+    .is("done_at", null)
+    .order("created_at", { ascending: true })
+    .limit(10);
+  const goals = (goalRows ?? []).map((g) => redactor.redact(g.body));
+  rawParts.push(...(goalRows ?? []).map((g) => g.body));
+
   // Safety: regex on raw text, model pass on redacted; high severity withholds.
   const signal = await assessSafety(rawParts.join("\n"), redactor.redact);
 
@@ -157,7 +168,7 @@ export async function generateWeeklyDigest(connectionId: string) {
   let digest;
   try {
     const content = await grokChat(
-      [digestSystemPrompt(), digestUserPrompt(conn!.type, trimmed)],
+      [digestSystemPrompt(), digestUserPrompt(conn!.type, trimmed, goals)],
       { json: true },
     );
     digest = parseDigest(content);
