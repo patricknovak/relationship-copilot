@@ -7,6 +7,7 @@ import SoftPremiumCard from "@/components/SoftPremiumCard";
 import NudgePerson from "@/components/NudgePerson";
 import ReactionBar from "@/components/ReactionBar";
 import { groupReactions, isReactionEmoji, reactionKey } from "@/lib/reactions";
+import { dimensionLabel, isDimensionScored, quizReflection } from "@/lib/quizResult";
 import {
   EMPTY_STATE,
   FIRST_REVEAL_UNLOCK,
@@ -53,14 +54,17 @@ export default async function PromptInstanceView({
   }
 
   // Prefer the template's own title (e.g. a specific quiz/challenge name).
+  // The config says whether the quiz has per-dimension scoring to reflect on.
   let heading = title;
+  let scored = false;
   if (instance.template_id) {
     const { data: tmpl } = await supabase
       .from("prompt_templates")
-      .select("title")
+      .select("title, config")
       .eq("id", instance.template_id)
       .maybeSingle();
     if (tmpl?.title) heading = tmpl.title;
+    scored = isDimensionScored(tmpl?.config);
   }
 
   const questions = instance.questions as PromptQuestion[];
@@ -202,6 +206,56 @@ export default async function PromptInstanceView({
               </Link>
             </div>
           </header>
+        )}
+
+        {scored && (
+          <section className="card mt-10 !p-5">
+            <h2 className="text-lg">Your reflections</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              Averages of your own scale answers, grouped by theme. A way to
+              talk about how you each relate, not a diagnosis.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {ordered.map((r) => {
+                const ref = quizReflection(questions, r.answers as AnswerMap);
+                const mine = r.user_id === user?.id;
+                return (
+                  <div
+                    key={r.user_id}
+                    className={`rounded-2xl border p-3.5 ${
+                      mine
+                        ? "border-brand-100 bg-brand-50/70 dark:bg-brand-900/25"
+                        : "border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold text-ink-soft">{nameOf(r.user_id)}</p>
+                    {ref ? (
+                      <>
+                        {ref.label && (
+                          <p className="mt-1 font-display text-lg text-ink">{ref.label}</p>
+                        )}
+                        {ref.blurb && (
+                          <p className="mt-1 text-sm text-ink-soft">{ref.blurb}</p>
+                        )}
+                        <ul className="mt-2 space-y-1 text-sm text-ink-soft">
+                          {ref.scores.map((s) => (
+                            <li key={s.dimension} className="flex justify-between gap-3">
+                              <span>{dimensionLabel(s.dimension)}</span>
+                              <span className="font-medium text-ink">
+                                {s.average} / {s.max}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm text-ink-soft/60">No scale answers.</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         <ol id="answers" className="mt-10 scroll-mt-24 space-y-6">
