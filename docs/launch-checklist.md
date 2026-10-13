@@ -12,6 +12,8 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
+- [ ] **Migrations 0020–0021** (2026-10-13, this branch) are not yet applied;
+      see §4 below. 0020 is idempotent (skips if batch already seeded).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
@@ -125,6 +127,44 @@ escalation uses the same client; the regex fast path still gates).
 - [x] `XAI_API_KEY` present in Vercel (since Jun 11).
 - [ ] Confirm `XAI_NO_TRAINING_DPA` in Vercel matches the real DPA status
       with xAI — only `true` once a no-training agreement is in place.
+
+### 4. Notification emails (optional, code shipped 2026-10-13)
+
+Roadmap item 3 (`docs/ROADMAP.md`). Nothing sends until these are set; the
+product behaves exactly as before without them.
+
+- [ ] Create a Resend **API key** (the domain already signs for Resend via
+      Supabase SMTP) and set `RESEND_API_KEY` in the hosting env. Optional
+      `EMAIL_FROM` (defaults to `Relationship Copilot
+      <noreply@relationshipcopilot.com>`). From then on "they answered, your
+      turn" and "you both answered" emails go out after a submit, subject to
+      each person's Account → Notifications settings.
+- [ ] Set `CRON_SECRET` (any long random string) and schedule the daily
+      reminder. The DB already runs pg_cron; with `pg_net` enabled
+      (Database → Extensions), run once in the SQL editor with the real
+      secret (do not commit it):
+
+      ```sql
+      select cron.schedule(
+        'daily-reminder-email',
+        '15 15 * * *',   -- 15:15 UTC ≈ 8:15 Pacific; after assign-daily-prompts
+        $$ select net.http_post(
+             url := 'https://relationshipcopilot.com/api/cron/daily-reminder',
+             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb
+           ); $$
+      );
+      ```
+
+      The route is idempotent (one email per person per connection per day,
+      enforced by `notification_log`) and only emails people who opted in to
+      "Today's question is ready". Vercel cron or a Cloudflare scheduled
+      handler can call the same URL instead.
+- [ ] Optional `NOTIFY_SECRET` for signing unsubscribe links (falls back to a
+      server-only key). One-click unsubscribe is at
+      `/api/notifications/unsubscribe` and also set as the
+      `List-Unsubscribe` header.
+- [ ] Apply migrations **0020** (daily pool, idempotent) and **0021**
+      (`notification_log` + love-languages wording) to production.
 
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 

@@ -314,6 +314,21 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      notification_log: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready";
+          sent_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready";
+        };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;

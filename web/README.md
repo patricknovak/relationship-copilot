@@ -33,10 +33,10 @@ npm run dev                  # http://localhost:3000
 
 ## Next
 
-Signup intake + zodiac, connection create + `/invite/[code]` accept, the
-20-question onboarding + mutual-reveal UI, then the Grok Blueprint and Stripe
-billing. The DB layer (RLS reveal gate, seeds) already lives in
-`../supabase/migrations`.
+See `../docs/ROADMAP.md`. The sections above describe the first slice; the
+app now covers connections, onboarding + mutual reveal, the daily loop,
+electives, the library, the premium AI Blueprint/digest, billing, account
+lifecycle, and notification email (`lib/notify.ts`, `lib/email.ts`).
 
 ## Auth provider config
 

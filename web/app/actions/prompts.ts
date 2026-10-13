@@ -11,6 +11,8 @@ import {
 } from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { after } from "next/server";
+import { notifyOtherMembersAfterSubmit } from "@/lib/notify";
 
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
@@ -186,6 +188,18 @@ export async function submitResponse(input: {
       .update({ status: "active", onboarding_done: true })
       .eq("id", connectionId);
   }
+
+  // Tell the other person it's their turn (or that the reveal is open), after
+  // the response is sent so a slow mail provider never delays the submit.
+  // Preference- and once-only-checked inside; no answer text leaves.
+  after(() =>
+    notifyOtherMembersAfterSubmit({
+      actorUserId: user.id,
+      instanceId,
+      connectionId,
+      revealed,
+    }),
+  );
 
   // North-star GA4: once-only claim in DB (survives concurrent final submits),
   // then schedule MP send via after() so serverless does not drop it.

@@ -91,8 +91,8 @@ export default function AddReminder({
       </div>
       <p className="text-xs text-ink-soft/70">
         Defaults to tomorrow at 7:00 PM, for 15 minutes. Change it here or in
-        your calendar. It&apos;s saved to your own calendar — we don&apos;t send
-        reminders.
+        your calendar. It&apos;s saved to your own calendar. Email nudges
+        are optional, under Account.
       </p>
     </div>
   );
