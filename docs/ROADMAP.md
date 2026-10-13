@@ -210,7 +210,37 @@ or an account action.
 - **Paywalling daily questions.** The category's number-one complaint.
 - **Zodiac beyond "just for fun".** Keep it entertainment-framed as today.
 
-## 5. What to measure
+## 5. Status after the 2026-10-13 build (PR #81)
+
+Shipped on the branch, in order of roadmap value: daily pool depth (0020),
+today's question inline with your-turn state and a weekly suggested
+activity, five notification emails with preferences and one-click
+unsubscribe (0021/0026/0027), premium covering the connection and optional
+annual price (0022), reactions (0023), electives for every type (0024) and
+a real first 20 everywhere (0029), public `/for` pages with four new
+library articles (0028), reveal history, quiz reflections, connection
+time zones (0025), the Blueprint reading recent dailies, shared goals
+(0030), and the walk-through quick wins. All migrations are additive and
+tested; the reveal gate is untouched.
+
+**What only Patrick can do next**, in order of unlock:
+
+1. Apply migrations 0020–0030 to production (launch checklist, "Already
+   done" and §4).
+2. Stripe activation + customer portal configuration, then a live
+   checkout test (checklist §1). Optionally create the annual price.
+3. The Turnstile secret in Supabase so email sign-in works (checklist §2).
+4. `RESEND_API_KEY` + `CRON_SECRET` and the two pg_cron schedules, so the
+   notification loop actually runs (checklist §4).
+5. The AI provider decision (`XAI_NO_TRAINING_DPA`, or a provider whose
+   terms already exclude training), which unlocks everything premium.
+6. Decide the price (recommendation: $9.99/mo or $59.99/yr, one plan covers
+   both people) and update the four places that say $18/mo.
+
+**Next engineering items**, once the above lands: scheduled weekly digest
+(needs the design call in 14b), web push (11), Cloudflare cutover (12).
+
+## 6. What to measure
 
 The north star stays `first_mutual_reveal_completed`. Add, as the funnel
 fills: pairs with a revealed daily in the last 7 days (the habit), day-30

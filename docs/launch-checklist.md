@@ -2,7 +2,10 @@
 
 Status audited 2026-07-31 against the real infrastructure (Supabase project
 `digbnrhwsifmycrxyquo`, Vercel project `relationship-copilot`, production at
-https://relationshipcopilot.com). Update the checkboxes as items land.
+https://relationshipcopilot.com); code status refreshed 2026-10-13 with
+PR #81 (migrations 0020–0030, notification email, see `docs/ROADMAP.md`
+§5 for the ordered list of what remains). Update the checkboxes as items
+land.
 
 ## Already done (verified)
 
