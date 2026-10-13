@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
-import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
+import { startOnboarding, ensureDaily, startElective } from "@/app/actions/prompts";
+import { pickWeeklySuggestion } from "@/lib/suggestion";
 import { leaveConnection, regenerateInvite } from "@/app/actions/connections";
 import { computeStreak } from "@/lib/streak";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
@@ -255,6 +256,32 @@ export default async function ConnectionPage({
         }),
       };
     }
+  }
+
+  // One suggested quiz or challenge the pair hasn't started, rotating
+  // weekly so the hub keeps offering something new without nagging.
+  let suggestion: { id: string; kind: string; title: string; description: string | null } | null = null;
+  if (conn.status === "active" && joinedCount >= 2) {
+    const [{ data: electives }, { data: started }] = await Promise.all([
+      supabase
+        .from("prompt_templates")
+        .select("id, kind, title, description")
+        .in("kind", ["quiz", "challenge"])
+        .eq("active", true)
+        .or(`relationship_type.eq.${conn.type},relationship_type.is.null`)
+        .order("id"),
+      supabase
+        .from("prompt_instances")
+        .select("template_id")
+        .eq("connection_id", id)
+        .in("kind", ["quiz", "challenge"]),
+    ]);
+    const done = new Set((started ?? []).map((s) => s.template_id).filter(Boolean));
+    suggestion = pickWeeklySuggestion(
+      (electives ?? []).map((t) => ({ ...t, title: t.title ?? "", kind: t.kind })),
+      done,
+      todayIn(conn.timezone),
+    );
   }
 
   // Zodiac compatibility (entertainment only). Computed server-side so
@@ -564,14 +591,33 @@ export default async function ConnectionPage({
       {conn.status === "active" && (
         <section className="card mt-6">
           <h2 className="text-lg">Quizzes &amp; challenges</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Playful activities and reflections to do together.
-          </p>
+          {suggestion ? (
+            <div className="mt-2 rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/50 dark:bg-brand-900/15 p-4">
+              <p className="eyebrow">
+                This week&apos;s {suggestion.kind === "quiz" ? "quiz" : "challenge"}
+              </p>
+              <p className="mt-1 font-display text-lg leading-snug text-ink">
+                {suggestion.title}
+              </p>
+              {suggestion.description && (
+                <p className="mt-1 text-sm text-ink-soft">{suggestion.description}</p>
+              )}
+              <form action={startElective.bind(null, id, suggestion.id)} className="mt-3">
+                <PendingButton className="btn-secondary !px-4 !py-2 text-sm" pendingLabel="Starting…">
+                  Start together
+                </PendingButton>
+              </form>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-ink-soft">
+              Playful activities and reflections to do together.
+            </p>
+          )}
           <Link
             href={`/connections/${id}/explore`}
-            className="mt-2 inline-block text-sm text-brand-700 underline"
+            className="mt-3 inline-block text-sm text-brand-700 underline"
           >
-            Explore activities →
+            Explore all activities →
           </Link>
         </section>
       )}
