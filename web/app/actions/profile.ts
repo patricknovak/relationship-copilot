@@ -122,6 +122,7 @@ export async function updateNotificationPrefs(formData: FormData) {
     your_turn: formData.get("your_turn") === "on",
     revealed: formData.get("revealed") === "on",
     daily_ready: formData.get("daily_ready") === "on",
+    discussion_reply: formData.get("discussion_reply") === "on",
   }) as unknown as Json;
 
   const { error } = await supabase

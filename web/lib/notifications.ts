@@ -5,7 +5,12 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export type NotificationKind = "your_turn" | "revealed" | "daily_ready" | "partner_joined";
+export type NotificationKind =
+  | "your_turn"
+  | "revealed"
+  | "daily_ready"
+  | "partner_joined"
+  | "discussion_reply";
 
 // Which preference switch governs each kind. partner_joined rides on
 // your_turn: both mean "they moved, it's your move".
@@ -14,12 +19,14 @@ export const PREF_FOR_KIND: Record<NotificationKind, keyof NotificationPrefs> = 
   revealed: "revealed",
   daily_ready: "daily_ready",
   partner_joined: "your_turn",
+  discussion_reply: "discussion_reply",
 };
 
 export interface NotificationPrefs {
   your_turn: boolean; // they answered; it's your move
   revealed: boolean; // you both answered; the reveal is ready
   daily_ready: boolean; // today's question is waiting (opt-in; one a day)
+  discussion_reply: boolean; // they wrote in a discussion (first reply per reveal)
 }
 
 // Defaults: the two event-driven emails on, the daily reminder off. A pair
@@ -30,6 +37,7 @@ export const DEFAULT_PREFS: NotificationPrefs = {
   your_turn: true,
   revealed: true,
   daily_ready: false,
+  discussion_reply: true,
 };
 
 export const PREF_LABELS: Record<
@@ -47,6 +55,10 @@ export const PREF_LABELS: Record<
   daily_ready: {
     label: "Today's question is ready",
     detail: "A daily reminder with the question, for each active connection.",
+  },
+  discussion_reply: {
+    label: "They wrote in a discussion",
+    detail: "The first time the other person replies under a reveal (never the message itself).",
   },
 };
 
@@ -67,6 +79,7 @@ export function parseNotificationPrefs(preferences: unknown): NotificationPrefs 
     your_turn: pick("your_turn"),
     revealed: pick("revealed"),
     daily_ready: pick("daily_ready"),
+    discussion_reply: pick("discussion_reply"),
   };
 }
 
@@ -89,6 +102,7 @@ export const ALL_OFF: NotificationPrefs = {
   your_turn: false,
   revealed: false,
   daily_ready: false,
+  discussion_reply: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -144,6 +158,11 @@ export function buildNotificationEmail(
       subject = `You and ${who} both answered`;
       lead = `You've both shared, so the reveal is open. Read the answers side by side and pick up the thread in the discussion.`;
       cta = "See the reveal";
+      break;
+    case "discussion_reply":
+      subject = `${who} wrote something under your reveal`;
+      lead = `${who} replied in the discussion under something you both answered on Relationship Copilot. Read it there and keep the thread going.`;
+      cta = "Open the discussion";
       break;
     case "partner_joined":
       subject = `${who} joined — your first questions are ready`;

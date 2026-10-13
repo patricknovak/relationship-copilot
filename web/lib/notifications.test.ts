@@ -24,7 +24,7 @@ describe("parseNotificationPrefs", () => {
       parseNotificationPrefs({
         notifications: { your_turn: false, daily_ready: true, revealed: "yes" },
       }),
-    ).toEqual({ your_turn: false, revealed: true, daily_ready: true });
+    ).toEqual({ your_turn: false, revealed: true, daily_ready: true, discussion_reply: true });
   });
 });
 
@@ -39,6 +39,7 @@ describe("withNotificationPrefs", () => {
       your_turn: false,
       revealed: true,
       daily_ready: true,
+      discussion_reply: true,
     });
   });
 
@@ -90,7 +91,7 @@ describe("buildNotificationEmail", () => {
   });
 
   it("always links the action and the unsubscribe", () => {
-    for (const kind of ["your_turn", "revealed", "daily_ready", "partner_joined"] as const) {
+    for (const kind of ["your_turn", "revealed", "daily_ready", "partner_joined", "discussion_reply"] as const) {
       const e = buildNotificationEmail({ ...base, kind, themName: null });
       expect(e.text).toContain(base.instanceUrl);
       expect(e.text).toContain(base.unsubscribeUrl);

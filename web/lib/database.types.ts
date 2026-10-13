@@ -341,13 +341,13 @@ export interface Database {
         Row: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
           sent_at: string;
         };
         Insert: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
         };
         Update: never;
         Relationships: [];

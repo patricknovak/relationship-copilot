@@ -119,10 +119,11 @@ or an account action.
    connection page shows today's question text and its state (answer now /
    waiting on them / revealed, with a link to discuss). The connections list
    shows a "your turn" badge per connection. Both read through RLS as today.
-3. **Transactional email notifications (code, then one env var). Code shipped 2026-10-13; needs `RESEND_API_KEY` and the cron schedule (launch checklist §4).** Three
-   emails, none containing answer text: "they answered, your turn", "you both
-   revealed, see it side by side", and an opt-in daily "today's question is
-   ready". Per-user preferences on `/account` (stored in
+3. **Transactional email notifications (code, then one env var). Code shipped 2026-10-13; needs `RESEND_API_KEY` and the cron schedule (launch checklist §4).** Five
+   emails, none containing answer or message text: "they joined", "they
+   answered, your turn", "you both revealed, see it side by side", "they
+   wrote in a discussion" (first reply per reveal), and an opt-in daily
+   "today's question is ready". Per-user preferences on `/account` (stored in
    `profiles.preferences`), unsubscribe in one click, never sent about safety
    resources or leaving a connection. Sender is Resend's HTTP API (the
    domain's DKIM is already set up for Resend via Supabase SMTP); the whole
@@ -180,8 +181,12 @@ or an account action.
 
 ### Later
 
-13. **Blueprint v2: longitudinal.** Once there are months of dailies, the
-    Blueprint should compare "then vs now" rather than re-read onboarding.
+13. **Blueprint v2: longitudinal.** First step shipped 2026-10-13: the
+    prompt now appends the pair's last 20 revealed daily answers and asks
+    for "then vs now". Still open: using each person's private intake
+    (goals, values, attachment) in a *shared* Blueprint needs an explicit
+    consent step, since intake is collected as private; do not feed it in
+    silently.
 14. **Shared goals and rituals.** A small, both-edit list ("things we're
     trying") that the digest can reference.
 15. **Parent–teen consent flow (COPPA / GDPR-K)** before under-13 use.

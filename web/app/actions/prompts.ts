@@ -13,7 +13,7 @@ import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { after } from "next/server";
 import { isReactionEmoji } from "@/lib/reactions";
-import { notifyOtherMembersAfterSubmit } from "@/lib/notify";
+import { notifyDiscussionReply, notifyOtherMembersAfterSubmit } from "@/lib/notify";
 
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
@@ -315,6 +315,12 @@ export async function postDiscussion(input: {
   if (error) {
     return { error: "Couldn't send that — give it another try." };
   }
+
+  // First reply on this reveal → one email to the other person (never the
+  // message). The insert succeeded under RLS, so the author is a member.
+  after(() =>
+    notifyDiscussionReply({ authorUserId: user.id, instanceId, connectionId }),
+  );
 
   revalidatePath(`/connections/${connectionId}/onboarding`);
   revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);

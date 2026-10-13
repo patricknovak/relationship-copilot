@@ -201,3 +201,45 @@ export async function notifyPartnerJoined(input: {
     console.error("[notify] partner-joined failed", err);
   }
 }
+
+// After a discussion post: tell the other member(s), once per instance per
+// recipient (the once-only key), never including the message.
+export async function notifyDiscussionReply(input: {
+  authorUserId: string;
+  instanceId: string;
+  connectionId: string;
+}): Promise<void> {
+  if (!emailConfigured()) return;
+  const admin = createAdminClient();
+  try {
+    const { data: members } = await admin
+      .from("connection_members")
+      .select("user_id")
+      .eq("connection_id", input.connectionId)
+      .not("joined_at", "is", null);
+    const others = (members ?? [])
+      .map((m) => m.user_id)
+      .filter((uid) => uid !== input.authorUserId);
+    if (others.length === 0) return;
+
+    const { data: author } = await admin
+      .from("profiles")
+      .select("display_name")
+      .eq("id", input.authorUserId)
+      .maybeSingle();
+    const authorName = author?.display_name?.trim() || null;
+
+    for (const uid of others) {
+      await notifyUser({
+        admin,
+        userId: uid,
+        instanceId: input.instanceId,
+        connectionId: input.connectionId,
+        kind: "discussion_reply",
+        themName: authorName,
+      });
+    }
+  } catch (err) {
+    console.error("[notify] discussion-reply failed", err);
+  }
+}
