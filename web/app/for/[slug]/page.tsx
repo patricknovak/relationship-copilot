@@ -93,6 +93,15 @@ export default async function ForPage({
         </ol>
       </section>
 
+      {page.article && (
+        <p className="mt-8 text-sm text-ink-soft">
+          From the library:{" "}
+          <Link href={`/library/${page.article.slug}`} className="text-brand-700 underline">
+            {page.article.title}
+          </Link>
+        </p>
+      )}
+
       <section className="mt-12">
         <h2 className="text-2xl">Common questions</h2>
         <div className="mt-5 space-y-3">

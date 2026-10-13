@@ -16,6 +16,8 @@ export interface ForPage {
   intro: string;
   samples: string[];
   faqs: { q: string; a: string }[];
+  // Free library article slug most relevant to this audience, if any.
+  article?: { slug: string; title: string };
 }
 
 const SHARED_FAQS: { q: string; a: string }[] = [
@@ -38,6 +40,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "partners",
     type: "romantic",
     label: "Partners",
+    article: { slug: "bids-for-connection", title: "Bids for connection: the small moments that matter" },
     title: "Questions for couples and partners",
     description:
       "Daily questions for couples, answered in private and revealed together. Free, grounded in research, no peeking.",
@@ -86,6 +89,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "siblings",
     type: "sibling",
     label: "Siblings",
+    article: { slug: "adult-siblings-meeting-again", title: "Adult siblings: meeting again as grown-ups" },
     title: "Questions to ask your brother or sister",
     description:
       "Questions for adult siblings to reconnect, answered in private and revealed together. Beyond the roles you grew up in.",
@@ -110,6 +114,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "family",
     type: "family",
     label: "Family",
+    article: { slug: "sharing-care-for-aging-parent", title: "Sharing the care of an aging parent" },
     title: "Questions to ask your parents and family",
     description:
       "Conversation questions for parents, adult children and relatives, answered privately and revealed together.",
@@ -134,6 +139,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "parents-and-teens",
     type: "parent_child",
     label: "Parents & teens",
+    article: { slug: "teens-autonomy-not-surveillance", title: "Teens, trust and the case against surveillance" },
     title: "Questions for parents and teens",
     description:
       "A trust-first way for a parent and teenager to talk: questions answered in private, revealed together, never surveillance.",
@@ -162,6 +168,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "coworkers",
     type: "coworker",
     label: "Coworkers",
+    article: { slug: "two-coworkers-psychological-safety", title: "Psychological safety between two coworkers" },
     title: "Questions for coworkers and teammates",
     description:
       "Check-in questions for two colleagues who work closely: feedback, priorities and trust, answered privately and revealed together.",
@@ -186,6 +193,7 @@ export const FOR_PAGES: ForPage[] = [
     slug: "mentors",
     type: "mentor",
     label: "Mentors",
+    article: { slug: "mentoring-that-actually-works", title: "Mentoring that actually works" },
     title: "Questions for mentors and mentees",
     description:
       "Structure for a mentoring relationship: questions on goals, feedback and candor, answered privately and revealed together.",
