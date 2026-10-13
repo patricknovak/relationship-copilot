@@ -88,7 +88,11 @@ export default async function PricingPage({
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         <Plan title="Free" price="$0" features={FREE} highlight={false}>
-          {!user && (
+          {user ? (
+            <Link href="/connections" className="btn-secondary w-full">
+              Go to your connections
+            </Link>
+          ) : (
             <Link href="/login" className="btn-secondary w-full">
               Get started
             </Link>

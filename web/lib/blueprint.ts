@@ -34,21 +34,45 @@ export function blueprintSystemPrompt(): GrokMessage {
   return { role: "system", content: SYSTEM };
 }
 
-// Build the user message from REDACTED question/answer pairs (names already
-// replaced with P1/P2 upstream).
-export function blueprintUserPrompt(
-  type: ConnectionType,
-  qa: { question: string; p1: string; p2: string }[],
-): GrokMessage {
-  const lines = qa
+export interface BlueprintQa {
+  question: string;
+  p1: string;
+  p2: string;
+  // ISO date of the reveal, for the "recent" section only.
+  date?: string | null;
+}
+
+// Keep the prompt bounded: the onboarding pack is at most 20 questions; the
+// recent-dailies section is capped here so the Blueprint stays a reflection,
+// not a transcript.
+export const MAX_RECENT_FOR_BLUEPRINT = 20;
+
+function qaLines(qa: BlueprintQa[], prefix: string): string {
+  return qa
     .map(
       (x, i) =>
-        `Q${i + 1}: ${x.question}\n- P1: ${x.p1 || "(no answer)"}\n- P2: ${x.p2 || "(no answer)"}`,
+        `${prefix}${i + 1}${x.date ? ` (${x.date})` : ""}: ${x.question}\n- P1: ${x.p1 || "(no answer)"}\n- P2: ${x.p2 || "(no answer)"}`,
     )
     .join("\n\n");
+}
+
+// Build the user message from REDACTED question/answer pairs (names already
+// replaced with P1/P2 upstream). `recent` is the pair's latest revealed
+// daily answers, oldest first, so the Blueprint can reflect how things are
+// now and not only how they started.
+export function blueprintUserPrompt(
+  type: ConnectionType,
+  qa: BlueprintQa[],
+  recent: BlueprintQa[] = [],
+): GrokMessage {
+  const trimmed = recent.slice(-MAX_RECENT_FOR_BLUEPRINT);
+  const recentBlock =
+    trimmed.length > 0
+      ? `\n\nTheir most recent daily answers, oldest first (same redaction). Weigh these as "where they are now" against the onboarding answers as "where they started", and note gently if something has shifted:\n\n${qaLines(trimmed, "D")}`
+      : "";
   return {
     role: "user",
-    content: `Relationship type: ${connectionLabel(type)}.\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${lines}\n\nProduce the JSON blueprint.`,
+    content: `Relationship type: ${connectionLabel(type)}.\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${qaLines(qa, "Q")}${recentBlock}\n\nProduce the JSON blueprint.`,
   };
 }
 

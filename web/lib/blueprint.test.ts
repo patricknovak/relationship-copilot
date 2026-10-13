@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseBlueprint } from "@/lib/blueprint";
+import { blueprintUserPrompt, MAX_RECENT_FOR_BLUEPRINT, parseBlueprint } from "@/lib/blueprint";
 
 describe("parseBlueprint", () => {
   it("parses well-formed JSON", () => {
@@ -29,5 +29,30 @@ describe("parseBlueprint", () => {
   it("filters non-string array entries", () => {
     const bp = parseBlueprint('{"strengths":["ok",2,null,"good"]}');
     expect(bp.strengths).toEqual(["ok", "good"]);
+  });
+});
+
+describe("blueprintUserPrompt", () => {
+  const qa = [{ question: "Q?", p1: "a", p2: "b" }];
+
+  it("omits the recent section when there is nothing recent", () => {
+    const m = blueprintUserPrompt("romantic", qa);
+    expect(m.content).toContain("Q1: Q?");
+    expect(m.content).not.toContain("most recent daily answers");
+  });
+
+  it("appends recent dailies with dates and caps them", () => {
+    const recent = Array.from({ length: MAX_RECENT_FOR_BLUEPRINT + 5 }, (_, i) => ({
+      question: `R${i}`,
+      p1: "x",
+      p2: "y",
+      date: "2026-10-01",
+    }));
+    const m = blueprintUserPrompt("friend", qa, recent);
+    expect(m.content).toContain("most recent daily answers");
+    expect(m.content).toContain("(2026-10-01)");
+    expect(m.content).not.toContain("R0:"); // oldest beyond the cap dropped
+    expect(m.content).toContain(`R${MAX_RECENT_FOR_BLUEPRINT + 4}`);
+    expect(m.content).not.toContain("P3");
   });
 });
