@@ -5,7 +5,16 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export type NotificationKind = "your_turn" | "revealed" | "daily_ready";
+export type NotificationKind = "your_turn" | "revealed" | "daily_ready" | "partner_joined";
+
+// Which preference switch governs each kind. partner_joined rides on
+// your_turn: both mean "they moved, it's your move".
+export const PREF_FOR_KIND: Record<NotificationKind, keyof NotificationPrefs> = {
+  your_turn: "your_turn",
+  revealed: "revealed",
+  daily_ready: "daily_ready",
+  partner_joined: "your_turn",
+};
 
 export interface NotificationPrefs {
   your_turn: boolean; // they answered; it's your move
@@ -24,12 +33,12 @@ export const DEFAULT_PREFS: NotificationPrefs = {
 };
 
 export const PREF_LABELS: Record<
-  NotificationKind,
+  keyof NotificationPrefs,
   { label: string; detail: string }
 > = {
   your_turn: {
-    label: "They answered — your turn",
-    detail: "When the other person has answered a question you haven't yet.",
+    label: "They joined or answered — your turn",
+    detail: "When the person you invited joins, and when they've answered a question you haven't yet.",
   },
   revealed: {
     label: "You both answered",
@@ -52,7 +61,7 @@ export function parseNotificationPrefs(preferences: unknown): NotificationPrefs 
     root.notifications && typeof root.notifications === "object"
       ? (root.notifications as Record<string, unknown>)
       : {};
-  const pick = (k: NotificationKind) =>
+  const pick = (k: keyof NotificationPrefs) =>
     typeof n[k] === "boolean" ? (n[k] as boolean) : DEFAULT_PREFS[k];
   return {
     your_turn: pick("your_turn"),
@@ -135,6 +144,11 @@ export function buildNotificationEmail(
       subject = `You and ${who} both answered`;
       lead = `You've both shared, so the reveal is open. Read the answers side by side and pick up the thread in the discussion.`;
       cta = "See the reveal";
+      break;
+    case "partner_joined":
+      subject = `${who} joined — your first questions are ready`;
+      lead = `${who} accepted your invite on Relationship Copilot. Your first questions are unlocked for you both: answer in private, and they reveal when you've both shared.`;
+      cta = "Start answering";
       break;
     case "daily_ready":
     default:

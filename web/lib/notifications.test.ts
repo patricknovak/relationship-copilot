@@ -4,6 +4,7 @@ import {
   buildNotificationEmail,
   DEFAULT_PREFS,
   parseNotificationPrefs,
+  PREF_FOR_KIND,
   unsubscribeToken,
   unsubscribeUrl,
   verifyUnsubscribeToken,
@@ -82,8 +83,14 @@ describe("buildNotificationEmail", () => {
     expect(noQ.text).not.toContain("should be ignored");
   });
 
+  it("announces a joined partner", () => {
+    const e = buildNotificationEmail({ ...base, kind: "partner_joined", themName: "Sam" });
+    expect(e.subject).toBe("Sam joined — your first questions are ready");
+    expect(PREF_FOR_KIND.partner_joined).toBe("your_turn");
+  });
+
   it("always links the action and the unsubscribe", () => {
-    for (const kind of ["your_turn", "revealed", "daily_ready"] as const) {
+    for (const kind of ["your_turn", "revealed", "daily_ready", "partner_joined"] as const) {
       const e = buildNotificationEmail({ ...base, kind, themName: null });
       expect(e.text).toContain(base.instanceUrl);
       expect(e.text).toContain(base.unsubscribeUrl);

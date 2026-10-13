@@ -2,11 +2,10 @@ import { updateNotificationPrefs } from "@/app/actions/profile";
 import PendingButton from "@/components/PendingButton";
 import {
   PREF_LABELS,
-  type NotificationKind,
   type NotificationPrefs as Prefs,
 } from "@/lib/notifications";
 
-const ORDER: NotificationKind[] = ["your_turn", "revealed", "daily_ready"];
+const ORDER: (keyof Prefs)[] = ["your_turn", "revealed", "daily_ready"];
 
 // Account → Notifications. Server-rendered form; the action merges into
 // profiles.preferences under the user's own RLS. Shown even when email isn't

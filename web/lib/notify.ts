@@ -10,6 +10,7 @@ import { emailConfigured, sendEmail } from "@/lib/email";
 import {
   buildNotificationEmail,
   parseNotificationPrefs,
+  PREF_FOR_KIND,
   unsubscribeUrl,
   type NotificationKind,
 } from "@/lib/notifications";
@@ -59,7 +60,7 @@ export async function notifyUser(input: {
       .eq("id", input.userId)
       .maybeSingle();
     const prefs = parseNotificationPrefs(profile?.preferences);
-    if (!prefs[input.kind]) return "skipped_pref";
+    if (!prefs[PREF_FOR_KIND[input.kind]]) return "skipped_pref";
 
     // Claim first; a conflict means this exact email already went out.
     const { data: claimed, error: claimError } = await admin
@@ -80,7 +81,10 @@ export async function notifyUser(input: {
       kind: input.kind,
       themName: input.themName,
       questionText: input.questionText ?? null,
-      instanceUrl: `${site}/connections/${input.connectionId}/prompts/${input.instanceId}`,
+      instanceUrl:
+        input.kind === "partner_joined"
+          ? `${site}/connections/${input.connectionId}`
+          : `${site}/connections/${input.connectionId}/prompts/${input.instanceId}`,
       unsubscribeUrl: unsubscribeUrl(site, input.userId, secret),
     });
     const result = await sendEmail({ to, ...email, unsubscribeUrl: unsubscribeUrl(site, input.userId, secret) });
@@ -145,5 +149,55 @@ export async function notifyOtherMembersAfterSubmit(input: {
     }
   } catch (err) {
     console.error("[notify] after-submit failed", err);
+  }
+}
+
+// After an invite is accepted: tell the other member(s) their person is in.
+// `joinerUserId` just joined (the RPC succeeded, so membership is real).
+// Logged against the onboarding instance; silently skipped if it isn't there.
+export async function notifyPartnerJoined(input: {
+  joinerUserId: string;
+  connectionId: string;
+}): Promise<void> {
+  if (!emailConfigured()) return;
+  const admin = createAdminClient();
+  try {
+    const { data: onboarding } = await admin
+      .from("prompt_instances")
+      .select("id")
+      .eq("connection_id", input.connectionId)
+      .eq("kind", "onboarding")
+      .maybeSingle();
+    if (!onboarding) return;
+
+    const { data: members } = await admin
+      .from("connection_members")
+      .select("user_id")
+      .eq("connection_id", input.connectionId)
+      .not("joined_at", "is", null);
+    const others = (members ?? [])
+      .map((m) => m.user_id)
+      .filter((uid) => uid !== input.joinerUserId);
+    if (others.length === 0) return;
+
+    const { data: joiner } = await admin
+      .from("profiles")
+      .select("display_name")
+      .eq("id", input.joinerUserId)
+      .maybeSingle();
+    const joinerName = joiner?.display_name?.trim() || null;
+
+    for (const uid of others) {
+      await notifyUser({
+        admin,
+        userId: uid,
+        instanceId: onboarding.id,
+        connectionId: input.connectionId,
+        kind: "partner_joined",
+        themName: joinerName,
+      });
+    }
+  } catch (err) {
+    console.error("[notify] partner-joined failed", err);
   }
 }

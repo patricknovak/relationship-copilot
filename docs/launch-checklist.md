@@ -12,7 +12,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0025** (2026-10-13, this branch) are not yet applied;
+- [ ] **Migrations 0020–0026** (2026-10-13, this branch) are not yet applied;
       see §4 below. 0020 is idempotent (skips if batch already seeded).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
@@ -136,9 +136,10 @@ product behaves exactly as before without them.
 - [ ] Create a Resend **API key** (the domain already signs for Resend via
       Supabase SMTP) and set `RESEND_API_KEY` in the hosting env. Optional
       `EMAIL_FROM` (defaults to `Relationship Copilot
-      <noreply@relationshipcopilot.com>`). From then on "they answered, your
-      turn" and "you both answered" emails go out after a submit, subject to
-      each person's Account → Notifications settings.
+      <noreply@relationshipcopilot.com>`). From then on "they joined",
+      "they answered, your turn" and "you both answered" emails go out after
+      a join or submit, subject to each person's Account → Notifications
+      settings.
 - [ ] Set `CRON_SECRET` (any long random string) and schedule the daily
       reminder. The DB already runs pg_cron; with `pg_net` enabled
       (Database → Extensions), run once in the SQL editor with the real
@@ -168,9 +169,9 @@ product behaves exactly as before without them.
       (`notification_log` + love-languages wording), **0022**
       (`connection_has_premium`: one plan covers both people), **0023**
       (`answer_reactions`, adds the table to the Realtime publication) and
-      **0024** (electives, idempotent) and **0025** (connection time zones;
+      **0024** (electives, idempotent), **0025** (connection time zones;
       also moves the `assign-daily-prompts` pg_cron job from daily to hourly)
-      to production.
+      and **0026** (`partner_joined` notification kind) to production.
       0022 changes behaviour the moment it is applied: a free partner of a
       subscriber can read and generate the Blueprint/digest for that
       connection, as the pricing page now says.

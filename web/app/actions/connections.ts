@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { isValidTimeZone } from "@/lib/dailyState";
+import { after } from "next/server";
+import { notifyPartnerJoined } from "@/lib/notify";
 import {
   CONNECTION_TYPES,
   FREE_CONNECTION_CAP,
@@ -199,6 +201,10 @@ export async function acceptInvite(
   } catch (err) {
     console.error("ensureOnboardingInstance after join failed", data, err);
   }
+
+  // Tell the inviter their person is in. Runs after the response; honours
+  // their "your turn" preference; once per connection via notification_log.
+  after(() => notifyPartnerJoined({ joinerUserId: user.id, connectionId: data }));
 
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
