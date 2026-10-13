@@ -59,11 +59,14 @@ export default async function BlueprintPage({
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("status")
+    .select("status, questions")
     .eq("connection_id", id)
     .eq("kind", "onboarding")
     .maybeSingle();
   const revealed = instance?.status === "revealed";
+  const answerCount = Array.isArray(instance?.questions)
+    ? instance.questions.length
+    : 0;
 
   const payload = (insight?.payload ?? null) as Payload | null;
   const generate = generateBlueprint.bind(null, id);
@@ -134,7 +137,8 @@ export default async function BlueprintPage({
             <>
               <p className="text-sm text-ink-soft">
                 Generate an AI reflection on your strengths, shared goals, and
-                areas to nurture — based on your 20 answers.
+                areas to nurture — based on your{" "}
+                {answerCount > 0 ? `${answerCount} ` : ""}first answers.
               </p>
               <form action={generate} className="mt-3">
                 <PendingButton pendingLabel="Generating — this takes a moment…">

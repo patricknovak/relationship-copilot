@@ -1,9 +1,23 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
+import { dailyBadge, dailyState, todayUtc } from "@/lib/dailyState";
 import type { ConnectionType } from "@/lib/database.types";
 
-type ConnectionRow = { id: string; type: ConnectionType; status: string };
+type ConnectionRow = {
+  id: string;
+  type: ConnectionType;
+  status: string;
+  them: string | null;
+  badge: ReturnType<typeof dailyBadge>;
+};
+
+const BADGE_CLS: Record<NonNullable<ConnectionRow["badge"]>["tone"], string> = {
+  action:
+    "bg-brand-700 text-white dark:bg-brand-500",
+  quiet: "bg-paper-warm text-ink-soft",
+  done: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+};
 
 function ConnectionList({ items }: { items: ConnectionRow[] }) {
   return (
@@ -11,19 +25,32 @@ function ConnectionList({ items }: { items: ConnectionRow[] }) {
       {items.map((c) => (
         <li key={c.id}>
           <Link href={`/connections/${c.id}`} className="card card-hover block">
-            <div className="flex items-center justify-between">
-              <span className="font-display text-lg text-ink">
-                {connectionLabel(c.type)}
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  c.status === "active"
-                    ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
-                    : "bg-paper-warm text-ink-soft"
-                }`}
-              >
-                {STATUS_LABEL[c.status] ?? c.status}
-              </span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-display text-lg text-ink">
+                  {c.them ?? connectionLabel(c.type)}
+                </p>
+                <p className="mt-0.5 text-xs text-ink-soft/80">
+                  {c.them ? connectionLabel(c.type) : STATUS_LABEL[c.status] ?? c.status}
+                </p>
+              </div>
+              {c.badge ? (
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${BADGE_CLS[c.badge.tone]}`}
+                >
+                  {c.badge.label}
+                </span>
+              ) : (
+                <span
+                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    c.status === "active"
+                      ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
+                      : "bg-paper-warm text-ink-soft"
+                  }`}
+                >
+                  {STATUS_LABEL[c.status] ?? c.status}
+                </span>
+              )}
             </div>
           </Link>
         </li>
@@ -42,11 +69,94 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default async function ConnectionsPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // RLS scopes this to the signed-in user's connections.
   const { data: connections } = await supabase
     .from("connections")
     .select("id, type, status, created_at")
     .order("created_at", { ascending: false });
+
+  const ids = (connections ?? []).map((c) => c.id);
+
+  // The other person in each connection, by display name only.
+  const themByConnection = new Map<string, string | null>();
+  if (ids.length && user) {
+    const { data: members } = await supabase
+      .from("connection_members")
+      .select("connection_id, user_id")
+      .in("connection_id", ids)
+      .neq("user_id", user.id);
+    const otherIds = Array.from(new Set((members ?? []).map((m) => m.user_id)));
+    const { data: profiles } = otherIds.length
+      ? await supabase
+          .from("partner_profiles")
+          .select("id, display_name")
+          .in("id", otherIds)
+      : { data: [] as { id: string; display_name: string | null }[] };
+    for (const m of members ?? []) {
+      const name = profiles?.find((p) => p.id === m.user_id)?.display_name;
+      themByConnection.set(m.connection_id, name?.trim() || null);
+    }
+  }
+
+  // Today's daily state per active connection, so the list says whose turn
+  // it is. Reads go through RLS; the boolean RPC is the only way to learn the
+  // other person has answered before you have.
+  const badgeByConnection = new Map<string, ReturnType<typeof dailyBadge>>();
+  const activeIds = (connections ?? [])
+    .filter((c) => c.status === "active")
+    .map((c) => c.id);
+  if (activeIds.length && user) {
+    const { data: dailies } = await supabase
+      .from("prompt_instances")
+      .select("id, connection_id, status")
+      .in("connection_id", activeIds)
+      .eq("kind", "daily")
+      .eq("scheduled_for", todayUtc());
+    const dailyIds = (dailies ?? []).map((d) => d.id);
+    const { data: mine } = dailyIds.length
+      ? await supabase
+          .from("prompt_responses")
+          .select("instance_id")
+          .in("instance_id", dailyIds)
+          .eq("user_id", user.id)
+      : { data: [] as { instance_id: string }[] };
+    const answered = new Set((mine ?? []).map((r) => r.instance_id));
+    await Promise.all(
+      (dailies ?? []).map(async (d) => {
+        const iAnswered = answered.has(d.id);
+        let theyAnswered = d.status === "revealed";
+        if (!iAnswered && !theyAnswered) {
+          const { data: others } = await supabase.rpc("others_have_answered", {
+            p_instance: d.id,
+          });
+          theyAnswered = !!others;
+        }
+        badgeByConnection.set(
+          d.connection_id,
+          dailyBadge(
+            dailyState({
+              hasInstance: true,
+              status: d.status,
+              iAnswered,
+              theyAnswered,
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
+  const rows: ConnectionRow[] = (connections ?? []).map((c) => ({
+    id: c.id,
+    type: c.type,
+    status: c.status,
+    them: themByConnection.get(c.id) ?? null,
+    badge: c.status === "active" ? (badgeByConnection.get(c.id) ?? null) : null,
+  }));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -57,7 +167,7 @@ export default async function ConnectionsPage() {
         </Link>
       </div>
 
-      {!connections || connections.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="card mt-10 !rounded-3xl border-dashed !border-brand-200 p-10 text-center">
           <p className="font-display text-xl text-ink">
             Your first connection starts here
@@ -72,18 +182,15 @@ export default async function ConnectionsPage() {
         </div>
       ) : (
         <>
-          <ConnectionList
-            items={connections.filter((c) => c.status !== "archived")}
-          />
-          {connections.some((c) => c.status === "archived") && (
+          <ConnectionList items={rows.filter((c) => c.status !== "archived")} />
+          {rows.some((c) => c.status === "archived") && (
             <details className="mt-8">
               <summary className="cursor-pointer text-sm text-ink-soft/70">
-                Archived (
-                {connections.filter((c) => c.status === "archived").length})
+                Archived ({rows.filter((c) => c.status === "archived").length})
               </summary>
               <div className="mt-3 opacity-70">
                 <ConnectionList
-                  items={connections.filter((c) => c.status === "archived")}
+                  items={rows.filter((c) => c.status === "archived")}
                 />
               </div>
             </details>

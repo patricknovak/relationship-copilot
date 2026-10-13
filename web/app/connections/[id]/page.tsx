@@ -24,6 +24,7 @@ import {
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { dailyCardCopy, dailyState, todayUtc } from "@/lib/dailyState";
 
 const NOTICES: Record<
   string,
@@ -114,6 +115,22 @@ export default async function ConnectionPage({
     myName = me?.display_name?.trim() || null;
   }
 
+  // The other person's name for the heading and the daily card. Read through
+  // the partner_profiles view, which exposes only display fields of people
+  // you share a connection with.
+  let themName: string | null = null;
+  const otherId = (members ?? [])
+    .map((m) => m.user_id)
+    .find((uid) => uid !== user?.id);
+  if (otherId) {
+    const { data: them } = await supabase
+      .from("partner_profiles")
+      .select("display_name")
+      .eq("id", otherId)
+      .maybeSingle();
+    themName = them?.display_name?.trim() || null;
+  }
+
   let { data: instance } = await supabase
     .from("prompt_instances")
     .select("id, status, questions")
@@ -177,6 +194,68 @@ export default async function ConnectionPage({
     streak = computeStreak(dates);
   }
 
+  // Today's question, inline. The instance is pre-created by cron for active
+  // connections; ensure_daily_prompt is the idempotent fallback (members
+  // only). Both answer flags are read under RLS / via the boolean-only RPC, so
+  // the card never sees the other person's words early.
+  let today: {
+    id: string;
+    text: string;
+    state: ReturnType<typeof dailyState>;
+  } | null = null;
+  if (conn.status === "active" && user) {
+    const date = todayUtc();
+    let { data: daily } = await supabase
+      .from("prompt_instances")
+      .select("id, status, questions")
+      .eq("connection_id", id)
+      .eq("kind", "daily")
+      .eq("scheduled_for", date)
+      .maybeSingle();
+    if (!daily) {
+      const { data: ensuredId } = await supabase.rpc("ensure_daily_prompt", {
+        p_conn: id,
+        p_date: date,
+      });
+      if (ensuredId) {
+        const { data: created } = await supabase
+          .from("prompt_instances")
+          .select("id, status, questions")
+          .eq("id", ensuredId)
+          .maybeSingle();
+        daily = created;
+      }
+    }
+    if (daily) {
+      const { data: mine } = await supabase
+        .from("prompt_responses")
+        .select("id")
+        .eq("instance_id", daily.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      let theyAnswered = daily.status === "revealed";
+      if (!mine && !theyAnswered) {
+        const { data: others } = await supabase.rpc("others_have_answered", {
+          p_instance: daily.id,
+        });
+        theyAnswered = !!others;
+      }
+      const qs = Array.isArray(daily.questions)
+        ? (daily.questions as PromptQuestion[])
+        : [];
+      today = {
+        id: daily.id,
+        text: qs[0]?.text ?? "",
+        state: dailyState({
+          hasInstance: true,
+          status: daily.status,
+          iAnswered: !!mine,
+          theyAnswered,
+        }),
+      };
+    }
+  }
+
   // Zodiac compatibility (entertainment only). Computed server-side so
   // partner birth dates are never readable through profiles RLS.
   let compat: { level: string; blurb: string; signs: string[] } | null = null;
@@ -212,7 +291,10 @@ export default async function ConnectionPage({
       <Link href="/connections" className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← All connections
       </Link>
-      <h1 className="mt-2 text-3xl">{connectionLabel(conn.type)}</h1>
+      <p className="eyebrow mt-3">{connectionLabel(conn.type)}</p>
+      <h1 className="mt-1 text-3xl">
+        {themName ?? (joinedCount >= 2 ? "Your person" : connectionLabel(conn.type))}
+      </h1>
       {streak > 0 && (
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200">
           🔥 {streak}-day streak
@@ -418,8 +500,49 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Daily question */}
-      {conn.status === "active" && (
+      {/* Daily question, shown inline with where you both are on it */}
+      {conn.status === "active" && today && (
+        <section
+          id="today"
+          className={`card mt-6 scroll-mt-24 ${
+            today.state === "your_turn" || today.state === "answer"
+              ? "!border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:!bg-brand-900/20"
+              : ""
+          }`}
+        >
+          {today.state !== "revealed" && <RevealWatcher instanceId={today.id} />}
+          <p className="eyebrow">Today&apos;s question</p>
+          <h2 className="mt-1 text-lg">{dailyCardCopy(today.state, themName).headline}</h2>
+          {today.text && (
+            <p className="mt-2 font-display text-xl leading-snug text-ink">
+              &ldquo;{today.text}&rdquo;
+            </p>
+          )}
+          <p className="mt-2 text-sm text-ink-soft">
+            {dailyCardCopy(today.state, themName).body}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/connections/${id}/prompts/${today.id}`}
+              className={
+                today.state === "waiting" || today.state === "revealed"
+                  ? "btn-secondary !px-4 !py-2 text-sm"
+                  : "btn-primary"
+              }
+            >
+              {dailyCardCopy(today.state, themName).cta}
+            </Link>
+            {today.state === "waiting" && (
+              <NudgePerson
+                connectionUrl={`${base}/connections/${id}`}
+                inviterName={myName}
+                variant="finish"
+              />
+            )}
+          </div>
+        </section>
+      )}
+      {conn.status === "active" && !today && (
         <section className="card mt-6">
           <h2 className="text-lg">Today&apos;s question</h2>
           <p className="mt-1 text-sm text-ink-soft">
@@ -481,16 +604,29 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Leave — anyone can step away (teen-revocable). */}
+      {/* Leave — anyone can step away (teen-revocable). One extra tap so a
+          stray click can't archive a shared space. */}
       {conn.status !== "archived" && (
-        <form action={leave} className="mt-10 border-t border-gray-100 pt-6">
-          <PendingButton
-            className="text-sm text-ink-soft/80 hover:text-rose-600"
-            pendingLabel="Leaving…"
-          >
+        <details className="mt-10 border-t border-gray-100 pt-6">
+          <summary className="cursor-pointer list-none text-sm text-ink-soft/80 hover:text-rose-600">
             Leave this connection
-          </PendingButton>
-        </form>
+          </summary>
+          <div className="mt-3 rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
+            <p className="text-sm text-ink-soft">
+              This archives the connection for both of you. Nothing new can be
+              started here afterwards, you each keep what you wrote, and the
+              other person isn&apos;t notified. You can always start a new one.
+            </p>
+            <form action={leave} className="mt-3">
+              <PendingButton
+                className="btn-secondary !border-rose-300 !px-4 !py-2 text-sm !text-rose-700 hover:!bg-rose-50 dark:!text-rose-300 dark:hover:!bg-rose-950/40"
+                pendingLabel="Leaving…"
+              >
+                Yes, leave this connection
+              </PendingButton>
+            </form>
+          </div>
+        </details>
       )}
     </div>
   );

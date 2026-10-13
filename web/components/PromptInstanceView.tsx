@@ -8,6 +8,7 @@ import NudgePerson from "@/components/NudgePerson";
 import {
   EMPTY_STATE,
   FIRST_REVEAL_UNLOCK,
+  REVEALED,
   WAITING_ON_THEM,
   WAITING_ON_YOU,
 } from "@/lib/firstRevealCopy";
@@ -88,7 +89,9 @@ export default async function PromptInstanceView({
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const connectionUrl = `${site}/connections/${connectionId}`;
 
-  // Soft Premium only after the connection's first mutual reveal.
+  // The big "You revealed together" hero and the soft Premium card belong to
+  // the connection's first mutual reveal only; later reveals get a quieter
+  // header so the daily loop doesn't shout every day.
   let isFirstReveal = false;
   let isPremium = false;
   if (instance.status === "revealed" && user) {
@@ -143,32 +146,53 @@ export default async function PromptInstanceView({
           ← Back
         </Link>
 
-        <header className="mt-4">
-          <p className="eyebrow">{heading}</p>
-          <h1 className="mt-2 text-3xl sm:text-4xl">
-            {FIRST_REVEAL_UNLOCK.headline}
-          </h1>
-          <p className="mt-2 font-display text-xl text-brand-800 dark:text-brand-200">
-            {FIRST_REVEAL_UNLOCK.subhead}
-          </p>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
-            {FIRST_REVEAL_UNLOCK.body}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <a href="#answers" className="btn-primary">
-              {FIRST_REVEAL_UNLOCK.primaryCta}
-            </a>
-            <a href="#discussion" className="btn-secondary">
-              {FIRST_REVEAL_UNLOCK.secondaryCta}
-            </a>
-            <Link
-              href={`/connections/${connectionId}`}
-              className="text-sm text-ink-soft/80 hover:text-ink"
-            >
-              {FIRST_REVEAL_UNLOCK.tertiaryCta}
-            </Link>
-          </div>
-        </header>
+        {isFirstReveal ? (
+          <header className="mt-4">
+            <p className="eyebrow">{heading}</p>
+            <h1 className="mt-2 text-3xl sm:text-4xl">
+              {FIRST_REVEAL_UNLOCK.headline}
+            </h1>
+            <p className="mt-2 font-display text-xl text-brand-800 dark:text-brand-200">
+              {FIRST_REVEAL_UNLOCK.subhead}
+            </p>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
+              {FIRST_REVEAL_UNLOCK.body}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <a href="#answers" className="btn-primary">
+                {FIRST_REVEAL_UNLOCK.primaryCta}
+              </a>
+              <a href="#discussion" className="btn-secondary">
+                {FIRST_REVEAL_UNLOCK.secondaryCta}
+              </a>
+              <Link
+                href={`/connections/${connectionId}#today`}
+                className="text-sm text-ink-soft/80 hover:text-ink"
+              >
+                {FIRST_REVEAL_UNLOCK.tertiaryCta}
+              </Link>
+            </div>
+          </header>
+        ) : (
+          <header className="mt-4">
+            <p className="eyebrow">{heading}</p>
+            <h1 className="mt-2 text-3xl">{REVEALED.headline}</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+              {REVEALED.body}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <a href="#discussion" className="btn-secondary !px-4 !py-2 text-sm">
+                {REVEALED.secondaryCta}
+              </a>
+              <Link
+                href={`/connections/${connectionId}#today`}
+                className="text-sm text-ink-soft/80 hover:text-ink"
+              >
+                {REVEALED.tertiaryCta}
+              </Link>
+            </div>
+          </header>
+        )}
 
         <ol id="answers" className="mt-10 scroll-mt-24 space-y-6">
           {questions.map((q, i) => (
