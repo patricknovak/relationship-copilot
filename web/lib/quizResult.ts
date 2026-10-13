@@ -35,7 +35,9 @@ export function scoreDimensions(
   const acc = new Map<string, { sum: number; count: number; max: number }>();
   for (const q of questions) {
     if (q.format !== "scale" || !q.dimension) continue;
-    const v = Number(answers[q.id]);
+    const raw = (answers[q.id] ?? "").trim();
+    if (raw === "") continue; // Number("") is 0, which would count a blank as a score
+    const v = Number(raw);
     if (!Number.isFinite(v)) continue;
     const cur = acc.get(q.dimension) ?? { sum: 0, count: 0, max: q.max ?? 5 };
     cur.sum += v;

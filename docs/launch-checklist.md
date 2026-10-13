@@ -6,7 +6,7 @@ https://relationshipcopilot.com). Update the checkboxes as items land.
 
 ## Already done (verified)
 
-- [x] **Code** — MVP complete on `main`; CI runs typecheck, 54 vitest tests,
+- [x] **Code** — MVP complete on `main`; CI runs typecheck, 182 vitest tests (this branch),
       build, and the SQL/RLS reveal-gate tests. Local run: all green.
 - [x] **Database** — migrations 0001–0012 applied to the `relationship-copilot`
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
