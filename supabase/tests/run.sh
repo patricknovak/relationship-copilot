@@ -52,6 +52,7 @@ run -f "$ROOT/supabase/tests/12_connection_timezone_test.sql"
 echo "re-applying content seeds 0020 and 0024 (must be no-ops)"
 run -f "$ROOT/supabase/migrations/0020_daily_pool_depth.sql"
 run -f "$ROOT/supabase/migrations/0024_electives_depth.sql"
+run -f "$ROOT/supabase/migrations/0029_first_twenty_everywhere.sql"
 echo "running seed-idempotency test"
 run -f "$ROOT/supabase/tests/13_seed_idempotency_test.sql"
 

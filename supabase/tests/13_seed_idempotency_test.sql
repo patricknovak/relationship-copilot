@@ -13,3 +13,17 @@ begin
 end $$;
 
 select 'ALL SEED IDEMPOTENCY TESTS PASSED' as result;
+
+-- 0029: every onboarding pack is a real first 20 (no type-specific pack
+-- shorter than 20), and re-applying leaves them at exactly 20.
+do $$
+declare short int; over int;
+begin
+  select count(*) into short from prompt_templates
+   where kind = 'onboarding' and active and jsonb_array_length(questions) < 20;
+  select count(*) into over from prompt_templates
+   where kind = 'onboarding' and active and jsonb_array_length(questions) > 20;
+  assert short = 0, format('EXPECTED no onboarding pack under 20 questions, got %s', short);
+  assert over = 0, format('EXPECTED no onboarding pack over 20 questions, got %s', over);
+  raise notice 'PASS: every onboarding pack has exactly 20 questions';
+end $$;
