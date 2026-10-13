@@ -53,6 +53,11 @@ export async function GET() {
         .in("connection_id", connIds)
     : { data: [] };
 
+  const { data: reactions } = await supabase
+    .from("answer_reactions")
+    .select("instance_id, target_user_id, question_id, emoji, created_at")
+    .eq("user_id", user.id);
+
   const { data: safetyEvents } = await supabase
     .from("safety_events")
     .select("*")
@@ -74,6 +79,7 @@ export async function GET() {
     memberships,
     prompt_responses: responses,
     discussions,
+    reactions,
     insights,
     safety_events: safetyEvents,
     subscription,

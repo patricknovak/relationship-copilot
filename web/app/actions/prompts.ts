@@ -12,6 +12,7 @@ import {
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { after } from "next/server";
+import { isReactionEmoji } from "@/lib/reactions";
 import { notifyOtherMembersAfterSubmit } from "@/lib/notify";
 
 // Always-free, plan-independent: log a safety event when free-text content
@@ -244,6 +245,53 @@ export async function ensureDaily(connectionId: string) {
   }
 
   redirect(`/connections/${connectionId}/prompts/${data}`);
+}
+
+// React to another member's revealed answer (or clear your reaction with
+// emoji null). The user's own client does the write, so RLS enforces
+// membership, post-reveal only, and not-your-own-answer.
+export async function reactToAnswer(input: {
+  instanceId: string;
+  connectionId: string;
+  targetUserId: string;
+  questionId: string;
+  emoji: string | null;
+}): Promise<{ error?: string }> {
+  const { instanceId, connectionId, targetUserId, questionId, emoji } = input;
+  if (!instanceId || !targetUserId || !questionId) return {};
+  if (emoji !== null && !isReactionEmoji(emoji)) return { error: "Unknown reaction." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  if (targetUserId === user.id) return {};
+
+  const { error } =
+    emoji === null
+      ? await supabase
+          .from("answer_reactions")
+          .delete()
+          .eq("instance_id", instanceId)
+          .eq("user_id", user.id)
+          .eq("target_user_id", targetUserId)
+          .eq("question_id", questionId)
+      : await supabase.from("answer_reactions").upsert(
+          {
+            instance_id: instanceId,
+            user_id: user.id,
+            target_user_id: targetUserId,
+            question_id: questionId,
+            emoji,
+          },
+          { onConflict: "instance_id,user_id,target_user_id,question_id" },
+        );
+  if (error) return { error: "Couldn't save that reaction." };
+
+  revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);
+  revalidatePath(`/connections/${connectionId}/onboarding`);
+  return {};
 }
 
 export async function postDiscussion(input: {

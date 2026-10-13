@@ -5,6 +5,8 @@ import AnswerForm from "@/components/AnswerForm";
 import DiscussionForm from "@/components/DiscussionForm";
 import SoftPremiumCard from "@/components/SoftPremiumCard";
 import NudgePerson from "@/components/NudgePerson";
+import ReactionBar from "@/components/ReactionBar";
+import { groupReactions, isReactionEmoji, reactionKey } from "@/lib/reactions";
 import {
   EMPTY_STATE,
   FIRST_REVEAL_UNLOCK,
@@ -131,6 +133,14 @@ export default async function PromptInstanceView({
       .eq("instance_id", instance.id)
       .order("created_at", { ascending: true });
 
+    // Reactions exist only on revealed instances (RLS), so this read is
+    // always post-reveal.
+    const { data: reactionRows } = await supabase
+      .from("answer_reactions")
+      .select("user_id, target_user_id, question_id, emoji")
+      .eq("instance_id", instance.id);
+    const reactions = groupReactions(reactionRows ?? []);
+
     // Stable answer order: you first, then the other person.
     const ordered = [...(responses ?? [])].sort((a) =>
       a.user_id === user?.id ? -1 : 1,
@@ -228,6 +238,35 @@ export default async function PromptInstanceView({
                           <span className="text-ink-soft/50">No answer</span>
                         )}
                       </p>
+                      {(() => {
+                        const got = reactions.get(reactionKey(r.user_id, q.id)) ?? [];
+                        if (mine) {
+                          // Their reaction to my answer, if any.
+                          return got.length > 0 ? (
+                            <p className="mt-2 text-sm" aria-label="Reactions to your answer">
+                              {got.map((x) => (
+                                <span
+                                  key={x.user_id}
+                                  className="mr-1 inline-block rounded-full border border-amber-200 bg-white/70 px-2 py-0.5 dark:border-amber-900/40 dark:bg-surface"
+                                  title={`${nameOf(x.user_id)} reacted`}
+                                >
+                                  {x.emoji}
+                                </span>
+                              ))}
+                            </p>
+                          ) : null;
+                        }
+                        const my = got.find((x) => x.user_id === user?.id)?.emoji ?? null;
+                        return (
+                          <ReactionBar
+                            instanceId={instance.id}
+                            connectionId={connectionId}
+                            targetUserId={r.user_id}
+                            questionId={q.id}
+                            mine={isReactionEmoji(my) ? my : null}
+                          />
+                        );
+                      })()}
                     </div>
                   );
                 })}

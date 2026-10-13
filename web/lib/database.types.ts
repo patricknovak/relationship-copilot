@@ -314,6 +314,27 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      answer_reactions: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["answer_reactions"]["Insert"]
+        >;
+        Relationships: [];
+      };
       notification_log: {
         Row: {
           instance_id: string;
