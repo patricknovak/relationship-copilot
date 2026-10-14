@@ -13,6 +13,28 @@
     // files are never public.
     "run_worker_first": ["/_vinext/static-cache/*"]
   },
+  // Hourly reminder email (lib/workerCron.ts maps schedules to routes; a test
+  // keeps the two in sync). The route is idempotent per person per local day.
+  "triggers": {
+    "crons": ["20 * * * *"]
+  },
+  // Non-secret runtime config. Secrets (Supabase service role, Stripe, xAI,
+  // GA4 API secret, Resend, CRON_SECRET, NOTIFY_SECRET) are Worker secrets,
+  // set with `npx wrangler secret put NAME --name relationship-copilot`;
+  // deploys never touch them. NEXT_PUBLIC_* are build-time (.env.production).
+  "vars": {
+    "APP_ORIGIN": "https://relationshipcopilot.com",
+    "GA4_MEASUREMENT_ID": "G-3HE7V5FTSR",
+    "EMAIL_FROM": "Relationship Copilot <noreply@relationshipcopilot.com>"
+  },
+  // Run the Worker next to Supabase (us-east-1), where Vercel's iad1
+  // functions ran. Signed-in pages make several sequential Supabase calls;
+  // from a far edge each one would cross a continent. Static assets and
+  // prerendered pages are served from the edge regardless.
+  "placement": {
+    "mode": "targeted",
+    "hostname": "digbnrhwsifmycrxyquo.supabase.co"
+  },
   "observability": {
     "enabled": true
   },

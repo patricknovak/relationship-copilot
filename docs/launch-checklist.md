@@ -143,29 +143,21 @@ product behaves exactly as before without them.
       "they answered, your turn", "you both answered" and "they wrote in a
       discussion" emails go out after a join, submit or first reply, subject
       to each person's Account → Notifications settings.
-- [ ] Set `CRON_SECRET` (any long random string) and schedule the daily
-      reminder. The DB already runs pg_cron; with `pg_net` enabled
-      (Database → Extensions), run once in the SQL editor with the real
-      secret (do not commit it):
-
-      ```sql
-      select cron.schedule(
-        'daily-reminder-email',
-        '20 * * * *',    -- hourly; the route emails each connection once, inside its own 9am–8pm local window
-        $$ select net.http_post(
-             url := 'https://relationshipcopilot.com/api/cron/daily-reminder',
-             headers := '{"Authorization": "Bearer <CRON_SECRET>"}'::jsonb
-           ); $$
-      );
-      ```
+- [ ] Daily reminder email. On Cloudflare this is a Worker Cron Trigger
+      (`20 * * * *` in `web/wrangler.jsonc`), which calls
+      `/api/cron/daily-reminder` with the Worker's `CRON_SECRET` (already set
+      on the Worker). No pg_cron job, `pg_net` or SQL secret is needed. Check
+      Workers → Logs for a `cron_tick` line at :20 past the hour after the
+      cutover. Do not also schedule it in pg_cron, or the route is hit twice
+      an hour (harmless, since it is idempotent, but wasteful).
 
       The route is idempotent (one email per person per connection per local
       day, enforced by `notification_log`), zone-aware (migration 0025 gives
       each connection a time zone; 9am–8pm local only) and only emails
-      people who opted in to "Today's question is ready". Vercel cron or a Cloudflare scheduled
-      handler can call the same URL instead.
-- [ ] Optional `NOTIFY_SECRET` for signing unsubscribe links (falls back to a
-      server-only key). One-click unsubscribe is at
+      people who opted in to "Today's question is ready". It does nothing
+      until `RESEND_API_KEY` is set.
+- [ ] `NOTIFY_SECRET` for signing unsubscribe links is set on the Worker
+      (it falls back to a server-only key if missing). One-click unsubscribe is at
       `/api/notifications/unsubscribe` and also set as the
       `List-Unsubscribe` header.
 - [ ] Apply migrations **0020** (daily pool, idempotent), **0021**

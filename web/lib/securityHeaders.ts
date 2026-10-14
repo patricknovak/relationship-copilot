@@ -149,9 +149,18 @@ export function formatCsp(directives: Record<string, string>): string {
     .join("; ");
 }
 
+/**
+ * HSTS, matching what Vercel sent in production before the move to
+ * Cloudflare Workers (two years, no includeSubDomains, no preload), so
+ * browsers see no change. Owned by the app now that the Worker is the only
+ * host; widen to includeSubDomains only once every subdomain is HTTPS.
+ */
+export const HSTS = "max-age=63072000";
+
 /** Non-CSP headers that are always enforced. */
 export function buildEnforcedSecurityHeaders(): SecurityHeader[] {
   return [
+    { key: "Strict-Transport-Security", value: HSTS },
     { key: "X-Frame-Options", value: FRAME_OPTIONS },
     { key: "X-Content-Type-Options", value: NOSNIFF },
     { key: "Referrer-Policy", value: REFERRER_POLICY },
@@ -160,9 +169,7 @@ export function buildEnforcedSecurityHeaders(): SecurityHeader[] {
 }
 
 /**
- * Full header set for Next `headers()` / middleware.
- * Does not set Strict-Transport-Security — Vercel already sends HSTS on
- * production; we must not weaken it.
+ * Full header set for Next `headers()` / middleware, HSTS included.
  */
 export function buildSecurityHeaders(
   options: BuildSecurityHeadersOptions = {},

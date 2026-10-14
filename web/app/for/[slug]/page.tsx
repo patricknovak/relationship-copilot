@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { AuthLink } from "@/components/AuthHint";
 import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
@@ -39,12 +39,9 @@ export default async function ForPage({
   const page = forPageBySlug(slug);
   if (!page) notFound();
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // No session read: these pages prerender at build (generateStaticParams).
   const newHref = `/connections/new?type=${page.type}`;
-  const inviteHref = user ? newHref : `/login?next=${encodeURIComponent(newHref)}`;
+  const loginHref = `/login?next=${encodeURIComponent(newHref)}`;
   const faqs = forPageFaqs(page);
   const url = canonicalUrl(`/for/${page.slug}`);
 
@@ -62,9 +59,9 @@ export default async function ForPage({
       <p className="mt-4 text-base leading-relaxed text-ink-soft">{page.intro}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Link href={inviteHref} className="btn-primary">
+        <AuthLink signedInHref={newHref} signedOutHref={loginHref} className="btn-primary">
           Invite your person
-        </Link>
+        </AuthLink>
         <Link href="/about" className="btn-secondary">
           How it works
         </Link>
@@ -125,9 +122,9 @@ export default async function ForPage({
           Create the connection, send the link, and your first questions
           unlock the moment they join.
         </p>
-        <Link href={inviteHref} className="btn-primary mt-5">
+        <AuthLink signedInHref={newHref} signedOutHref={loginHref} className="btn-primary mt-5">
           Invite your person
-        </Link>
+        </AuthLink>
       </section>
 
       <nav className="mt-10 flex flex-wrap gap-2 text-sm" aria-label="Other relationships">

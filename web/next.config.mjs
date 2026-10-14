@@ -24,7 +24,11 @@ const PERMISSIONS_POLICY = [
   "xr-spatial-tracking=()",
 ].join(", ");
 
+// Same value Vercel sent before the move to Cloudflare Workers.
+const HSTS = "max-age=63072000";
+
 const ENFORCED_HEADERS = [
+  { key: "Strict-Transport-Security", value: HSTS },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -33,8 +37,8 @@ const ENFORCED_HEADERS = [
 
 const nextConfig = {
   reactStrictMode: true,
-  // Match production Vercel Domains: www → apex (308). Belt-and-suspenders so
-  // the app config agrees with platform redirects if domain settings drift.
+  // www → apex (308). On Cloudflare Workers this is the only place the
+  // redirect lives, so keep `permanent: true` (vinext ignores statusCode).
   async redirects() {
     return [
       {
@@ -46,8 +50,8 @@ const nextConfig = {
     ];
   },
   async headers() {
-    // Applied to every path including static assets. Do not set HSTS here —
-    // Vercel already sends strict-transport-security on production.
+    // Applied to every path, static assets included. HSTS lives here now that
+    // the app, not the platform, is responsible for it.
     return [
       {
         source: "/:path*",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { AuthLink } from "@/components/AuthHint";
 import { ACQUISITION } from "@/lib/firstRevealCopy";
 import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
@@ -60,12 +60,9 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
 ];
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+// Static: no session read, so the page is prerendered at build. CTAs carry
+// both targets; the auth hint (components/AuthHint.tsx) shows the right one.
+export default function Home() {
   return (
     <div>
       {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
@@ -86,18 +83,21 @@ export default async function Home() {
             {ACQUISITION.body}
           </p>
           <div className="mt-9 flex animate-fade-up flex-wrap items-center justify-center gap-3 [animation-delay:200ms]">
-            <Link
-              href={user ? "/connections/new" : "/login?next=/connections/new"}
+            <AuthLink
+              signedInHref="/connections/new"
+              signedOutHref="/login?next=/connections/new"
               className="btn-primary !px-7 !py-3 !text-base"
             >
               {ACQUISITION.inviteCta}
-            </Link>
-            <Link
-              href={user ? "/connections" : "/login"}
+            </AuthLink>
+            <AuthLink
+              signedInHref="/connections"
+              signedOutHref="/login"
               className="btn-secondary !px-7 !py-3 !text-base"
+              signedInChildren="Open your connections"
             >
-              {user ? "Open your connections" : ACQUISITION.startCta}
-            </Link>
+              {ACQUISITION.startCta}
+            </AuthLink>
           </div>
           <p className="mt-4 animate-fade-up text-xs text-ink-soft/70 [animation-delay:260ms]">
             {ACQUISITION.trustLine}
@@ -279,12 +279,14 @@ export default async function Home() {
             by Friday.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={user ? "/connections" : "/login"}
+            <AuthLink
+              signedInHref="/connections"
+              signedOutHref="/login"
               className="btn-primary !px-7 !py-3 !text-base"
+              signedInChildren="Open your connections"
             >
-              {user ? "Open your connections" : "Start free"}
-            </Link>
+              Start free
+            </AuthLink>
             <Link href="/pricing" className="btn-ghost">
               See pricing
             </Link>

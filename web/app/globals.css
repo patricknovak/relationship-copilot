@@ -126,3 +126,15 @@
       radial-gradient(26rem 16rem at 12% 12rem, rgb(60 48 59 / 0.55), transparent 70%);
   }
 }
+
+/* Auth display hint (components/AuthHint.tsx): both variants are in the HTML,
+   so public pages can be prerendered; <html data-auth="in"> picks one before
+   first paint. display: contents keeps the wrappers out of flex layouts. */
+.auth-in,
+.auth-out {
+  display: contents;
+}
+html:not([data-auth="in"]) .auth-in,
+html[data-auth="in"] .auth-out {
+  display: none !important;
+}

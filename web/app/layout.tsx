@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import ThemeScript from "@/components/ThemeScript";
+import { AuthHintScript } from "@/components/AuthHint";
 import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
@@ -53,6 +54,7 @@ export default function RootLayout({
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <head>
         <ThemeScript />
+        <AuthHintScript />
         {/* Consent Mode v2 defaults must run before GTM loads. */}
         <ConsentDefaults />
       </head>

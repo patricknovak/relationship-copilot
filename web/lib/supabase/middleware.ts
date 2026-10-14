@@ -42,9 +42,13 @@ export async function updateSession(request: NextRequest) {
   const needsAuth = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!user && needsAuth) {
+    // Keep the full path *and* query in `next` (e.g. /connections/new?type=
+    // sibling from the /for pages), and nothing else on /login itself.
     const url = request.nextUrl.clone();
+    const next = `${pathname}${request.nextUrl.search}`;
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = "";
+    url.searchParams.set("next", next);
     return NextResponse.redirect(url);
   }
 
