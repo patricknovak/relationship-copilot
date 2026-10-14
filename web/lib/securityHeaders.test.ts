@@ -5,6 +5,7 @@ import {
   buildSecurityHeaders,
   formatCsp,
   FRAME_OPTIONS,
+  HSTS,
   NOSNIFF,
   PERMISSIONS_POLICY,
   REFERRER_POLICY,
@@ -71,9 +72,10 @@ describe("formatCsp", () => {
 });
 
 describe("buildSecurityHeaders", () => {
-  it("always enforces frame/nosniff/referrer/permissions", () => {
+  it("always enforces hsts/frame/nosniff/referrer/permissions", () => {
     const keys = buildEnforcedSecurityHeaders().map((h) => h.key);
     expect(keys).toEqual([
+      "Strict-Transport-Security",
       "X-Frame-Options",
       "X-Content-Type-Options",
       "Referrer-Policy",
@@ -118,10 +120,22 @@ describe("buildSecurityHeaders", () => {
     ).toBeUndefined();
   });
 
-  it("never sets Strict-Transport-Security (Vercel owns HSTS)", () => {
+  it("sets HSTS exactly as Vercel did (two years, no subdomains, no preload)", () => {
     const headers = buildSecurityHeaders({ cspMode: "enforce" });
-    expect(
-      headers.find((h) => h.key.toLowerCase() === "strict-transport-security"),
-    ).toBeUndefined();
+    const hsts = headers.filter(
+      (h) => h.key.toLowerCase() === "strict-transport-security",
+    );
+    expect(hsts).toHaveLength(1);
+    expect(hsts[0].value).toBe("max-age=63072000");
+    expect(HSTS).toBe("max-age=63072000");
+  });
+
+  it("keeps next.config.mjs in lockstep with the enforced headers", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync(new URL("../next.config.mjs", import.meta.url), "utf8");
+    for (const h of buildEnforcedSecurityHeaders()) {
+      expect(src).toContain(`key: "${h.key}"`);
+    }
+    expect(src).toContain(`const HSTS = "${HSTS}";`);
   });
 });
