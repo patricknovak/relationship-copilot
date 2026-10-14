@@ -58,18 +58,13 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      # NEXT_PUBLIC_* values are inlined at build time, so they come from repo
-      # variables; server secrets live in the Worker (wrangler secret put).
+      # NEXT_PUBLIC_* values are public and inlined at build time from
+      # web/.env.production. Do not set them here: an unset repo variable
+      # arrives as an empty env var and would override the file. Server
+      # secrets live in the Worker (wrangler secret put) and persist across
+      # deploys.
       - name: Build (Cloudflare)
         run: npm run build:vinext
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://relationshipcopilot.com' }}
-          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: ${{ vars.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM }}
-          NEXT_PUBLIC_AUTH_PROVIDERS: ${{ vars.NEXT_PUBLIC_AUTH_PROVIDERS }}
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
-          NEXT_PUBLIC_GTM_ID: ${{ vars.NEXT_PUBLIC_GTM_ID }}
       - name: Check Cloudflare credentials
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
