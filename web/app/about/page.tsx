@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { AuthLink } from "@/components/AuthHint";
 import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,17 +10,8 @@ export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl("/about") },
 };
 
-export default async function AboutPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const startHref = user ? "/connections" : "/login";
-  const inviteHref = user
-    ? "/connections/new"
-    : "/login?next=/connections/new";
-
+// Static (prerendered); CTAs follow the auth hint, see components/AuthHint.tsx.
+export default function AboutPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
       <p className="eyebrow">About</p>
@@ -37,12 +28,12 @@ export default async function AboutPage() {
         Free where it matters. Never therapy. Built so safety stays free.
       </p>
       <div className="mt-7 flex flex-wrap items-center gap-3">
-        <Link href={inviteHref} className="btn-primary">
+        <AuthLink signedInHref="/connections/new" signedOutHref="/login?next=/connections/new" className="btn-primary">
           Invite your person
-        </Link>
-        <Link href={startHref} className="btn-secondary">
+        </AuthLink>
+        <AuthLink signedInHref="/connections" signedOutHref="/login" className="btn-secondary">
           Start free
-        </Link>
+        </AuthLink>
       </div>
 
       <section className="mt-12 space-y-4">
@@ -204,12 +195,12 @@ export default async function AboutPage() {
           Invite the person who matters. Answer on your own. Reveal together.
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link href={inviteHref} className="btn-primary">
+          <AuthLink signedInHref="/connections/new" signedOutHref="/login?next=/connections/new" className="btn-primary">
             Invite your person
-          </Link>
-          <Link href={startHref} className="btn-secondary">
+          </AuthLink>
+          <AuthLink signedInHref="/connections" signedOutHref="/login" className="btn-secondary">
             Start free
-          </Link>
+          </AuthLink>
           <Link href="/safety" className="btn-ghost">
             Safety always free
           </Link>
