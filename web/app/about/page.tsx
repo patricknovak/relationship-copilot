@@ -71,8 +71,10 @@ export default function AboutPage() {
           </li>
           <li>You can export your data and delete your account.</li>
           <li>
-            Optional AI features (like Blueprint) use redacted inputs and safety
-            screening. We do not use your intimate answers to train models.
+            Optional AI features (like Blueprint) strip names, emails, and phone
+            numbers before anything leaves our systems, and run safety
+            screening. Production AI stays off until a no-training agreement
+            with the provider is in place.
           </li>
           <li>
             Crisis and safety resources are always free — never locked behind
@@ -109,8 +111,8 @@ export default function AboutPage() {
           </li>
         </ul>
         <p>
-          Life-season packs cover the moments most apps skip: new love through
-          grief and everything in between.
+          Optional question packs and library reads cover seasons most apps
+          skip: new love through grief and everything in between.
         </p>
       </section>
 
