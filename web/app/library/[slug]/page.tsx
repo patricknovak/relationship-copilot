@@ -110,6 +110,47 @@ export default async function ArticlePage({
         )}
       </div>
 
+      {slug === "36-questions" && (
+        <aside className="mt-10 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 dark:border-surface-line dark:bg-brand-900/20">
+          <p className="font-display text-lg text-ink">Try a curated list</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            Browse questions from our onboarding packs, then start a connection
+            and answer in private.
+          </p>
+          <ul className="mt-3 space-y-1 text-sm">
+            <li>
+              <Link
+                href="/questions/partners"
+                className="text-brand-700 underline"
+              >
+                Questions to ask your partner
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/questions/friends"
+                className="text-brand-700 underline"
+              >
+                Questions to ask a friend
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/questions/family"
+                className="text-brand-700 underline"
+              >
+                Questions to ask family
+              </Link>
+            </li>
+            <li>
+              <Link href="/questions" className="text-brand-700 underline">
+                All question lists
+              </Link>
+            </li>
+          </ul>
+        </aside>
+      )}
+
       <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/70">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
