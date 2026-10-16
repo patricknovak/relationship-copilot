@@ -153,6 +153,28 @@ export default function Home() {
               </Link>
             ))}
           </div>
+          <p className="mt-6 animate-fade-up text-sm text-ink-soft [animation-delay:500ms]">
+            Or browse{" "}
+            <Link href="/questions" className="text-brand-700 underline">
+              questions to ask
+            </Link>
+            {" — "}
+            <Link
+              href="/questions/partners"
+              className="text-brand-700 underline"
+            >
+              your partner
+            </Link>
+            {", "}
+            <Link href="/questions/friends" className="text-brand-700 underline">
+              a friend
+            </Link>
+            {", or "}
+            <Link href="/questions/family" className="text-brand-700 underline">
+              family
+            </Link>
+            .
+          </p>
         </div>
       </section>
 

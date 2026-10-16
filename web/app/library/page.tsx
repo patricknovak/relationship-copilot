@@ -65,7 +65,11 @@ export default async function LibraryPage() {
       <section className="mt-10">
         <h2 className="text-lg">Questions for your…</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Sample questions and how it works, for each kind of relationship.
+          Sample questions and how it works, for each kind of relationship.{" "}
+          <Link href="/questions" className="text-brand-700 underline">
+            Longer lists on /questions
+          </Link>
+          .
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {FOR_PAGES.map((p) => (

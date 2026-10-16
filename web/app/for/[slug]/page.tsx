@@ -90,6 +90,25 @@ export default async function ForPage({
         </ol>
       </section>
 
+      {(page.slug === "partners" ||
+        page.slug === "friends" ||
+        page.slug === "family") && (
+        <p className="mt-8 text-sm text-ink-soft">
+          Longer list:{" "}
+          <Link
+            href={`/questions/${page.slug}`}
+            className="text-brand-700 underline"
+          >
+            {page.slug === "partners"
+              ? "questions to ask your partner"
+              : page.slug === "friends"
+                ? "questions to ask a friend"
+                : "questions to ask family"}
+          </Link>
+          .
+        </p>
+      )}
+
       {page.article && (
         <p className="mt-8 text-sm text-ink-soft">
           From the library:{" "}
