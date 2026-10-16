@@ -268,6 +268,22 @@ export async function sendEmailInvite(
     return { error: "This connection is no longer accepting invites." };
   }
 
+  // Rate limit invite email (creates accounts via admin API). Users can read
+  // their own audit_log; count recent sends and stop before spam volume.
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentInvites } = await supabase
+    .from("audit_log")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("action", "connection.invite_email")
+    .gte("created_at", since);
+  if ((recentInvites ?? 0) >= 10) {
+    return {
+      error:
+        "You've sent quite a few invite emails recently — try sharing the link instead, or wait an hour.",
+    };
+  }
+
   // Inviter display name only — never relationship type. Empty when unset so
   // the email template falls back to "Someone you know".
   const { data: profile } = await supabase

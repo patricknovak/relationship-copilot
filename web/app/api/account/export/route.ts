@@ -17,6 +17,21 @@ export async function GET() {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
+  // Soft rate limit: exports are heavy (many tables) and easy to hammer.
+  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { count: recentExports } = await supabase
+    .from("audit_log")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("action", "account.export")
+    .gte("created_at", since);
+  if ((recentExports ?? 0) >= 3) {
+    return NextResponse.json(
+      { error: "Export rate limit — try again in a few minutes." },
+      { status: 429 },
+    );
+  }
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
