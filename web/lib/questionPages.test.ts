@@ -46,8 +46,12 @@ describe("questionPages", () => {
     expect(QUESTIONS_SHARED_FAQS).toHaveLength(3);
     const blob = QUESTIONS_SHARED_FAQS.map((f) => `${f.q} ${f.a}`).join(" ");
     expect(blob.toLowerCase()).toContain("database");
-    expect(blob.toLowerCase()).toMatch(/never paywall|safety.*free|free/);
-    expect(blob).toContain("$18/mo");
+    expect(blob).toContain(
+      "Yes. Safety resources are always free and never paywalled.",
+    );
+    expect(blob).toContain(
+      "Premium is $18/mo and optional. Free covers up to 3 connections, with the questions, mutual reveal, and Safety resources included.",
+    );
     expect(blob.toLowerCase()).not.toContain("20 questions");
     expect(blob.toLowerCase()).not.toMatch(/train(ing)? (ai|models)/);
   });

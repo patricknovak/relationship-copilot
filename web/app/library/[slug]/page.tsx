@@ -114,8 +114,8 @@ export default async function ArticlePage({
         <aside className="mt-10 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 dark:border-surface-line dark:bg-brand-900/20">
           <p className="font-display text-lg text-ink">Try a curated list</p>
           <p className="mt-1 text-sm text-ink-soft">
-            Browse questions from our onboarding packs, then start a connection
-            and answer in private.
+            Browse the questions you&apos;ll answer in Relationship Copilot,
+            then start a connection and answer in private.
           </p>
           <ul className="mt-3 space-y-1 text-sm">
             <li>

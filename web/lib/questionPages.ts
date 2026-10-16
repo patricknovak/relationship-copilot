@@ -48,11 +48,11 @@ export const QUESTIONS_SHARED_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Are safety features free?",
-    a: "Yes. Safety resources are never paywalled — crisis support stays free and easy to reach.",
+    a: "Yes. Safety resources are always free and never paywalled.",
   },
   {
     q: "What does Premium cost?",
-    a: "Premium is $18/mo and is optional. The core experience — questions, mutual reveal, and Safety — stays free.",
+    a: "Premium is $18/mo and optional. Free covers up to 3 connections, with the questions, mutual reveal, and Safety resources included.",
   },
 ];
 
@@ -72,9 +72,9 @@ export const QUESTION_PAGES: QuestionPage[] = [
     title: "Questions to ask your partner",
     metaTitle: "Questions to ask your partner",
     metaDescription:
-      "Thoughtful questions for couples, answered in private and revealed together. Free to start — Continue with Google.",
+      "Thoughtful questions for couples, answered in private and revealed together. Free for up to 3 connections.",
     intro:
-      "A selection from the romantic onboarding pack. Use them here as a list, or start a connection and answer each one in private.",
+      "Questions couples answer when they start. Use them here as a list, or start a connection and answer each one in private.",
     forSlug: "partners",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
@@ -145,9 +145,9 @@ export const QUESTION_PAGES: QuestionPage[] = [
     title: "Questions to ask a friend",
     metaTitle: "Questions to ask a friend",
     metaDescription:
-      "Deep questions for close friends, answered in private and revealed together. Free to start — Continue with Google.",
+      "Deep questions for close friends, answered in private and revealed together. Free for up to 3 connections.",
     intro:
-      "A selection from the friendship onboarding pack. Answer on your own, or start a connection and reveal together.",
+      "Questions friends answer when they start. Use them here as a list, or start a connection and reveal together.",
     forSlug: "friends",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
@@ -218,9 +218,9 @@ export const QUESTION_PAGES: QuestionPage[] = [
     title: "Questions to ask family",
     metaTitle: "Questions to ask family",
     metaDescription:
-      "Conversation questions for family, answered in private and revealed together. Free to start — Continue with Google.",
+      "Conversation questions for family, answered in private and revealed together. Free for up to 3 connections.",
     intro:
-      "A selection from the family onboarding pack. Private answers, shared only when you've both responded.",
+      "Questions family members answer when they start. Private answers, shared only when you've both responded.",
     forSlug: "family",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
@@ -295,8 +295,8 @@ export function questionPageBySlug(slug: string): QuestionPage | null {
 export const QUESTIONS_HUB = {
   metaTitle: "Questions to ask — partners, friends, and family",
   metaDescription:
-    "Curated questions to ask your partner, a friend, or family — answered in private and revealed together. Free to start with Google.",
+    "Curated questions to ask your partner, a friend, or family — answered in private and revealed together. Free for up to 3 connections.",
   title: "Questions to ask",
   intro:
-    "Lists drawn from the onboarding packs already in the product. Pick a relationship, browse the questions, then start a connection and answer the honest way.",
+    "These are the same questions you'll answer in Relationship Copilot. Pick a relationship, browse the questions, then start a connection and answer the honest way.",
 };
