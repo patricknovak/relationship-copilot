@@ -4,6 +4,13 @@ import { authorizeCronBearer } from "@/lib/cronAuth";
 import { emailConfigured } from "@/lib/email";
 import { notifyUser } from "@/lib/notify";
 import { todayIn } from "@/lib/dailyState";
+import {
+  answeredByInstance,
+  displayNameMap,
+  filterConnectionsInSendWindow,
+  membersByConnection,
+  partitionDailyInstances,
+} from "@/lib/dailyReminderBatch";
 import type { PromptQuestion } from "@/lib/database.types";
 
 export const runtime = "nodejs";
@@ -44,7 +51,13 @@ async function run(req: Request) {
 
   const admin = createAdminClient();
   const now = new Date();
-  const counts = { connections: 0, outside_window: 0, sent: 0, skipped: 0, failed: 0 };
+  const counts = {
+    connections: 0,
+    outside_window: 0,
+    sent: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
   // Page through active connections in id order so every one is visited.
   const connections: { id: string; timezone: string }[] = [];
@@ -64,53 +77,108 @@ async function run(req: Request) {
     if (page.length < PAGE) break;
   }
 
-  for (const conn of connections) {
-    counts.connections += 1;
-    const hour = localHour(conn.timezone, now);
-    if (hour < SEND_HOUR_FROM || hour > SEND_HOUR_TO) {
-      counts.outside_window += 1;
-      continue;
-    }
-    const date = todayIn(conn.timezone, now);
-    // Service role: ensure_daily_prompt skips the membership check when
-    // auth.uid() is null, which is the cron contract from migration 0004.
+  counts.connections = connections.length;
+  const inWindow = filterConnectionsInSendWindow(
+    connections,
+    localHour,
+    now,
+    SEND_HOUR_FROM,
+    SEND_HOUR_TO,
+  );
+  counts.outside_window = connections.length - inWindow.length;
+  if (inWindow.length === 0) {
+    return NextResponse.json({ at: now.toISOString(), ...counts });
+  }
+
+  const todayFor = new Map(
+    inWindow.map((c) => [c.id, todayIn(c.timezone, now)] as const),
+  );
+  const windowIds = inWindow.map((c) => c.id);
+
+  // Prefetch existing dailies for the three-day UTC window covering every
+  // connection's local "today", then only call ensure_daily_prompt for gaps.
+  const utcDates = Array.from(new Set(todayFor.values())).sort();
+  const fromDate = utcDates[0];
+  const { data: existingDailies } = await admin
+    .from("prompt_instances")
+    .select("id, connection_id, scheduled_for, status, questions")
+    .in("connection_id", windowIds)
+    .eq("kind", "daily")
+    .gte("scheduled_for", fromDate);
+
+  const { ready, missing } = partitionDailyInstances(
+    windowIds,
+    todayFor,
+    existingDailies ?? [],
+  );
+
+  // Fill gaps with ensure_daily_prompt (still per missing connection — the
+  // RPC is connection-scoped and idempotent).
+  for (const connId of missing) {
+    const date = todayFor.get(connId)!;
     const { data: instanceId } = await admin.rpc("ensure_daily_prompt", {
-      p_conn: conn.id,
+      p_conn: connId,
       p_date: date,
     });
-    if (!instanceId) continue;
+    if (instanceId) ready.set(connId, instanceId);
+  }
 
-    const { data: instance } = await admin
+  const instanceIds = Array.from(new Set(ready.values()));
+  if (instanceIds.length === 0) {
+    return NextResponse.json({ at: now.toISOString(), ...counts });
+  }
+
+  // Batch-load instance details for any ensure_daily ids not in the prefetch.
+  const known = new Map(
+    (existingDailies ?? []).map((d) => [d.id, d] as const),
+  );
+  const needFetch = instanceIds.filter((id) => !known.has(id));
+  if (needFetch.length) {
+    const { data: fetched } = await admin
       .from("prompt_instances")
-      .select("id, status, questions")
-      .eq("id", instanceId)
-      .maybeSingle();
+      .select("id, connection_id, scheduled_for, status, questions")
+      .in("id", needFetch);
+    for (const row of fetched ?? []) known.set(row.id, row);
+  }
+
+  // One members query + one responses query + one profiles query for the
+  // whole window (was N+1 inside the per-connection loop).
+  const { data: memberRows } = await admin
+    .from("connection_members")
+    .select("connection_id, user_id")
+    .in("connection_id", windowIds)
+    .not("joined_at", "is", null);
+  const membersMap = membersByConnection(memberRows);
+
+  const { data: responseRows } = await admin
+    .from("prompt_responses")
+    .select("instance_id, user_id")
+    .in("instance_id", instanceIds);
+  const answeredMap = answeredByInstance(responseRows);
+
+  const allUserIds = Array.from(
+    new Set(Array.from(membersMap.values()).flat()),
+  );
+  const { data: profileRows } = allUserIds.length
+    ? await admin.from("profiles").select("id, display_name").in("id", allUserIds)
+    : { data: [] as { id: string; display_name: string | null }[] };
+  const names = displayNameMap(profileRows);
+
+  for (const conn of inWindow) {
+    const instanceId = ready.get(conn.id);
+    if (!instanceId) continue;
+    const instance = known.get(instanceId);
     if (!instance || instance.status !== "open") continue;
+
     const qs = Array.isArray(instance.questions)
       ? (instance.questions as PromptQuestion[])
       : [];
     const questionText = qs[0]?.text ?? null;
 
-    const { data: members } = await admin
-      .from("connection_members")
-      .select("user_id")
-      .eq("connection_id", conn.id)
-      .not("joined_at", "is", null);
-    const ids = (members ?? []).map((m) => m.user_id);
+    const ids = membersMap.get(conn.id) ?? [];
     if (ids.length < 2) continue;
 
-    const { data: responses } = await admin
-      .from("prompt_responses")
-      .select("user_id")
-      .eq("instance_id", instance.id);
-    const answered = new Set((responses ?? []).map((r) => r.user_id));
-
-    const { data: profiles } = await admin
-      .from("profiles")
-      .select("id, display_name")
-      .in("id", ids);
-    const nameOf = (uid: string) =>
-      profiles?.find((p) => p.id === uid)?.display_name?.trim() || null;
+    const answered = answeredMap.get(instance.id) ?? new Set<string>();
 
     for (const uid of ids) {
       if (answered.has(uid)) continue;
@@ -121,7 +189,7 @@ async function run(req: Request) {
         instanceId: instance.id,
         connectionId: conn.id,
         kind: "daily_ready",
-        themName: other ? nameOf(other) : null,
+        themName: other ? (names.get(other) ?? null) : null,
         questionText,
       });
       if (outcome === "sent") counts.sent += 1;

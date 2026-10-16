@@ -8,10 +8,12 @@ test("security headers are present on HTML responses", async ({ request }) => {
   expect(headers["x-content-type-options"]?.toLowerCase()).toBe("nosniff");
   expect(headers["referrer-policy"]).toMatch(/strict-origin/i);
   expect(headers["strict-transport-security"]).toMatch(/max-age=/i);
-  // CSP is report-only until a deliberate flip.
-  const csp =
-    headers["content-security-policy-report-only"] ||
-    headers["content-security-policy"];
+
+  // CSP is enforced (not report-only) with a per-request script nonce.
+  expect(headers["content-security-policy-report-only"]).toBeFalsy();
+  const csp = headers["content-security-policy"];
   expect(csp).toBeTruthy();
   expect(csp).toMatch(/default-src/);
+  expect(csp).toMatch(/script-src[^;]*'nonce-/);
+  expect(csp).not.toMatch(/script-src[^;]*'unsafe-inline'/);
 });

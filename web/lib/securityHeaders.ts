@@ -5,25 +5,35 @@
  * body can document why it is present. Prefer deriving the Supabase origin
  * from NEXT_PUBLIC_SUPABASE_URL rather than hardcoding the project ref.
  *
- * script-src uses a tight host allowlist (not nonces): wiring a nonce through
- * root layout via `headers()` would dynamize every page — including the
- * crisis /safety surface that currently stays static. Inline ThemeScript,
- * ConsentDefaults, and the GTM loader therefore need 'unsafe-inline';
- * external loaders are allowlisted by host.
+ * script-src uses a per-request nonce (minted in proxy.ts) instead of
+ * 'unsafe-inline'. ThemeScript, ConsentDefaults, AuthHint, and the GTM
+ * loader receive the nonce from layout. We intentionally omit 'strict-dynamic'
+ * so same-origin Next.js chunks (including loading.tsx boundary scripts that
+ * historically omitted the nonce attribute) still load via 'self'.
  */
+
+import { cspNonceSource } from "@/lib/cspNonce";
 
 export type CspMode = "enforce" | "report-only";
 
 export type SecurityHeader = { key: string; value: string };
 
+export type BuildCspDirectivesOptions = {
+  /** Per-request script nonce; when set, replaces 'unsafe-inline' in script-src. */
+  nonce?: string | null;
+  /** Add 'unsafe-eval' for React refresh / stack reconstruction in development. */
+  isDev?: boolean;
+};
+
 export type BuildSecurityHeadersOptions = {
   /** From NEXT_PUBLIC_SUPABASE_URL when available. */
   supabaseUrl?: string | null;
   /**
-   * Prefer report-only until a Vercel preview confirms no console violations
-   * with GTM + Turnstile. Other headers are always enforced.
+   * Enforced by default. Pass "report-only" only for emergency rollback.
    */
   cspMode?: CspMode;
+  nonce?: string | null;
+  isDev?: boolean;
 };
 
 /** Permissions the app does not use — disable explicitly. */
@@ -84,19 +94,26 @@ export function supabaseConnectOrigins(
  */
 export function buildCspDirectives(
   supabaseUrl?: string | null,
+  options: BuildCspDirectivesOptions = {},
 ): Record<string, string> {
   const supabase = supabaseConnectOrigins(supabaseUrl);
+  const nonce = options.nonce?.trim() || null;
+  const scriptSources = [
+    "'self'",
+    nonce ? cspNonceSource(nonce) : "'unsafe-inline'",
+    "https://www.googletagmanager.com",
+    "https://challenges.cloudflare.com",
+  ];
+  if (options.isDev) {
+    scriptSources.push("'unsafe-eval'");
+  }
 
   return {
     "default-src": "'self'",
-    // 'unsafe-inline': ThemeScript, ConsentDefaults, GTM loader (see file header).
     // Hosts: GTM container + Cloudflare Turnstile api.js.
-    "script-src": [
-      "'self'",
-      "'unsafe-inline'",
-      "https://www.googletagmanager.com",
-      "https://challenges.cloudflare.com",
-    ].join(" "),
+    // Inline scripts (ThemeScript, ConsentDefaults, AuthHint, GTM loader)
+    // use the per-request nonce when provided.
+    "script-src": scriptSources.join(" "),
     // React inline style={{...}} attrs (animation delays, skeletons).
     // next/font self-hosts Fraunces/Inter — no fonts.googleapis.com needed.
     "style-src": ["'self'", "'unsafe-inline'"].join(" "),
@@ -174,8 +191,13 @@ export function buildEnforcedSecurityHeaders(): SecurityHeader[] {
 export function buildSecurityHeaders(
   options: BuildSecurityHeadersOptions = {},
 ): SecurityHeader[] {
-  const cspMode = options.cspMode ?? "report-only";
-  const csp = formatCsp(buildCspDirectives(options.supabaseUrl));
+  const cspMode = options.cspMode ?? "enforce";
+  const csp = formatCsp(
+    buildCspDirectives(options.supabaseUrl, {
+      nonce: options.nonce,
+      isDev: options.isDev,
+    }),
+  );
   const cspHeader: SecurityHeader = {
     key:
       cspMode === "enforce"

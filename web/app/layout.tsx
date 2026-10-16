@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { FOR_PAGES } from "@/lib/forPages";
 import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
@@ -9,6 +10,7 @@ import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import { CANONICAL_ORIGIN } from "@/lib/site";
+import { CSP_NONCE_HEADER } from "@/lib/cspNonce";
 import "./globals.css";
 
 const display = Fraunces({
@@ -45,18 +47,21 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Per-request CSP nonce from proxy.ts — required for enforced script-src.
+  const nonce = (await headers()).get(CSP_NONCE_HEADER) ?? undefined;
+
   return (
     <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <head>
-        <ThemeScript />
-        <AuthHintScript />
+        <ThemeScript nonce={nonce} />
+        <AuthHintScript nonce={nonce} />
         {/* Consent Mode v2 defaults must run before GTM loads. */}
-        <ConsentDefaults />
+        <ConsentDefaults nonce={nonce} />
       </head>
       <body className="flex min-h-screen min-w-0 flex-col font-sans">
         <a
@@ -152,7 +157,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
-        <Analytics />
+        <Analytics nonce={nonce} />
         <CookieConsent />
       </body>
     </html>
