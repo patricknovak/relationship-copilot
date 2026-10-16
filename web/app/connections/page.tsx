@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { dailyBadge, dailyState, todayIn, todayUtc } from "@/lib/dailyState";
+import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
 import type { ConnectionType } from "@/lib/database.types";
 
 type ConnectionRow = {
@@ -136,29 +137,28 @@ export default async function ConnectionsPage() {
           .eq("user_id", user.id)
       : { data: [] as { instance_id: string }[] };
     const answered = new Set((mine ?? []).map((r) => r.instance_id));
-    await Promise.all(
-      (dailies ?? []).map(async (d) => {
-        const iAnswered = answered.has(d.id);
-        let theyAnswered = d.status === "revealed";
-        if (!iAnswered && !theyAnswered) {
-          const { data: others } = await supabase.rpc("others_have_answered", {
-            p_instance: d.id,
-          });
-          theyAnswered = !!others;
-        }
-        badgeByConnection.set(
-          d.connection_id,
-          dailyBadge(
-            dailyState({
-              hasInstance: true,
-              status: d.status,
-              iAnswered,
-              theyAnswered,
-            }),
-          ),
-        );
-      }),
-    );
+    // One batch RPC for every daily that still needs the boolean-only signal
+    // (was N `others_have_answered` calls — one per connection).
+    const needOthers = (dailies ?? [])
+      .filter((d) => !answered.has(d.id) && d.status !== "revealed")
+      .map((d) => d.id);
+    const othersSet = await fetchOthersHaveAnswered(supabase, needOthers);
+    for (const d of dailies ?? []) {
+      const iAnswered = answered.has(d.id);
+      const theyAnswered =
+        d.status === "revealed" || othersSet.has(d.id);
+      badgeByConnection.set(
+        d.connection_id,
+        dailyBadge(
+          dailyState({
+            hasInstance: true,
+            status: d.status,
+            iAnswered,
+            theyAnswered,
+          }),
+        ),
+      );
+    }
   }
 
   const rows: ConnectionRow[] = (connections ?? []).map((c) => ({

@@ -14,7 +14,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
 | Vercel project | `relationship-copilot` (`prj_OKbm6q58LX5tNXOg5AKvP5tLH1PW`). Production branch `main`. Node 24. Builds `web/`. |
 | App | Next.js 15.5 → **16.4** in this branch. React 19.3, App Router. 19 pages, 4 route handlers, plus OG images, sitemap, robots and manifest. Supabase SSR auth. Stripe. xAI. GA4 Measurement Protocol via `after()`. |
 | `vercel.json` / crons | None on Vercel. The hourly daily-reminder email (`/api/cron/daily-reminder`) was planned as pg_cron + pg_net; it is now a Worker Cron Trigger (§2). |
-| Proxy | `middleware.ts` → `proxy.ts`: Supabase session refresh, then the CSP (report-only) and security headers. |
+| Proxy | `middleware.ts` → `proxy.ts`: Supabase session refresh, then the enforced CSP (per-request script nonce) and security headers. |
 | Edge runtime | The two OG images declared `runtime = "edge"`. Removed; they render on the Node runtime, and both return 200 on the Worker. |
 | Stripe webhook | Already `constructEventAsync`. Verified in workerd: a bad signature returns 400 and a valid one returns 200. |
 | Turnstile | The login widget's hostname list is `relationshipcopilot.com` only. **Magic-link sign-in can't be tested on `workers.dev`**; test it on the real domain after the cutover. The site key is built in, and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is an optional override. |

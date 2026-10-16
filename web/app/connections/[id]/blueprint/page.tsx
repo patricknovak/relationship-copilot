@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBlueprint } from "@/app/actions/blueprint";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
+import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 
@@ -69,7 +70,12 @@ export default async function BlueprintPage({
     ? instance.questions.length
     : 0;
 
-  const payload = (insight?.payload ?? null) as Payload | null;
+  // Skip in-flight rate-limit claims so a mid-generation refresh doesn't
+  // render an empty Blueprint shell.
+  const rawPayload = insight?.payload ?? null;
+  const payload = (
+    isPendingInsightPayload(rawPayload) ? null : rawPayload
+  ) as Payload | null;
   const generate = generateBlueprint.bind(null, id);
 
   return (

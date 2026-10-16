@@ -15,7 +15,14 @@ import {
   parseBlueprint,
   type BlueprintQa,
 } from "@/lib/blueprint";
+import {
+  claimInsightSlot,
+  finalizeInsightClaim,
+  releaseInsightClaim,
+} from "@/lib/insightRateLimit";
 import type { PromptQuestion, Json } from "@/lib/database.types";
+
+const BLUEPRINT_GAP_MS = 10 * 60 * 1000; // one generation per connection per 10 minutes
 
 // Generate the AI Relationship Blueprint. AI generation is PREMIUM-gated here
 // (defense in depth — the UI also gates). Safety detection runs regardless and
@@ -47,23 +54,6 @@ export async function generateBlueprint(connectionId: string) {
   });
   if (!isPremium) back("premium");
 
-  // Rate limit: one generation per connection per 10 minutes (cost control —
-  // each run is a model call). DB-backed so it holds across serverless instances.
-  const { data: recent } = await supabase
-    .from("relationship_insights")
-    .select("generated_at")
-    .eq("connection_id", connectionId)
-    .eq("kind", "blueprint")
-    .order("generated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (
-    recent &&
-    Date.now() - new Date(recent.generated_at).getTime() < 10 * 60 * 1000
-  ) {
-    back("ratelimit");
-  }
-
   // Need a revealed onboarding instance so both answers are readable.
   const { data: instance } = await supabase
     .from("prompt_instances")
@@ -78,6 +68,22 @@ export async function generateBlueprint(connectionId: string) {
     .select("user_id, answers")
     .eq("instance_id", instance!.id);
   if (!responses || responses.length < 2) back("notready");
+
+  // Atomic rate limit after readiness: insert a claim row first, then verify
+  // we are the only generation inside the gap (insert-then-verify).
+  const admin = createAdminClient();
+  const slot = await claimInsightSlot(
+    admin,
+    connectionId,
+    "blueprint",
+    BLUEPRINT_GAP_MS,
+  );
+  if (!slot.ok) {
+    back("ratelimit");
+  }
+  // slot.ok is true here; redirect()/back is typed loosely under tsc.
+  const claimId = slot.ok ? slot.claim.id : "";
+  if (!claimId) back("ratelimit");
 
   // Sorted so which participant is P1 is stable across regenerations.
   const ids = responses!.map((r) => r.user_id).sort();
@@ -139,8 +145,6 @@ export async function generateBlueprint(connectionId: string) {
   ].join("\n");
   const signal = await assessSafety(rawAll, redactor.redact);
 
-  const admin = createAdminClient();
-
   // High severity → withhold AI analysis, surface support, log for review.
   if (signal.severity === "high") {
     await admin.from("safety_events").insert({
@@ -148,13 +152,14 @@ export async function generateBlueprint(connectionId: string) {
       category: signal.categories[0] ?? "abuse",
       surfaced_resources: { categories: signal.categories } as Json,
     });
-    await admin.from("relationship_insights").insert({
-      connection_id: connectionId,
-      kind: "blueprint",
-      audience: "shared",
+    await finalizeInsightClaim(admin, claimId, {
       summary: "Support resources",
       payload: { safety: true, categories: signal.categories } as Json,
-      safety_flags: { severity: "high", categories: signal.categories, reviewed: false } as Json,
+      safety_flags: {
+        severity: "high",
+        categories: signal.categories,
+        reviewed: false,
+      } as Json,
     });
     await logAudit(user.id, "blueprint.withheld_safety", connectionId);
     revalidatePath(`/connections/${connectionId}/blueprint`);
@@ -175,18 +180,19 @@ export async function generateBlueprint(connectionId: string) {
     );
     bp = parseBlueprint(content);
   } catch {
+    await releaseInsightClaim(admin, claimId);
     back("ai");
     return; // unreachable — for control-flow analysis
   }
 
-  await admin.from("relationship_insights").insert({
-    connection_id: connectionId,
-    kind: "blueprint",
-    audience: "shared",
+  await finalizeInsightClaim(admin, claimId, {
     summary: bp.reflection.slice(0, 200),
     payload: bp as unknown as Json,
     model: process.env.XAI_MODEL ?? "grok-4",
-    safety_flags: { severity: signal.severity, categories: signal.categories } as Json,
+    safety_flags: {
+      severity: signal.severity,
+      categories: signal.categories,
+    } as Json,
   });
   await logAudit(user.id, "blueprint.generate", connectionId);
 

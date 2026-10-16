@@ -223,7 +223,14 @@ export interface Database {
           model?: string | null;
           safety_flags?: Json;
         };
-        Update: never;
+        // Service-role only (no client UPDATE policy). Used to finalize
+        // rate-limit claim rows after Blueprint / digest generation.
+        Update: {
+          summary?: string | null;
+          payload?: Json;
+          model?: string | null;
+          safety_flags?: Json;
+        };
         Relationships: [];
       };
       safety_events: {
@@ -417,6 +424,11 @@ export interface Database {
       others_have_answered: {
         Args: { p_instance: string };
         Returns: boolean;
+      };
+      // Batch form (migration 0032). Same boolean-only privacy as the single RPC.
+      others_have_answered_many: {
+        Args: { p_instances: string[] };
+        Returns: { instance_id: string; answered: boolean }[];
       };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };

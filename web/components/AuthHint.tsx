@@ -5,8 +5,13 @@ import { AUTH_HINT_SCRIPT } from "@/lib/authHint";
 // Sets <html data-auth="in"> before first paint when a session cookie exists
 // (lib/authHint.ts). Lets public pages be static while nav and CTAs match the
 // visitor. Display only; the server still checks every protected route.
-export function AuthHintScript() {
-  return <script dangerouslySetInnerHTML={{ __html: AUTH_HINT_SCRIPT }} />;
+export function AuthHintScript({ nonce }: { nonce?: string }) {
+  return (
+    <script
+      nonce={nonce}
+      dangerouslySetInnerHTML={{ __html: AUTH_HINT_SCRIPT }}
+    />
+  );
 }
 
 // Renders both variants; CSS in globals.css shows the one matching data-auth.

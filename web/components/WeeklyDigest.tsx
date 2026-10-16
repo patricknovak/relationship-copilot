@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { generateWeeklyDigest } from "@/app/actions/digest";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
+import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import PendingButton from "@/components/PendingButton";
 
 type Payload = {
@@ -41,10 +42,13 @@ export default async function WeeklyDigest({
     p_conn: connectionId,
   });
 
-  const payload = (insight?.payload ?? null) as Payload | null;
-  const generatedAt = insight?.generated_at ?? null;
+  const rawPayload = insight?.payload ?? null;
+  const pending = isPendingInsightPayload(rawPayload);
+  const payload = (pending ? null : rawPayload) as Payload | null;
+  const generatedAt = pending ? null : (insight?.generated_at ?? null);
   const canRegenerate =
-    !generatedAt || Date.now() - new Date(generatedAt).getTime() >= MIN_GAP_MS;
+    !pending &&
+    (!generatedAt || Date.now() - new Date(generatedAt).getTime() >= MIN_GAP_MS);
   const generate = generateWeeklyDigest.bind(null, connectionId);
 
   // Only offer generation when the week actually has revealed answers —

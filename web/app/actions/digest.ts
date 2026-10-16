@@ -14,6 +14,11 @@ import {
   parseDigest,
   type DigestItem,
 } from "@/lib/digest";
+import {
+  claimInsightSlot,
+  finalizeInsightClaim,
+  releaseInsightClaim,
+} from "@/lib/insightRateLimit";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -49,21 +54,6 @@ export async function generateWeeklyDigest(connectionId: string) {
     p_conn: connectionId,
   });
   if (!isPremium) back("digest-premium");
-
-  const { data: lastDigest } = await supabase
-    .from("relationship_insights")
-    .select("generated_at")
-    .eq("connection_id", connectionId)
-    .eq("kind", "weekly_digest")
-    .order("generated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (
-    lastDigest &&
-    Date.now() - new Date(lastDigest.generated_at).getTime() < MIN_GAP_MS
-  ) {
-    back("digest-gap");
-  }
 
   // Last week's revealed activity (daily questions, quizzes, challenges).
   const since = new Date(Date.now() - WEEK_MS).toISOString();
@@ -141,10 +131,23 @@ export async function generateWeeklyDigest(connectionId: string) {
   const goals = (goalRows ?? []).map((g) => redactor.redact(g.body));
   rawParts.push(...(goalRows ?? []).map((g) => g.body));
 
+  // Atomic rate limit after readiness: claim a slot before the model call.
+  const admin = createAdminClient();
+  const slot = await claimInsightSlot(
+    admin,
+    connectionId,
+    "weekly_digest",
+    MIN_GAP_MS,
+  );
+  if (!slot.ok) {
+    back("digest-gap");
+  }
+  // slot.ok is true here; redirect()/back is typed loosely under tsc.
+  const claimId = slot.ok ? slot.claim.id : "";
+  if (!claimId) back("digest-gap");
+
   // Safety: regex on raw text, model pass on redacted; high severity withholds.
   const signal = await assessSafety(rawParts.join("\n"), redactor.redact);
-
-  const admin = createAdminClient();
 
   if (signal.severity === "high") {
     await admin.from("safety_events").insert({
@@ -152,13 +155,14 @@ export async function generateWeeklyDigest(connectionId: string) {
       category: signal.categories[0] ?? "abuse",
       surfaced_resources: { categories: signal.categories } as Json,
     });
-    await admin.from("relationship_insights").insert({
-      connection_id: connectionId,
-      kind: "weekly_digest",
-      audience: "shared",
+    await finalizeInsightClaim(admin, claimId, {
       summary: "Support resources",
       payload: { safety: true, categories: signal.categories } as Json,
-      safety_flags: { severity: "high", categories: signal.categories, reviewed: false } as Json,
+      safety_flags: {
+        severity: "high",
+        categories: signal.categories,
+        reviewed: false,
+      } as Json,
     });
     await logAudit(user.id, "digest.withheld_safety", connectionId);
     revalidatePath(`/connections/${connectionId}`);
@@ -173,18 +177,19 @@ export async function generateWeeklyDigest(connectionId: string) {
     );
     digest = parseDigest(content);
   } catch {
+    await releaseInsightClaim(admin, claimId);
     back("digest-ai");
     return; // unreachable — for control-flow analysis
   }
 
-  await admin.from("relationship_insights").insert({
-    connection_id: connectionId,
-    kind: "weekly_digest",
-    audience: "shared",
+  await finalizeInsightClaim(admin, claimId, {
     summary: digest.reflection.slice(0, 200),
     payload: digest as unknown as Json,
     model: process.env.XAI_MODEL ?? "grok-4",
-    safety_flags: { severity: signal.severity, categories: signal.categories } as Json,
+    safety_flags: {
+      severity: signal.severity,
+      categories: signal.categories,
+    } as Json,
   });
   await logAudit(user.id, "digest.generate", connectionId);
 
