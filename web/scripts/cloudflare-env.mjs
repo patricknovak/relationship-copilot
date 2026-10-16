@@ -2,7 +2,7 @@
 /**
  * One-time copy of the web app's environment from Vercel to Cloudflare.
  *
- * Usage (from apps/web, logged in to the Vercel and Cloudflare CLIs):
+ * Usage (from `web/`, logged in to the Vercel and Cloudflare CLIs):
  *
  *   npx vercel env pull .env.cloudflare --environment=production
  *   node scripts/cloudflare-env.mjs .env.cloudflare --dry-run   # names only
@@ -13,10 +13,10 @@
  *   - Server variables (everything except NEXT_PUBLIC_*, Vercel system and
  *     unused Vercel Postgres variables) go to the Worker with
  *     `wrangler secret bulk`. Secrets persist across deploys.
- *   - NEXT_PUBLIC_* values are inlined at build time, so the Worker cannot
- *     use them at runtime. They go to GitHub repo variables (read by the
- *     deploy workflow) with `gh variable set` when --github is passed;
- *     otherwise the script prints the names to set.
+ *   - NEXT_PUBLIC_* values are build-time only. They live in
+ *     `web/.env.production` (committed public config). CI builds from that
+ *     file — do **not** set them as GitHub Actions variables (an empty GH
+ *     variable overrides the file). This script never uploads them.
  *   - Variables Vercel marks "sensitive" come back from `env pull` as the
  *     placeholder "[SENSITIVE]" (older CLIs: empty). They are listed and
  *     never uploaded; set them with `npx wrangler secret put NAME`.
@@ -99,23 +99,30 @@ function main() {
   const dryRun = args.includes("--dry-run");
   const toGithub = args.includes("--github");
   if (!file) {
-    console.error("Usage: node scripts/cloudflare-env.mjs <pulled .env file> [--dry-run] [--github]");
+    console.error("Usage: node scripts/cloudflare-env.mjs <pulled .env file> [--dry-run]");
     process.exit(2);
   }
 
   const { secrets, publicVars, empty, missing } = classify(parseDotenv(readFileSync(file, "utf8")));
 
   console.log(`Worker secrets (${Object.keys(secrets).length}): ${Object.keys(secrets).sort().join(", ")}`);
-  console.log(`Build-time NEXT_PUBLIC_* (${Object.keys(publicVars).length}): ${Object.keys(publicVars).sort().join(", ")}`);
+  console.log(
+    `Build-time NEXT_PUBLIC_* (${Object.keys(publicVars).length}) — already in web/.env.production; not uploaded: ${Object.keys(publicVars).sort().join(", ")}`,
+  );
   if (empty.length) {
     console.log(`\nNot pulled (Vercel "sensitive": empty or [SENSITIVE]); set by hand with \`npx wrangler secret put NAME\`:\n  ${empty.join("\n  ")}`);
   }
   if (missing.length) {
     console.log(`\nRequired but not in the pull (set before cutover):\n  ${missing.join("\n  ")}`);
   }
+  if (toGithub) {
+    console.log(
+      "\n--github is ignored: NEXT_PUBLIC_* must stay in web/.env.production. Setting them as GitHub Actions variables would override the file with empty values when unset.",
+    );
+  }
   if (dryRun) return;
 
-  const dir = mkdtempSync(path.join(tmpdir(), "avvizo-cf-"));
+  const dir = mkdtempSync(path.join(tmpdir(), "rc-cf-"));
   const secretsFile = path.join(dir, "secrets.json");
   try {
     writeFileSync(secretsFile, JSON.stringify(secrets), { mode: 0o600 });
@@ -126,14 +133,7 @@ function main() {
     rmSync(dir, { recursive: true, force: true });
   }
 
-  if (toGithub) {
-    for (const [key, value] of Object.entries(publicVars)) {
-      execFileSync("gh", ["variable", "set", key, "--body", value], { stdio: ["ignore", "inherit", "inherit"] });
-    }
-    console.log("GitHub repo variables set.");
-  } else if (Object.keys(publicVars).length) {
-    console.log("\nSet these as GitHub repo variables (Settings → Secrets and variables → Actions → Variables), or rerun with --github.");
-  }
+  console.log("\nWorker secrets uploaded. Confirm web/.env.production matches production NEXT_PUBLIC_* before the next deploy.");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main();

@@ -1,6 +1,6 @@
 # Moving relationshipcopilot.com from Vercel to Cloudflare Workers
 
-Status (2026-10-14): **the Worker is live on `workers.dev` and matches Vercel.** Production still runs on Vercel. Three things only Patrick can do stand between here and the cutover (§5):
+Status (2026-10-16): **Cutover code is complete** (PRs #82/#83 merged). The Worker is live on `workers.dev` and matches Vercel. Production still runs on Vercel. Three things only Patrick can do stand between here and the cutover (§5):
 1. Paste five server secrets into the Worker.
 2. Swap DNS to the Worker (the agent's Cloudflare token has no DNS permission).
 3. Add two GitHub secrets so CI deploys on merge.
@@ -40,7 +40,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
   - `next build` still works, so Vercel stays the fallback.
 - **Local gotcha:** run `rm -rf .next` between `npm run build` and `npm run build:vinext` before `npm run typecheck`. vinext rewrites `.next/types/routes.d.ts`, which clashes with `next build`'s validator. CI typechecks a fresh tree first, so it isn't affected.
 - **CI:** Lint plus the Cloudflare build on every PR. `deploy-cloudflare` runs on push to `main` only when `vars.CLOUDFLARE_DEPLOY == 'true'`, and fails fast without the Cloudflare secrets.
-- **`web/scripts/cloudflare-env.mjs`:** copies Vercel's production env to Worker secrets and GitHub variables without printing values (playbook §8).
+- **`web/scripts/cloudflare-env.mjs`:** copies Vercel's production **server** env to Worker secrets without printing values (playbook §8). `NEXT_PUBLIC_*` stay in `web/.env.production` — the script does not push them to GitHub Actions variables (empty GH vars would override the file).
 
 - **Cutover branch (`claude/cloudflare-cutover`):**
   - `web/.env.production` holds the public `NEXT_PUBLIC_*` build values (Supabase URL and anon key, site URL, Stripe price, auth providers, GTM). They ship in the browser bundle anyway; the values were checked against Vercel's live bundles. CI no longer passes them as repo variables, because an unset variable arrives empty and overrides the file.
