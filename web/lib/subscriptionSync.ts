@@ -34,3 +34,22 @@ export function shouldApplySubscriptionEvent(
   if (existing.stripe_subscription_id === incomingSubscriptionId) return true;
   return !isEntitled(existing);
 }
+
+/**
+ * Unix seconds for the subscription's current period end, or null if Stripe
+ * did not send one. Prefer item-level `current_period_end` (stripe@23+ types /
+ * API); fall back to the legacy top-level field when present at runtime.
+ * Never invents a date.
+ */
+export function resolveSubscriptionPeriodEnd(sub: {
+  current_period_end?: unknown;
+  items?: { data?: ReadonlyArray<unknown> };
+}): number | null {
+  const first = sub.items?.data?.[0];
+  const fromItem =
+    first && typeof first === "object" && "current_period_end" in first
+      ? (first as { current_period_end: unknown }).current_period_end
+      : undefined;
+  if (typeof fromItem === "number") return fromItem;
+  return typeof sub.current_period_end === "number" ? sub.current_period_end : null;
+}
