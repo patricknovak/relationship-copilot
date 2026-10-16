@@ -43,3 +43,5 @@ tmp/
 
 .wrangler/
 .vinext/
+web/test-results/
+web/playwright-report/
