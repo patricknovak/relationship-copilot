@@ -16,6 +16,7 @@ import {
   loginSubhead,
   type LoginIntent,
 } from "@/lib/inviteStatus";
+import { fireEmailSignUpConversion } from "@/lib/enhancedConversions";
 import Turnstile from "@/components/Turnstile";
 
 const ENABLED_PROVIDERS = parseAuthProviders(
@@ -94,7 +95,13 @@ export default function LoginForm({
       setCaptchaKey((k) => k + 1);
     }
     if (error) setError(error.message);
-    else setSent(true);
+    else {
+      // Client signup conversion: only measurable-path moment we hold the
+      // typed email. Sets Ads enhanced user_data (hashed) first when consent
+      // allows, then fires gtag sign_up for GTM / Google Ads.
+      void fireEmailSignUpConversion(email);
+      setSent(true);
+    }
   }
 
   function focusResendForm() {
