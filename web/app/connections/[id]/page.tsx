@@ -191,19 +191,25 @@ export default async function ConnectionPage({
     }
   }
 
-  // Daily streak (gamification) from revealed daily instances.
+  // Daily streak (gamification) from revealed daily instances. Only the
+  // recent window matters — streaks longer than ~14 months aren't shown as a
+  // bigger number in a way that needs the full history.
   let streak = 0;
   {
+    const today = todayIn(conn.timezone);
+    const from = new Date(`${today}T00:00:00Z`);
+    from.setUTCDate(from.getUTCDate() - 400);
     const { data: dailies } = await supabase
       .from("prompt_instances")
       .select("scheduled_for")
       .eq("connection_id", id)
       .eq("kind", "daily")
-      .eq("status", "revealed");
+      .eq("status", "revealed")
+      .gte("scheduled_for", from.toISOString().slice(0, 10));
     const dates = (dailies ?? [])
       .map((d) => d.scheduled_for)
       .filter((x): x is string => !!x);
-    streak = computeStreak(dates, todayIn(conn.timezone));
+    streak = computeStreak(dates, today);
   }
 
   // Today's question, inline. The instance is pre-created by cron for active

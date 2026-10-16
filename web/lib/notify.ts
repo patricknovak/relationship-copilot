@@ -19,15 +19,11 @@ function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL || "https://relationshipcopilot.com";
 }
 
-// The unsubscribe link is signed with a dedicated secret when set, otherwise
-// with a server-only key that never reaches a client. Either way the token's
-// only power is to switch a user's emails off.
+// Unsubscribe links are signed with NOTIFY_SECRET only. Do not fall back to
+// the service-role key: rotating that key would invalidate every outstanding
+// unsubscribe URL, and the blast radius is larger than a dedicated secret.
 export function notifySecret(): string | null {
-  return (
-    process.env.NOTIFY_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    null
-  );
+  return process.env.NOTIFY_SECRET || null;
 }
 
 type Admin = ReturnType<typeof createAdminClient>;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { authorizeCronBearer } from "@/lib/cronAuth";
 import { emailConfigured } from "@/lib/email";
 import { notifyUser } from "@/lib/notify";
 import { todayIn } from "@/lib/dailyState";
@@ -33,15 +34,8 @@ function localHour(tz: string, now: Date): number {
   }
 }
 
-function authorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const header = req.headers.get("authorization") ?? "";
-  return header === `Bearer ${secret}`;
-}
-
 async function run(req: Request) {
-  if (!authorized(req)) {
+  if (!authorizeCronBearer(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!emailConfigured()) {

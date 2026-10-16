@@ -21,10 +21,16 @@ export async function saveProfile(formData: FormData) {
   const backWithError = (code: string): never =>
     redirect(`/onboarding?error=${code}&next=${encodeURIComponent(next)}`);
 
-  const displayName = String(formData.get("display_name") || "").trim();
+  const displayName = String(formData.get("display_name") || "")
+    .trim()
+    .slice(0, 80);
   const birthdayRaw = String(formData.get("birthday") || "").trim();
-  const goals = String(formData.get("goals") || "").trim();
-  const values = String(formData.get("values") || "").trim();
+  const goals = String(formData.get("goals") || "")
+    .trim()
+    .slice(0, 2000);
+  const values = String(formData.get("values") || "")
+    .trim()
+    .slice(0, 2000);
 
   if (!displayName) backWithError("name");
   // A birthday must be a real, past calendar date (the input enforces this in
