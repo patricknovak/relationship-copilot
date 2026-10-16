@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { shouldApplySubscriptionEvent } from "@/lib/subscriptionSync";
+import {
+  resolveSubscriptionPeriodEnd,
+  shouldApplySubscriptionEvent,
+} from "@/lib/subscriptionSync";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -89,9 +92,10 @@ async function handleEvent(
           .maybeSingle();
         if (readErr) throw readErr;
         if (!shouldApplySubscriptionEvent(existing, sub.id)) break;
+        const periodEndUnix = resolveSubscriptionPeriodEnd(sub);
         const periodEnd =
-          typeof sub.current_period_end === "number"
-            ? new Date(sub.current_period_end * 1000).toISOString()
+          periodEndUnix !== null
+            ? new Date(periodEndUnix * 1000).toISOString()
             : null;
         const { error } = await admin.from("subscriptions").upsert({
           user_id: userId,
