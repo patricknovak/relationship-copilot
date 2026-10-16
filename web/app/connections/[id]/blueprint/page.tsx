@@ -184,7 +184,8 @@ export default async function BlueprintPage({
         How this works: to generate a Blueprint, your written answers are sent
         to our AI provider (xAI&apos;s Grok) with names, email addresses, and
         phone numbers removed first. They are used only to produce this
-        reflection and are not used to train models.
+        reflection. Production AI stays off until a no-training agreement with
+        the provider is in place.
       </p>
     </div>
   );

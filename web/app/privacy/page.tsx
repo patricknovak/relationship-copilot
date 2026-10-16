@@ -43,10 +43,12 @@ export default function PrivacyPage() {
           If you use an AI feature (the Relationship Blueprint or weekly
           digest), the answers involved are sent to our AI provider
           (xAI&apos;s Grok) with names, email addresses, and phone numbers
-          removed first. They are used only to produce that reflection and not
-          to train models. Safety screening runs before any AI output: content
-          suggesting danger leads us to withhold the AI output and show support
-          resources instead. Safety features are free for everyone.
+          removed first (best-effort redaction). They are used only to produce
+          that reflection. Production AI stays off until a no-training
+          agreement with the provider is in place. Safety screening runs before
+          any AI output, and high-severity signals on answers also surface
+          support resources: content suggesting danger leads us to withhold AI
+          output and show help instead. Safety features are free for everyone.
         </p>
 
         <h2 className="text-lg font-semibold text-ink">

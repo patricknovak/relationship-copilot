@@ -2,8 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { submitResponse } from "@/app/actions/prompts";
 import { MICROCOPY } from "@/lib/firstRevealCopy";
+import {
+  INLINE_RESOURCES,
+  SAFETY_NOTE,
+  SAFETY_PRIVACY_LINE,
+} from "@/lib/safety";
 import type { PromptQuestion } from "@/lib/database.types";
 
 type AnswerMap = Record<string, string>;
@@ -34,6 +40,7 @@ export default function AnswerForm({
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [showSafety, setShowSafety] = useState(false);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const hydrated = useRef(false);
@@ -91,6 +98,7 @@ export default function AnswerForm({
       } catch {
         /* ignore */
       }
+      if (result?.safety) setShowSafety(true);
       setSaved(true);
       router.refresh();
     });
@@ -102,6 +110,30 @@ export default function AnswerForm({
         <p className="rounded-2xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/70 dark:bg-brand-900/20 px-4 py-2.5 text-sm text-brand-800 dark:text-brand-200">
           Picked up where you left off — your unsent draft was restored.
         </p>
+      )}
+
+      {showSafety && (
+        <div
+          role="status"
+          className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/40"
+        >
+          <p className="text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
+          <p className="mt-2 text-xs text-rose-800/80 dark:text-rose-200/80">
+            {SAFETY_PRIVACY_LINE}
+          </p>
+          <ul className="mt-3 space-y-1.5 text-sm text-rose-900 dark:text-rose-100">
+            {INLINE_RESOURCES.map((r) => (
+              <li key={r.name}>
+                <span className="font-medium">{r.name}</span>
+                {" — "}
+                {r.contact}
+              </li>
+            ))}
+          </ul>
+          <Link href="/safety" className="mt-3 inline-block text-sm underline">
+            More Safety resources
+          </Link>
+        </div>
       )}
 
       <p className="text-sm text-ink-soft">{MICROCOPY.aboveQuestion}</p>

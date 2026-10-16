@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const FREE = [
   "All relationship types",
   `Up to ${FREE_CONNECTION_CAP} connections`,
-  "Onboarding questions + mutual reveal (10–20, depending on the relationship)",
+  "20 onboarding questions + mutual reveal",
   "Daily questions, reveal & discussion",
   "Quizzes & challenges",
   "Core education library",
@@ -29,7 +29,7 @@ const PREMIUM = [
   "Weekly AI digests",
   "Covers both people in every connection you share",
   "Unlimited connections",
-  "Premium education library",
+  "Deeper premium library reads",
 ];
 
 // Annual plan appears only once the price exists in Stripe and env.
@@ -44,7 +44,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Does the other person need to pay too?",
-    a: "No. One Premium plan covers both people in every connection the subscriber is part of: the Blueprint and digests work for the pair, and the other person reads them for free.",
+    a: "No. When Premium is active on a connection, Blueprint and digests are available to both people in that connection — the other person does not need their own subscription.",
   },
   {
     q: "Can the other person see my answers early?",

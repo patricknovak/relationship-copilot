@@ -17,9 +17,10 @@ import { notifyDiscussionReply, notifyOtherMembersAfterSubmit } from "@/lib/noti
 
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
-async function logSafety(userId: string, text: string) {
+// Returns true when resources should be shown inline to the writer.
+async function logSafety(userId: string, text: string): Promise<boolean> {
   const signal = detectSafetySignals(text);
-  if (signal.severity !== "high") return;
+  if (signal.severity !== "high") return false;
   try {
     await createAdminClient()
       .from("safety_events")
@@ -31,6 +32,7 @@ async function logSafety(userId: string, text: string) {
   } catch {
     /* never block the user's action on safety logging */
   }
+  return true;
 }
 
 // Ensure the connection's onboarding instance exists (idempotent via the
@@ -118,7 +120,7 @@ export async function submitResponse(input: {
   instanceId: string;
   connectionId: string;
   answers: Record<string, string>;
-}): Promise<{ error?: string; revealed?: boolean }> {
+}): Promise<{ error?: string; revealed?: boolean; safety?: boolean }> {
   const { instanceId, connectionId } = input;
   if (!instanceId || !connectionId) {
     return { error: "This question is no longer available." };
@@ -178,7 +180,7 @@ export async function submitResponse(input: {
     };
   }
 
-  await logSafety(user.id, Object.values(answers).join(" "));
+  const safety = await logSafety(user.id, Object.values(answers).join(" "));
 
   // If onboarding just fully revealed, mark the connection active.
   let revealed = false;
@@ -231,7 +233,7 @@ export async function submitResponse(input: {
   revalidatePath(`/connections/${connectionId}/onboarding`);
   revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);
   revalidatePath(`/connections/${connectionId}`);
-  return { revealed };
+  return { revealed, safety };
 }
 
 // Pull (or create) today's daily question for a connection, then open it.

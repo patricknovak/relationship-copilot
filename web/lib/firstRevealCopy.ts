@@ -80,7 +80,7 @@ export const REVEALED = {
 
 export const SOFT_PREMIUM = {
   headline: "Want a deeper reflection?",
-  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI uses redacted inputs — we don't train models on your intimate answers.",
+  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI strips names, emails, and phones first — and stays off in production until a no-training provider agreement is in place.",
   primaryCta: "See Premium",
   dismiss: "Not now",
 } as const;

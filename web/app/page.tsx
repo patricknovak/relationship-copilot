@@ -31,7 +31,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "What happens to what I write — and what does the AI see?",
-    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. The optional AI features send only the relevant answers — with names, emails, and phone numbers stripped out first — to generate a reflection for you, and that text isn't used to train models.",
+    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. Optional AI features strip names, emails, and phone numbers from the relevant answers before they leave our systems. Production AI stays off until a no-training agreement with the provider is in place.",
   },
   {
     q: "Is it really free?",
@@ -43,7 +43,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "What if I'm in an unsafe relationship?",
-    a: "Safety comes first and free. The app screens for signs of harm and, when it sees them, withholds AI output and surfaces support resources instead. There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
+    a: "Safety comes first and free. When answers look like they may involve harm, we surface support resources (and withhold optional AI reflections). There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
   },
   {
     q: "Who built this?",
@@ -188,17 +188,17 @@ export default function Home() {
             <Feature
               icon={<IconSpark />}
               title="Grounded in research"
-              body="Questions are informed by research traditions like Gottman and attachment theory, and the science of closeness — with weaker ideas flagged honestly."
+              body="Questions are informed by research traditions like Gottman and attachment theory — and we rate evidence strength in the library so weaker ideas stay honest."
             />
             <Feature
               icon={<IconArc />}
               title="Cradle to grave"
-              body="New love, new parents, teens, caring for aging parents, grief — packs for the seasons most apps pretend don't exist."
+              body="Optional packs and library reads for seasons most apps skip — new love, new parents, teens, caregiving, grief."
             />
             <Feature
               icon={<IconFlame />}
               title="Streaks that forgive"
-              body="A daily rhythm worth keeping, without the guilt mechanics. Miss a day? Life happens. Pick it back up."
+              body="A daily rhythm without guilt mechanics. Miss yesterday? Catch up today and the streak holds. Miss longer and it resets gently."
             />
             <Feature
               icon={<IconLock />}
