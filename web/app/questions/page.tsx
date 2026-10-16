@@ -67,6 +67,26 @@ export default function QuestionsHubPage() {
         </div>
         <p className="mt-3 text-xs text-ink-soft/70">{QUESTIONS_SIGN_IN_HINT}</p>
       </section>
+
+      <section className="mt-12">
+        <h2 className="text-2xl">Common questions</h2>
+        <div className="mt-5 space-y-3">
+          {QUESTIONS_SHARED_FAQS.map((f) => (
+            <details key={f.q} className="card group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+                {f.q}
+                <span
+                  aria-hidden
+                  className="text-brand-500 transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

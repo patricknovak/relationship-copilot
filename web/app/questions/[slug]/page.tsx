@@ -109,7 +109,7 @@ export default async function QuestionsTypePage({
       <p className="mt-10 text-sm text-ink-soft">
         Also see{" "}
         <Link href={`/for/${page.forSlug}`} className="text-brand-700 underline">
-          questions for {page.forSlug}
+          questions for {page.forLabel}
         </Link>{" "}
         and the{" "}
         <Link href="/questions" className="text-brand-700 underline">

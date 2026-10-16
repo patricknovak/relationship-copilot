@@ -25,6 +25,8 @@ export type QuestionPage = {
   faqs: { q: string; a: string }[];
   /** Matching /for/* slug for cross-links. */
   forSlug: string;
+  /** Human label for “questions for …” (not the raw slug). */
+  forLabel: string;
 };
 
 /** Shared CTA / honesty block — exact marketing strings for HoM. */
@@ -76,6 +78,7 @@ export const QUESTION_PAGES: QuestionPage[] = [
     intro:
       "Questions couples answer when they start. Use them here as a list, or start a connection and answer each one in private.",
     forSlug: "partners",
+    forLabel: "your partner",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
       {
@@ -149,6 +152,7 @@ export const QUESTION_PAGES: QuestionPage[] = [
     intro:
       "Questions friends answer when they start. Use them here as a list, or start a connection and reveal together.",
     forSlug: "friends",
+    forLabel: "a friend",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
       {
@@ -222,6 +226,7 @@ export const QUESTION_PAGES: QuestionPage[] = [
     intro:
       "Questions family members answer when they start. Private answers, shared only when you've both responded.",
     forSlug: "family",
+    forLabel: "family",
     faqs: QUESTIONS_SHARED_FAQS,
     questions: [
       {
