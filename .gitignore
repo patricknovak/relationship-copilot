@@ -37,6 +37,12 @@ npm-debug.log*
 # Test coverage
 coverage/
 
+# Playwright
+web/playwright-report/
+web/test-results/
+web/blob-report/
+web/playwright/.cache/
+
 # Temp
 tmp/
 .tmp/
