@@ -18,7 +18,8 @@ land.
 - [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
       against `supabase_migrations.schema_migrations` and the live tables).
 - [ ] **Migration 0035** (`invite_notes`, the inviter's personal note).
-      Apply before this code ships: the hub's note form writes to it.
+      Apply with this code. Without it nothing breaks; the hub's note form
+      just says it couldn't save, and the invite page shows no note.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
