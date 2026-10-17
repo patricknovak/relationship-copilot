@@ -86,7 +86,7 @@ export default async function WeeklyDigest({
       ) : payload ? (
         <div className="mt-2 space-y-3 text-sm text-ink-soft">
           {generatedAt && (
-            <p className="text-xs text-ink-soft/60">
+            <p className="text-xs text-ink-soft/80">
               From your week up to {generatedAt.slice(0, 10)}
             </p>
           )}
@@ -134,21 +134,21 @@ export default async function WeeklyDigest({
             <PendingButton pendingLabel="Writing your digest…">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
             </PendingButton>
-            <p className="mt-2 text-xs text-ink-soft/60">
+            <p className="mt-2 text-xs text-ink-soft/80">
               Your week&apos;s revealed answers are sent to our AI provider
               (xAI&apos;s Grok) with names and contact details removed, used
               only to write this digest.
             </p>
           </form>
         ) : (
-          <p className="mt-3 text-sm text-ink-soft/70">
+          <p className="mt-3 text-sm text-ink-soft/80">
             Answer a daily question together this week and the digest unlocks.
           </p>
         ))
       ) : (
         <p className="mt-3 text-sm text-ink-soft">
           Part of{" "}
-          <Link href="/pricing" className="text-brand-700 underline">
+          <Link href="/pricing" className="text-brand-700 underline dark:text-brand-300">
             Premium
           </Link>
           {" "}— your questions, reveals, and safety resources stay free.

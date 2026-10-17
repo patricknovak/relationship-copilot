@@ -204,7 +204,7 @@ export default function LoginForm({
                   Or use email instead
                 </button>
               ) : (
-                <p className="mb-3 text-center text-xs text-ink-soft/60">
+                <p className="mb-3 text-center text-xs text-ink-soft/80">
                   Or use email
                 </p>
               )}
@@ -220,7 +220,7 @@ export default function LoginForm({
                 <button
                   type="button"
                   onClick={sendNewLink}
-                  className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900"
+                  className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900 dark:text-brand-300"
                 >
                   Send a new link
                 </button>
@@ -237,7 +237,7 @@ export default function LoginForm({
                 <button
                   type="button"
                   onClick={focusResendForm}
-                  className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900"
+                  className="text-sm font-medium text-brand-700 underline underline-offset-2 hover:text-brand-900 dark:text-brand-300"
                 >
                   Send a new link
                 </button>
@@ -275,7 +275,7 @@ export default function LoginForm({
               </form>
             ))}
         </div>
-        <p className="mt-6 text-center text-xs text-ink-soft/70">
+        <p className="mt-6 text-center text-xs text-ink-soft/80">
           By continuing you agree to our{" "}
           <Link href="/terms" className="underline">
             Terms

@@ -60,7 +60,7 @@ export default async function AccountPage({
         <h1 className="text-3xl">
           {profile?.display_name || "Your account"}
         </h1>
-        <Link href="/onboarding" className="text-sm text-brand-700 underline">
+        <Link href="/onboarding" className="text-sm text-brand-700 underline dark:text-brand-300">
           Edit profile
         </Link>
       </div>
@@ -93,10 +93,10 @@ export default async function AccountPage({
             {isPremium ? "Premium" : "Free"}
             {isPremium && sub?.status === "trialing" && " (trial)"}
             {isPremium && renews && (
-              <span className="ml-2 text-ink-soft/70">· renews {renews}</span>
+              <span className="ml-2 text-ink-soft/80">· renews {renews}</span>
             )}
             {!isPremium && (
-              <Link href="/pricing" className="ml-2 text-brand-700 underline">
+              <Link href="/pricing" className="ml-2 text-brand-700 underline dark:text-brand-300">
                 Unlock the AI Blueprint with Premium →
               </Link>
             )}
@@ -109,7 +109,7 @@ export default async function AccountPage({
               >
                 Manage billing
               </PendingButton>
-              <p className="mt-1.5 text-xs text-ink-soft/60">
+              <p className="mt-1.5 text-xs text-ink-soft/80">
                 Update your card, see invoices, or cancel anytime — cancellation
                 takes effect at the end of the billing period.
               </p>
@@ -129,13 +129,13 @@ export default async function AccountPage({
 
         {sign && (
           <div className="card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20 !p-4">
-            <dt className="text-sm font-medium text-brand-700">
+            <dt className="text-sm font-medium text-brand-700 dark:text-brand-300">
               Your sign <span aria-hidden>{sign.symbol}</span>
             </dt>
             <dd className="mt-1 text-sm text-ink-soft">
               {sign.name} ({sign.element}) — {sign.blurb}
             </dd>
-            <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
+            <p className="mt-2 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
           </div>
         )}
 
@@ -159,7 +159,7 @@ export default async function AccountPage({
       </dl>
 
       <div className="mt-8">
-        <Link href="/connections" className="text-sm text-brand-700 underline">
+        <Link href="/connections" className="text-sm text-brand-700 underline dark:text-brand-300">
           Go to your connections →
         </Link>
       </div>
@@ -179,20 +179,20 @@ export default async function AccountPage({
         <h2 className="text-sm font-semibold text-ink-soft/80 uppercase tracking-wide">
           Your data
         </h2>
-        <div className="card !p-4">
+        <dl className="card !p-4">
           <dt className="text-sm font-medium">Download your data</dt>
           <dd className="mt-1 text-sm text-ink-soft">
             Everything your account contains — profile, answers, discussions,
             insights — as a JSON file.{" "}
             <a
               href="/api/account/export"
-              className="text-brand-700 underline"
+              className="text-brand-700 underline dark:text-brand-300"
               download
             >
               Export now
             </a>
           </dd>
-        </div>
+        </dl>
         <DeleteAccount />
       </div>
     </div>

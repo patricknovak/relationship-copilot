@@ -50,7 +50,7 @@ export default async function LibraryPage() {
                 </p>
               )}
               {a.evidence_rating != null && (
-                <p className="mt-2 text-xs text-brand-600/90">
+                <p className="mt-2 text-xs text-brand-600/90 dark:text-brand-300">
                   Evidence: {"★".repeat(a.evidence_rating)}
                   <span className="text-brand-300">
                     {"★".repeat(Math.max(0, 5 - a.evidence_rating))}
@@ -66,7 +66,7 @@ export default async function LibraryPage() {
         <h2 className="text-lg">Questions for your…</h2>
         <p className="mt-1 text-sm text-ink-soft">
           Sample questions and how it works, for each kind of relationship.{" "}
-          <Link href="/questions" className="text-brand-700 underline">
+          <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
             Longer lists on /questions
           </Link>
           .
@@ -80,7 +80,7 @@ export default async function LibraryPage() {
         </div>
       </section>
 
-      <p className="mt-8 text-xs text-ink-soft/70">
+      <p className="mt-8 text-xs text-ink-soft/80">
         More in-depth guides are part of{" "}
         <Link href="/pricing" className="underline">
           Premium

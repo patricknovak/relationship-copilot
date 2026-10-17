@@ -480,14 +480,14 @@ export default async function ConnectionPage({
                   >
                     Save note
                   </PendingButton>
-                  <span className="text-xs text-ink-soft/70">
+                  <span className="text-xs text-ink-soft/80">
                     They see it on the invite page. Clear it to remove it.
                   </span>
                 </div>
               </form>
             </details>
           )}
-          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/70">
+          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/80">
             {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
             <PendingButton
               className="underline hover:text-ink-soft"
@@ -555,7 +555,7 @@ export default async function ConnectionPage({
               {/* Fallback if ensureOnboardingInstance failed at join time */}
               <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{EMPTY_STATE.trustLine}</p>
               <form action={begin} className="mt-3">
                 <PendingButton pendingLabel="Setting up…">
                   {EMPTY_STATE.primaryCta}
@@ -568,7 +568,7 @@ export default async function ConnectionPage({
               <p className="mt-1 text-sm">
                 <Link
                   href={`/connections/${id}/onboarding`}
-                  className="text-brand-700 underline"
+                  className="text-brand-700 underline dark:text-brand-300"
                 >
                   See your answers side by side →
                 </Link>
@@ -592,14 +592,14 @@ export default async function ConnectionPage({
                   {WAITING_ON_THEM.secondaryCta}
                 </Link>
               </div>
-              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_THEM.helper}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_THEM.helper}</p>
             </>
           ) : othersAnsweredOnboarding ? (
             <>
               {instance && <RevealWatcher instanceId={instance.id} />}
               <h2 className="text-lg">{WAITING_ON_YOU.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_YOU.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_YOU.trustLine}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_YOU.trustLine}</p>
               <Link
                 href={`/connections/${id}/onboarding`}
                 className="mt-3 inline-flex btn-primary"
@@ -718,7 +718,7 @@ export default async function ConnectionPage({
           )}
           <Link
             href={`/connections/${id}/explore`}
-            className="mt-3 inline-block text-sm text-brand-700 underline"
+            className="mt-3 inline-block text-sm text-brand-700 underline dark:text-brand-300"
           >
             Explore all activities →
           </Link>
@@ -735,7 +735,7 @@ export default async function ConnectionPage({
           </p>
           <Link
             href={`/connections/${id}/blueprint`}
-            className="mt-2 inline-block text-sm text-brand-700 underline"
+            className="mt-2 inline-block text-sm text-brand-700 underline dark:text-brand-300"
           >
             View Blueprint →
           </Link>
@@ -754,7 +754,7 @@ export default async function ConnectionPage({
         <p className="mt-4 text-sm">
           <Link
             href={`/connections/${id}/history`}
-            className="text-brand-700 underline"
+            className="text-brand-700 underline dark:text-brand-300"
           >
             Everything you&apos;ve revealed →
           </Link>
@@ -769,7 +769,7 @@ export default async function ConnectionPage({
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Star match ✨</h2>
           <p className="mt-1 text-sm text-ink-soft">{compat.blurb}</p>
-          <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-2 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
         </section>
       )}
 

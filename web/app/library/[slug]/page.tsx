@@ -64,7 +64,7 @@ export default async function ArticlePage({
       />
       <Link
         href="/library"
-        className="text-sm text-ink-soft/70 hover:text-ink"
+        className="text-sm text-ink-soft/80 hover:text-ink"
       >
         ← Library
       </Link>
@@ -78,7 +78,7 @@ export default async function ArticlePage({
         </p>
       )}
       {article.evidence_rating != null && (
-        <p className="mt-3 text-xs text-brand-600/90">
+        <p className="mt-3 text-xs text-brand-600/90 dark:text-brand-300">
           Evidence: {"★".repeat(article.evidence_rating)}
           <span className="text-brand-300">
             {"★".repeat(Math.max(0, 5 - article.evidence_rating))}
@@ -121,7 +121,7 @@ export default async function ArticlePage({
             <li>
               <Link
                 href="/questions/partners"
-                className="text-brand-700 underline"
+                className="text-brand-700 underline dark:text-brand-300"
               >
                 Questions to ask your partner
               </Link>
@@ -129,7 +129,7 @@ export default async function ArticlePage({
             <li>
               <Link
                 href="/questions/friends"
-                className="text-brand-700 underline"
+                className="text-brand-700 underline dark:text-brand-300"
               >
                 Questions to ask a friend
               </Link>
@@ -137,13 +137,13 @@ export default async function ArticlePage({
             <li>
               <Link
                 href="/questions/family"
-                className="text-brand-700 underline"
+                className="text-brand-700 underline dark:text-brand-300"
               >
                 Questions to ask family
               </Link>
             </li>
             <li>
-              <Link href="/questions" className="text-brand-700 underline">
+              <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
                 All question lists
               </Link>
             </li>
@@ -151,7 +151,7 @@ export default async function ArticlePage({
         </aside>
       )}
 
-      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/70">
+      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/80">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
           Safety resources

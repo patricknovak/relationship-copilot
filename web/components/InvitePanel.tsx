@@ -152,7 +152,7 @@ export default function InvitePanel({
         </p>
       )}
 
-      <p className="text-xs text-ink-soft/60">
+      <p className="text-xs text-ink-soft/80">
         The link works once — whoever taps it first becomes your person here.
       </p>
     </div>

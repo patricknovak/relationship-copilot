@@ -7,7 +7,7 @@ function LogoMark() {
     <svg
       viewBox="0 0 28 20"
       aria-hidden
-      className="h-5 w-7 text-brand-700"
+      className="h-5 w-7 text-brand-700 dark:text-brand-300"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"

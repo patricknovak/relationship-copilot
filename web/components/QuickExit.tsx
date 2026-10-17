@@ -24,7 +24,7 @@ export default function QuickExit() {
   return (
     <button
       onClick={exitNow}
-      aria-label="Quickly leave this page"
+      aria-label="Quick exit (Esc): leave this page now"
       className="fixed right-4 top-20 z-50 rounded-md bg-gray-800 px-3 py-2 text-sm font-medium text-white shadow hover:bg-gray-900"
     >
       Quick exit (Esc)

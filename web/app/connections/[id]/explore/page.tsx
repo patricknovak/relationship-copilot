@@ -99,7 +99,7 @@ export default async function ExplorePage({
                   <span>
                     {(templates ?? []).find((t) => t.id === m.template_id)
                       ?.title ?? (KIND_LABEL[m.kind] ?? m.kind)}
-                    <span className="ml-2 text-xs text-ink-soft/60">
+                    <span className="ml-2 text-xs text-ink-soft/80">
                       {KIND_LABEL[m.kind] ?? m.kind}
                     </span>
                   </span>

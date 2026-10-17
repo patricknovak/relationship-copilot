@@ -75,7 +75,7 @@ export default async function OnboardingPage({
 
         <div>
           <label className="block text-sm font-medium" htmlFor="birthday">
-            Birthday <span className="text-ink-soft/60">(optional)</span>
+            Birthday <span className="text-ink-soft/80">(optional)</span>
           </label>
           <input
             id="birthday"
@@ -85,7 +85,7 @@ export default async function OnboardingPage({
             defaultValue={profile?.birthday ?? ""}
             className="input mt-1.5 !w-auto"
           />
-          <p className="mt-1 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-1 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
         </div>
 
         <div>
@@ -116,7 +116,7 @@ export default async function OnboardingPage({
 
         <fieldset className="card !p-4">
           <legend className="px-1 text-sm font-medium">
-            A quick reflection <span className="font-normal text-ink-soft/60">(optional)</span>
+            A quick reflection <span className="font-normal text-ink-soft/80">(optional)</span>
           </legend>
           <p className="text-xs text-ink-soft/80">
             How much do you agree? (1 = not at all, 5 = very much) — educational,

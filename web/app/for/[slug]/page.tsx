@@ -66,7 +66,7 @@ export default async function ForPage({
           How it works
         </Link>
       </div>
-      <p className="mt-3 text-xs text-ink-soft/70">
+      <p className="mt-3 text-xs text-ink-soft/80">
         Free for the core experience. Answers stay private until you&apos;ve
         both shared.
       </p>
@@ -97,7 +97,7 @@ export default async function ForPage({
           Longer list:{" "}
           <Link
             href={`/questions/${page.slug}`}
-            className="text-brand-700 underline"
+            className="text-brand-700 underline dark:text-brand-300"
           >
             {page.slug === "partners"
               ? "questions to ask your partner"
@@ -112,7 +112,7 @@ export default async function ForPage({
       {page.article && (
         <p className="mt-8 text-sm text-ink-soft">
           From the library:{" "}
-          <Link href={`/library/${page.article.slug}`} className="text-brand-700 underline">
+          <Link href={`/library/${page.article.slug}`} className="text-brand-700 underline dark:text-brand-300">
             {page.article.title}
           </Link>
         </p>
@@ -125,7 +125,7 @@ export default async function ForPage({
             <details key={f.q} className="card group">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
                 {f.q}
-                <span aria-hidden className="text-brand-500 transition-transform group-open:rotate-45">
+                <span aria-hidden className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300">
                   +
                 </span>
               </summary>

@@ -79,7 +79,7 @@ export default function HeaderNav() {
             <>
               {desktop(SIGNED_IN_LINKS)}
               <form action={signOut} onSubmit={forgetPush}>
-                <button className="rounded-full px-3 py-1.5 text-ink-soft/70 hover:bg-surface-line/60 hover:text-ink">
+                <button className="rounded-full px-3 py-1.5 text-ink-soft/80 hover:bg-surface-line/60 hover:text-ink">
                   Sign out
                 </button>
               </form>

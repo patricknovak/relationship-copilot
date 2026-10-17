@@ -47,7 +47,7 @@ export default async function PromptInstanceView({
     return (
       <div className="mx-auto max-w-2xl px-4 py-12">
         <p className="text-ink-soft">This question is no longer available.</p>
-        <Link href={`/connections/${connectionId}`} className="text-brand-700 underline">
+        <Link href={`/connections/${connectionId}`} className="text-brand-700 underline dark:text-brand-300">
           ← Back
         </Link>
       </div>
@@ -166,7 +166,7 @@ export default async function PromptInstanceView({
         <RevealWatcher instanceId={instance.id} />
         <Link
           href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/70 hover:text-ink"
+          className="text-sm text-ink-soft/80 hover:text-ink"
         >
           ← Back
         </Link>
@@ -260,7 +260,7 @@ export default async function PromptInstanceView({
                         </ul>
                       </>
                     ) : (
-                      <p className="mt-1 text-sm text-ink-soft/60">No scale answers.</p>
+                      <p className="mt-1 text-sm text-ink-soft/80">No scale answers.</p>
                     )}
                   </div>
                 );
@@ -300,7 +300,7 @@ export default async function PromptInstanceView({
                       </p>
                       <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink">
                         {(r.answers as AnswerMap)[q.id] || (
-                          <span className="text-ink-soft/50">No answer</span>
+                          <span className="text-ink-soft/80">No answer</span>
                         )}
                       </p>
                       {(() => {
@@ -358,7 +358,7 @@ export default async function PromptInstanceView({
                     }`}
                   >
                     {!mine && (
-                      <p className="text-xs font-semibold text-brand-700">
+                      <p className="text-xs font-semibold text-brand-700 dark:text-brand-300">
                         {nameOf(d.user_id)}
                       </p>
                     )}
@@ -368,7 +368,7 @@ export default async function PromptInstanceView({
               );
             })}
             {(!discussion || discussion.length === 0) && (
-              <li className="text-sm text-ink-soft/60">
+              <li className="text-sm text-ink-soft/80">
                 No messages yet — start the conversation.
               </li>
             )}
@@ -388,7 +388,7 @@ export default async function PromptInstanceView({
         <RevealWatcher instanceId={instance.id} />
         <Link
           href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/70 hover:text-ink"
+          className="text-sm text-ink-soft/80 hover:text-ink"
         >
           ← Back
         </Link>
@@ -410,7 +410,7 @@ export default async function PromptInstanceView({
             {WAITING_ON_THEM.secondaryCta}
           </a>
         </div>
-        <p className="mt-4 text-sm text-ink-soft/70">{WAITING_ON_THEM.helper}</p>
+        <p className="mt-4 text-sm text-ink-soft/80">{WAITING_ON_THEM.helper}</p>
 
         <div id="review-answers" className="mt-10 scroll-mt-24">
           <h2 className="text-lg">{heading}</h2>
@@ -438,7 +438,7 @@ export default async function PromptInstanceView({
         <RevealWatcher instanceId={instance.id} />
         <Link
           href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/70 hover:text-ink"
+          className="text-sm text-ink-soft/80 hover:text-ink"
         >
           ← Back
         </Link>
@@ -476,7 +476,7 @@ export default async function PromptInstanceView({
       <RevealWatcher instanceId={instance.id} />
       <Link
         href={`/connections/${connectionId}`}
-        className="text-sm text-ink-soft/70 hover:text-ink"
+        className="text-sm text-ink-soft/80 hover:text-ink"
       >
         ← Back
       </Link>
@@ -484,7 +484,7 @@ export default async function PromptInstanceView({
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
         {EMPTY_STATE.body}
       </p>
-      <p className="mt-3 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
+      <p className="mt-3 text-xs text-ink-soft/80">{EMPTY_STATE.trustLine}</p>
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <a href="#answer-form" className="btn-primary">
           {EMPTY_STATE.primaryCta}
@@ -515,7 +515,7 @@ function LockIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="h-3.5 w-3.5 text-brand-600"
+      className="h-3.5 w-3.5 text-brand-600 dark:text-brand-300"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"

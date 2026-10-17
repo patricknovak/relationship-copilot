@@ -96,7 +96,7 @@ export default async function HistoryPage({
                 {it.title ? `“${it.title}”` : "Untitled"}
               </p>
               {it.count > 1 && (
-                <p className="mt-1 text-xs text-ink-soft/70">{it.count} questions</p>
+                <p className="mt-1 text-xs text-ink-soft/80">{it.count} questions</p>
               )}
             </Link>
           </li>
