@@ -7,6 +7,7 @@ import {
   keyBytes,
   needsHomeScreenInstall,
   pushSupported,
+  sameServerKey,
 } from "@/components/pushDevice";
 
 type State = "loading" | "unsupported" | "ios-install" | "denied" | "off" | "on";
@@ -31,7 +32,21 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
         if (!cancelled) setState("denied");
         return;
       }
-      const sub = await currentSubscription();
+      let sub = await currentSubscription();
+      if (sub && !sameServerKey(sub, vapidPublicKey)) {
+        // The server's key pair was rotated, so this subscription is dead.
+        // Replace it quietly when permission is already granted.
+        await sub.unsubscribe();
+        sub = null;
+        if (Notification.permission === "granted") {
+          const reg = await navigator.serviceWorker.getRegistration("/");
+          sub =
+            (await reg?.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: keyBytes(vapidPublicKey),
+            })) ?? null;
+        }
+      }
       if (sub) {
         // Re-link to whoever is signed in now (a shared browser follows the
         // latest account; migration 0034).

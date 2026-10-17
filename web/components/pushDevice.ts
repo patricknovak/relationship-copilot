@@ -28,6 +28,15 @@ export function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+/** Whether a subscription was made with this server key (rotation check). */
+export function sameServerKey(sub: PushSubscription, base64url: string): boolean {
+  const have = sub.options?.applicationServerKey;
+  if (!have) return true; // browser doesn't expose it; assume current
+  const a = new Uint8Array(have);
+  const b = keyBytes(base64url);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 export async function currentSubscription(): Promise<PushSubscription | null> {
   if (!pushSupported()) return null;
   const reg = await navigator.serviceWorker.getRegistration("/");

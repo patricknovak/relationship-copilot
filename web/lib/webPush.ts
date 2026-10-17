@@ -265,7 +265,12 @@ export interface PushMessage {
 
 export type PushResult = "sent" | "gone" | "failed";
 
-/** Classify a push service response: 404/410 mean the subscription is dead. */
+/**
+ * Classify a push service response: 404/410 mean the subscription is dead.
+ * 401/403 stay "failed", not "gone": they usually mean our VAPID config is
+ * wrong, and deleting on them would wipe every device at once. After a key
+ * rotation, PushToggle replaces the browser's stale subscription instead.
+ */
 export function classifyPushStatus(status: number): PushResult {
   if (status >= 200 && status < 300) return "sent";
   if (status === 404 || status === 410) return "gone";
