@@ -54,6 +54,43 @@ jobs:
             web/test-results
           retention-days: 7
 
+  e2e-core:
+    # Signed-in core loop (invite, join, private answers, reveal) against a
+    # local Supabase stack with every migration applied. Local demo keys
+    # only; never touches production.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Start local Supabase
+        run: ./scripts/e2e-core-stack.sh "$RUNNER_TEMP/e2e-core.env" && cat "$RUNNER_TEMP/e2e-core.env" >> "$GITHUB_ENV"
+      - name: Build against the local stack
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3100
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Core loop (Playwright)
+        run: npm run test:e2e:core
+        env:
+          CI: true
+      - name: Upload core-loop report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-core-report
+          path: web/test-results
+          retention-days: 7
+
   deploy-cloudflare:
     # Production deploy to the Cloudflare Worker "relationship-copilot".
     # Off until the repo variable CLOUDFLARE_DEPLOY is "true"; Vercel keeps

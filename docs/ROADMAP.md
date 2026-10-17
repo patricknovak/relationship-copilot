@@ -174,8 +174,36 @@ or an account action.
 10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
-11. **Web push (code).** Service worker + VAPID keys, same preference
-    switches as email. Only after email proves the loop; adds a secret.
+10d. **Answer first, while you wait (code). Shipped 2026-10-17 (0033).**
+    The inviter could do nothing until their person joined, and the invitee
+    had no reason to hurry. Now the inviter can answer the first set right
+    away; the hub, the question page and the share message say so, and the
+    invite page tells the invitee "Sam has already answered". The gate is
+    unchanged: the reveal trigger needs two joined members, and the invitee
+    sees nothing until they share (`supabase/tests/17_answer_first_test.sql`).
+    Dailies and activities still start once both are in.
+10e. **Personal note on the invite (code). Shipped 2026-10-17 (0035).**
+    The inviter can add a line or two ("I miss our long walks") that the
+    invitee sees on the invite page and that is quoted in the shared
+    message. Plain text, 280 characters, no links (the invite page is our
+    trusted domain). Creator-only under RLS, frozen once the invite is
+    used, and it goes with the author's account.
+10f. **One "still your turn" follow-up (code). Shipped 2026-10-17 (0036).**
+    "Your turn" fires once, when the other person submits. A first-questions
+    set, quiz or challenge that then waits 36 hours gets one more nudge
+    ("Ann is still waiting on your answers"), inside the recipient's local
+    9am–8pm window, never after a week, and never for dailies (they have
+    their own reminder). Same "your turn" switch; once per set per person.
+    Worker Cron Trigger `40 * * * *` → `/api/cron/turn-reminder`.
+11. **Web push (code). Shipped 2026-10-17 (0034); needs a VAPID key pair (launch checklist §4).**
+    Moved ahead of "email first": push needs no third-party account (the
+    keys are self-generated and browser push services are free), while
+    email still waits on `RESEND_API_KEY`. Same preference switches and
+    once-only log as email; a notification goes out on every channel that
+    is set up. Payloads are RFC 8291-encrypted to the browser and carry a
+    first name and a generic line only. Account → "Notifications on this
+    device"; signing out stops a shared browser's alerts. iPhone needs the
+    site added to the Home Screen first (the toggle says so).
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the
     `workers.dev` test deploy is waiting on a go. Keep Vercel as fallback.
 
@@ -183,10 +211,13 @@ or an account action.
 
 13. **Blueprint v2: longitudinal.** First step shipped 2026-10-13: the
     prompt now appends the pair's last 20 revealed daily answers and asks
-    for "then vs now". Still open: using each person's private intake
-    (goals, values, attachment) in a *shared* Blueprint needs an explicit
-    consent step, since intake is collected as private; do not feed it in
-    silently.
+    for "then vs now". Consent step shipped 2026-10-17 (0037): each person
+    can choose, per connection, to include their private profile
+    reflections (goals, values, attachment label). Both see who opted in;
+    the text is read server-side only for those who did, redacted and
+    safety-screened like answers, never shown word for word, and the model
+    is told not to quote or attribute it. Revoking affects future
+    Blueprints only.
 14. **Shared goals and rituals. Shipped 2026-10-13 (0030):** a both-edit
     "things we're trying" list on the hub (members only, visible
     immediately, survives a member's deletion), fed to the weekly digest as
@@ -195,7 +226,10 @@ or an account action.
     cron needs a service-role read of revealed-only responses, which the
     "never read responses through the admin client" rule currently forbids;
     decide whether a narrowly scoped `revealed_responses_for_digest`
-    SECURITY DEFINER function is acceptable before building it.
+    SECURITY DEFINER function is acceptable before building it. Options and
+    a recommendation (generate on visit now; the definer function only once
+    digests are delivered by email or push):
+    `docs/decisions/0001-scheduled-weekly-digest.md`.
 15. **Parent–teen consent flow (COPPA / GDPR-K)** before under-13 use.
 16. **Native wrapper** (Capacitor) if push + PWA prove insufficient for
     retention on mobile.
@@ -235,7 +269,9 @@ tested; the reveal gate is untouched.
 5. The AI provider decision (`XAI_NO_TRAINING_DPA`, or a provider whose
    terms already exclude training), which unlocks everything premium.
 6. Decide the price (recommendation: $9.99/mo or $59.99/yr, one plan covers
-   both people) and update the four places that say $18/mo.
+   both people). The list price is one constant now: change
+   `PREMIUM_MONTHLY_USD` in `web/lib/pricing.ts` together with the Stripe
+   price; a test fails if a price is hard-coded anywhere else.
 
 **Next engineering items**, once the above lands: scheduled weekly digest
 (needs the design call in 14b), web push (11), Cloudflare cutover (12).
@@ -247,3 +283,8 @@ fills: pairs with a revealed daily in the last 7 days (the habit), day-30
 retention of pairs, notification open-to-answer rate, and premium
 conversion after the first Blueprint. All of these are derivable from
 `prompt_instances` and `relationship_insights` without new tracking.
+
+Answer-first (10d) is measured by the `answered_before_join` funnel step
+(`connection_funnel_steps`, plus an anonymous GA4 event): compare the share
+of connections reaching `partner_joined`, and the first mutual reveal, with
+and without it.

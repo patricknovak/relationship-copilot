@@ -56,23 +56,76 @@ function qaLines(qa: BlueprintQa[], prefix: string): string {
     .join("\n\n");
 }
 
+// A member's private profile reflections, included only when that member
+// opted in for this connection (blueprint_intake_consent, migration 0037).
+// Text fields arrive REDACTED; the attachment style is a fixed label.
+export interface BlueprintIntake {
+  goals?: string;
+  values?: string;
+  attachmentStyle?: string;
+}
+
+export const MAX_INTAKE_FIELD = 500;
+const ATTACHMENT_STYLES = new Set(["Secure", "Anxious", "Avoidant", "Fearful"]);
+
+/** Pull the shareable parts out of profiles.intake; null when there's nothing. */
+export function intakeFromProfile(raw: unknown): BlueprintIntake | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { goals?: unknown; values?: unknown; attachment?: { style?: unknown } | null };
+  const clip = (v: unknown) =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_INTAKE_FIELD) : undefined;
+  const out: BlueprintIntake = {
+    goals: clip(r.goals),
+    values: clip(r.values),
+    attachmentStyle:
+      typeof r.attachment?.style === "string" && ATTACHMENT_STYLES.has(r.attachment.style)
+        ? r.attachment.style
+        : undefined,
+  };
+  return out.goals || out.values || out.attachmentStyle ? out : null;
+}
+
+function intakeLines(label: string, x: BlueprintIntake): string {
+  return [
+    `${label} chose to share their private profile reflections:`,
+    x.goals ? `- What they hope for: ${x.goals}` : null,
+    x.values ? `- What matters to them: ${x.values}` : null,
+    x.attachmentStyle
+      ? `- A short self-reflection quiz suggested "${x.attachmentStyle}" (self-reported, not a diagnosis)`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 // Build the user message from REDACTED question/answer pairs (names already
 // replaced with P1/P2 upstream). `recent` is the pair's latest revealed
 // daily answers, oldest first, so the Blueprint can reflect how things are
-// now and not only how they started.
+// now and not only how they started. `intake` holds only the reflections of
+// members who opted in; the model is told to use them for gentle context and
+// never to quote or attribute them.
 export function blueprintUserPrompt(
   type: ConnectionType,
   qa: BlueprintQa[],
   recent: BlueprintQa[] = [],
+  intake: { p1?: BlueprintIntake | null; p2?: BlueprintIntake | null } = {},
 ): GrokMessage {
   const trimmed = recent.slice(-MAX_RECENT_FOR_BLUEPRINT);
   const recentBlock =
     trimmed.length > 0
       ? `\n\nTheir most recent daily answers, oldest first (same redaction). Weigh these as "where they are now" against the onboarding answers as "where they started", and note gently if something has shifted:\n\n${qaLines(trimmed, "D")}`
       : "";
+  const shared = [
+    intake.p1 ? intakeLines("P1", intake.p1) : null,
+    intake.p2 ? intakeLines("P2", intake.p2) : null,
+  ].filter(Boolean);
+  const intakeBlock =
+    shared.length > 0
+      ? `\n\nProfile reflections (same redaction), shared by choice. Use them only as gentle background for shared goals and focus areas. Never quote them, never say who wrote what, and never treat the quiz label as a diagnosis or as a reason one person is the problem:\n\n${shared.join("\n\n")}`
+      : "";
   return {
     role: "user",
-    content: `Relationship type: ${connectionLabel(type)}.\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${qaLines(qa, "Q")}${recentBlock}\n\nProduce the JSON blueprint.`,
+    content: `Relationship type: ${connectionLabel(type)}.\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${qaLines(qa, "Q")}${recentBlock}${intakeBlock}\n\nProduce the JSON blueprint.`,
   };
 }
 

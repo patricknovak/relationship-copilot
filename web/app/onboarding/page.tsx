@@ -6,6 +6,7 @@ import { ATTACHMENT_ITEMS } from "@/lib/attachment";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import { suggestedFirstName } from "@/lib/profileName";
 
 type Intake = {
   goals?: string;
@@ -67,7 +68,7 @@ export default async function OnboardingPage({
             required
             pattern=".*\S.*"
             title="Please enter your name"
-            defaultValue={profile?.display_name ?? ""}
+            defaultValue={profile?.display_name ?? suggestedFirstName(user?.user_metadata)}
             className="input mt-1.5"
           />
         </div>

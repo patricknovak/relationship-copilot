@@ -45,6 +45,28 @@ export function dailyBadge(state: DailyState): {
   }
 }
 
+// Badge for a connection still on its first set of questions (status
+// pending or onboarding). With answer-first the inviter may have answered
+// before their person joined. `null` falls back to the status label.
+export function firstSetBadge(
+  state: DailyState,
+  partnerJoined: boolean,
+): { label: string; tone: "action" | "quiet" | "done" } | null {
+  switch (state) {
+    case "your_turn":
+      return { label: "Your turn", tone: "action" };
+    case "waiting":
+      return partnerJoined
+        ? { label: "Waiting on them", tone: "quiet" }
+        : { label: "Answered · invite pending", tone: "quiet" };
+    case "answer":
+    case "none":
+      return partnerJoined ? { label: "First questions", tone: "action" } : null;
+    default:
+      return null;
+  }
+}
+
 // Card copy for the hub. `them` is the other person's first name or null.
 export function dailyCardCopy(
   state: DailyState,

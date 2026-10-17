@@ -7,6 +7,7 @@ import { ATTACHMENT_BLURB } from "@/lib/attachment";
 import DeleteAccount from "@/components/DeleteAccount";
 import NoticeBanner from "@/components/NoticeBanner";
 import NotificationPrefs from "@/components/NotificationPrefs";
+import PushToggle from "@/components/PushToggle";
 import { parseNotificationPrefs } from "@/lib/notifications";
 
 type Intake = {
@@ -171,6 +172,7 @@ export default async function AccountPage({
           prefs={notificationPrefs}
           saved={saved === "notifications"}
         />
+        <PushToggle vapidPublicKey={process.env.VAPID_PUBLIC_KEY?.trim() || null} />
       </div>
 
       <div className="mt-10 space-y-4">

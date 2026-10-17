@@ -19,9 +19,10 @@ export default function NotificationPrefs({
 }) {
   return (
     <form action={updateNotificationPrefs} className="card !p-4">
-      <h2 className="text-sm font-medium">Email notifications</h2>
+      <h2 className="text-sm font-medium">What to tell you about</h2>
       <p className="mt-1 text-sm text-ink-soft">
-        Short nudges with a link, never the answers themselves. We never email
+        Short nudges with a link, by email and on any device where you turn
+        notifications on. Never the answers themselves. We never notify you
         about safety resources or about someone leaving a connection.
       </p>
       <ul className="mt-3 space-y-2.5">

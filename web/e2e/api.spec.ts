@@ -20,6 +20,14 @@ test.describe("API negative paths (no secrets spent)", () => {
     expect(res.status()).toBe(401);
   });
 
+  test("cron turn-reminder rejects missing and wrong auth", async ({ request }) => {
+    expect((await request.post("/api/cron/turn-reminder")).status()).toBe(401);
+    const res = await request.post("/api/cron/turn-reminder", {
+      headers: { authorization: "Bearer not-the-real-secret" },
+    });
+    expect(res.status()).toBe(401);
+  });
+
   test("Stripe webhook rejects unsigned body", async ({ request }) => {
     const res = await request.post("/api/stripe/webhook", {
       data: "{}",

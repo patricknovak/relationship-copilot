@@ -14,6 +14,7 @@ import {
 } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { normalizeInviteNote } from "@/lib/inviteNote";
 import {
   INVITE_SENT,
   PARTNER_JOINED,
@@ -239,6 +240,39 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // the join completes automatically. Existing accounts can't be invited this
 // way (Supabase rejects re-inviting a registered email), so we tell the
 // inviter to share the link directly instead.
+// Save (or clear) the creator's personal note on a pending invite. RLS
+// (migration 0035) limits this to the connection's creator while pending.
+export async function setInviteNote(connectionId: string, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/login?next=/connections/${connectionId}`);
+
+  const result = normalizeInviteNote(formData.get("note"));
+  if ("error" in result) {
+    redirect(
+      `/connections/${connectionId}?notice=${result.error === "link" ? "note-link" : "note-long"}#invite`,
+    );
+  }
+
+  const { error } = result.note
+    ? await supabase.from("invite_notes").upsert(
+        {
+          connection_id: connectionId,
+          author_id: user.id,
+          note: result.note,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "connection_id" },
+      )
+    : await supabase.from("invite_notes").delete().eq("connection_id", connectionId);
+  if (error) redirect(`/connections/${connectionId}?notice=note-failed#invite`);
+
+  revalidatePath(`/connections/${connectionId}`);
+  redirect(`/connections/${connectionId}?notice=${result.note ? "note-saved" : "note-cleared"}#invite`);
+}
+
 export async function sendEmailInvite(
   connectionId: string,
   email: string,

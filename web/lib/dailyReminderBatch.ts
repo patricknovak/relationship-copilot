@@ -5,6 +5,21 @@
 
 export type ConnectionWindow = { id: string; timezone: string };
 
+/** The hour (0–23) in a connection's time zone; UTC if the zone is bad. */
+export function localHour(tz: string, now: Date): number {
+  try {
+    const h = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "numeric",
+      hour12: false,
+    }).format(now);
+    const n = Number.parseInt(h, 10);
+    return Number.isFinite(n) ? n % 24 : now.getUTCHours();
+  } catch {
+    return now.getUTCHours();
+  }
+}
+
 export function filterConnectionsInSendWindow(
   connections: ConnectionWindow[],
   localHour: (tz: string, now: Date) => number,

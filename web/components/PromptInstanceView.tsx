@@ -9,6 +9,7 @@ import ReactionBar from "@/components/ReactionBar";
 import { groupReactions, isReactionEmoji, reactionKey } from "@/lib/reactions";
 import { dimensionLabel, isDimensionScored, quizReflection } from "@/lib/quizResult";
 import {
+  ANSWER_FIRST,
   EMPTY_STATE,
   FIRST_REVEAL_UNLOCK,
   REVEALED,
@@ -81,6 +82,16 @@ export default async function PromptInstanceView({
   const { data: othersAnswered } = await supabase.rpc("others_have_answered", {
     p_instance: instance.id,
   });
+
+  // Answer-first: before the other person joins, "nudge them" can't work
+  // (they can't open the connection yet), so point back at the invite.
+  const { count: joinedCount } = await supabase
+    .from("connection_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("connection_id", connectionId)
+    .not("joined_at", "is", null);
+  const partnerJoined = (joinedCount ?? 0) >= 2;
+  const inviteHref = `/connections/${connectionId}#invite`;
 
   let myName: string | null = null;
   if (user) {
@@ -381,12 +392,20 @@ export default async function PromptInstanceView({
         >
           ← Back
         </Link>
-        <h1 className="mt-3 text-3xl">{WAITING_ON_THEM.headline}</h1>
+        <h1 className="mt-3 text-3xl">
+          {partnerJoined ? WAITING_ON_THEM.headline : ANSWER_FIRST.answeredHeadline}
+        </h1>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
-          {WAITING_ON_THEM.body}
+          {partnerJoined ? WAITING_ON_THEM.body : ANSWER_FIRST.answeredBody}
         </p>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <NudgePerson connectionUrl={connectionUrl} inviterName={myName} />
+          {partnerJoined ? (
+            <NudgePerson connectionUrl={connectionUrl} inviterName={myName} />
+          ) : (
+            <Link href={inviteHref} className="btn-primary">
+              {ANSWER_FIRST.answeredCta}
+            </Link>
+          )}
           <a href="#review-answers" className="btn-secondary">
             {WAITING_ON_THEM.secondaryCta}
           </a>
@@ -470,12 +489,11 @@ export default async function PromptInstanceView({
         <a href="#answer-form" className="btn-primary">
           {EMPTY_STATE.primaryCta}
         </a>
-        <Link
-          href={`/connections/${connectionId}`}
-          className="btn-secondary"
-        >
-          {EMPTY_STATE.secondaryCta}
-        </Link>
+        {!partnerJoined && (
+          <Link href={inviteHref} className="btn-secondary">
+            {EMPTY_STATE.secondaryCta}
+          </Link>
+        )}
       </div>
 
       <div id="answer-form" className="mt-10 scroll-mt-24">

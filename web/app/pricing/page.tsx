@@ -6,12 +6,13 @@ import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import { canonicalUrl } from "@/lib/site";
 import { FREE_CONNECTION_CAP } from "@/lib/relationships";
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  // Display price matches Plan price="$18/mo" and homepage JSON-LD offer "18.00"
+  // Display price and the homepage JSON-LD offer both come from lib/pricing.ts.
   // (no shared display-price constant in the codebase).
-  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the core library and Safety. Premium ($18/mo) adds the AI Blueprint and more.`,
+  description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the core library and Safety. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and more.`,
   alternates: { canonical: canonicalUrl("/pricing") },
 };
 
@@ -99,7 +100,7 @@ export default async function PricingPage({
           )}
         </Plan>
 
-        <Plan title="Premium" price="$18/mo" features={PREMIUM} highlight>
+        <Plan title="Premium" price={PREMIUM_MONTHLY_DISPLAY} features={PREMIUM} highlight>
           {isPremium ? (
             <span className="block rounded-full bg-brand-100 dark:bg-brand-900/40 px-4 py-2.5 text-center text-sm font-medium text-brand-800 dark:text-brand-200">
               You&apos;re on Premium ✨

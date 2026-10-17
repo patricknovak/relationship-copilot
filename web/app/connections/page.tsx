@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
-import { dailyBadge, dailyState, todayIn, todayUtc } from "@/lib/dailyState";
+import { dailyBadge, dailyState, firstSetBadge, todayIn, todayUtc } from "@/lib/dailyState";
 import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
 import type { ConnectionType } from "@/lib/database.types";
 
@@ -84,12 +84,15 @@ export default async function ConnectionsPage() {
 
   // The other person in each connection, by display name only.
   const themByConnection = new Map<string, string | null>();
+  // Members rows exist only once someone has joined (accept_invite).
+  const partnerJoined = new Set<string>();
   if (ids.length && user) {
     const { data: members } = await supabase
       .from("connection_members")
       .select("connection_id, user_id")
       .in("connection_id", ids)
       .neq("user_id", user.id);
+    for (const m of members ?? []) partnerJoined.add(m.connection_id);
     const otherIds = Array.from(new Set((members ?? []).map((m) => m.user_id)));
     const { data: profiles } = otherIds.length
       ? await supabase
@@ -161,12 +164,51 @@ export default async function ConnectionsPage() {
     }
   }
 
+  // The first set (pending / onboarding): whose turn it is, including an
+  // inviter who answered before their person joined. Same RLS reads and
+  // boolean-only signal as the dailies above.
+  const firstSetIds = (connections ?? [])
+    .filter((c) => c.status === "pending" || c.status === "onboarding")
+    .map((c) => c.id);
+  if (firstSetIds.length && user) {
+    const { data: firstSets } = await supabase
+      .from("prompt_instances")
+      .select("id, connection_id, status")
+      .in("connection_id", firstSetIds)
+      .eq("kind", "onboarding");
+    const setIds = (firstSets ?? []).map((i) => i.id);
+    const { data: mineFirst } = setIds.length
+      ? await supabase
+          .from("prompt_responses")
+          .select("instance_id")
+          .in("instance_id", setIds)
+          .eq("user_id", user.id)
+      : { data: [] as { instance_id: string }[] };
+    const answeredFirst = new Set((mineFirst ?? []).map((r) => r.instance_id));
+    const othersFirst = await fetchOthersHaveAnswered(
+      supabase,
+      (firstSets ?? []).filter((i) => !answeredFirst.has(i.id) && i.status !== "revealed").map((i) => i.id),
+    );
+    const byConn = new Map((firstSets ?? []).map((i) => [i.connection_id, i] as const));
+    for (const connId of firstSetIds) {
+      const inst = byConn.get(connId);
+      const state = dailyState({
+        hasInstance: !!inst,
+        status: inst?.status,
+        iAnswered: !!inst && answeredFirst.has(inst.id),
+        theyAnswered: !!inst && (inst.status === "revealed" || othersFirst.has(inst.id)),
+      });
+      const badge = firstSetBadge(state, partnerJoined.has(connId));
+      if (badge) badgeByConnection.set(connId, badge);
+    }
+  }
+
   const rows: ConnectionRow[] = (connections ?? []).map((c) => ({
     id: c.id,
     type: c.type,
     status: c.status,
     them: themByConnection.get(c.id) ?? null,
-    badge: c.status === "active" ? (badgeByConnection.get(c.id) ?? null) : null,
+    badge: badgeByConnection.get(c.id) ?? null,
   }));
 
   return (

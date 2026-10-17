@@ -12,6 +12,7 @@ import {
 import type { ConnectionType } from "@/lib/database.types";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
+import { inviterAnsweredLine } from "@/lib/firstRevealCopy";
 
 // Static for every code — never look up the invite in generateMetadata.
 // Unfurl caches and search indexes must not see inviter names, relationship
@@ -43,6 +44,8 @@ type InvitePreview =
       type: ConnectionType;
       createdBy: string | null;
       inviterName: string | null;
+      note: string | null;
+      inviterAnswered: boolean;
     }
   | { status: InviteFailureStatus };
 
@@ -55,7 +58,7 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
 
   const { data: conn } = await admin
     .from("connections")
-    .select("id, type, created_by, invite_expires_at")
+    .select("id, type, created_by, invite_expires_at, status")
     .eq("invite_code", normalized)
     .maybeSingle();
 
@@ -93,12 +96,33 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
       .maybeSingle();
     inviterName = inviter?.display_name?.trim() || null;
   }
+
+  // The inviter's personal note (0035), shown only while the code is valid
+  // and the connection is still waiting for them. Leaving archives the
+  // connection without burning the code, so a leaver's note must not keep
+  // showing to whoever has the link.
+  const { data: noteRow } =
+    conn!.status === "pending"
+      ? await admin
+          .from("invite_notes")
+          .select("note")
+          .eq("connection_id", conn!.id)
+          .maybeSingle()
+      : { data: null };
+  // Answer-first (0033): a boolean "they already answered", never content.
+  // Failure just hides the line.
+  const { data: answered } = await admin.rpc("invite_inviter_has_answered", {
+    p_code: normalized,
+  });
+
   return {
     status: "ok",
     connectionId: conn!.id,
     type: conn!.type,
     createdBy: conn!.created_by,
     inviterName,
+    note: noteRow?.note ?? null,
+    inviterAnswered: answered === true,
   };
 }
 
@@ -194,12 +218,27 @@ export default async function InvitePage({
         {connectionLabel(invite.type)}
         {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
+      {invite.note && (
+        <figure className="mt-5 rounded-2xl bg-paper-warm px-4 py-3 text-left">
+          <blockquote className="whitespace-pre-wrap font-display text-lg leading-snug text-ink">
+            &ldquo;{invite.note}&rdquo;
+          </blockquote>
+          <figcaption className="mt-1 text-xs text-ink-soft">
+            {invite.inviterName ? `${invite.inviterName}, to you` : "From the person who invited you"}
+          </figcaption>
+        </figure>
+      )}
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
         You&apos;ll each answer the same thoughtful questions in a private space.
         Neither of you sees the other&apos;s answers until you&apos;ve both
         shared — then you reveal together. It&apos;s free, and you can leave
         anytime.
       </p>
+      {invite.inviterAnswered && (
+        <p className="mt-4 rounded-2xl bg-brand-50/80 px-4 py-3 text-sm font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
+          {inviterAnsweredLine(invite.inviterName)}
+        </p>
+      )}
 
       {user ? (
         <AutoAcceptInvite code={code} />

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
     <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-ink-soft">
       <h1 className="text-3xl text-ink">Privacy Policy</h1>
       <p className="mt-1 text-xs text-ink-soft/80">
-        Last updated September 20, 2026.
+        Last updated October 17, 2026.
       </p>
 
       <section className="mt-6 space-y-4">
@@ -41,7 +41,9 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-semibold text-ink">AI features</h2>
         <p>
           If you use an AI feature (the Relationship Blueprint or weekly
-          digest), the answers involved are sent to our AI provider
+          digest), the answers involved, and your profile reflections if you
+          chose to include them in a connection&apos;s Blueprint, are sent to
+          our AI provider
           (xAI&apos;s Grok) with names, email addresses, and phone numbers
           removed first (best-effort redaction). They are used only to produce
           that reflection. Production AI stays off until a no-training
@@ -49,6 +51,18 @@ export default function PrivacyPage() {
           any AI output, and high-severity signals on answers also surface
           support resources: content suggesting danger leads us to withhold AI
           output and show help instead. Safety features are free for everyone.
+        </p>
+
+        <h2 className="text-lg font-semibold text-ink">Notifications</h2>
+        <p>
+          If you turn on notifications on a device, your browser gives us an
+          address at its push service (Google, Apple, Mozilla, or Microsoft,
+          depending on the browser). We store that address and its keys and
+          use them only to send short alerts such as &ldquo;Sam
+          answered&rdquo;. Each alert is encrypted so the push service
+          can&apos;t read it, and none ever contains your answers. Turning
+          notifications off or deleting your account removes it; signing out
+          stops notifications on that device.
         </p>
 
         <h2 className="text-lg font-semibold text-ink">

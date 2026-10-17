@@ -6,6 +6,7 @@ import { ACQUISITION } from "@/lib/firstRevealCopy";
 import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
 import { FOR_PAGES } from "@/lib/forPages";
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl("/") },
@@ -35,7 +36,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Is it really free?",
-    a: "The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the core library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
+    a: `The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the core library — is free. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.`,
   },
   {
     q: "Is it only for couples?",
