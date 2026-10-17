@@ -1,6 +1,7 @@
 // In-product first-reveal prompt copy (Patrick-approved activation package).
 // Keep trust/privacy language aligned with LIVE Privacy / mutual-reveal FAQ.
 // Prefer "your person" — not couples-only.
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export const EMPTY_STATE = {
   headline: "Answer in private. Reveal together.",
@@ -80,7 +81,7 @@ export const REVEALED = {
 
 export const SOFT_PREMIUM = {
   headline: "Want a deeper reflection?",
-  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI strips names, emails, and phones first — and stays off in production until a no-training provider agreement is in place.",
+  body: `Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI strips names, emails, and phones first — and stays off in production until a no-training provider agreement is in place.`,
   primaryCta: "See Premium",
   dismiss: "Not now",
 } as const;
@@ -102,7 +103,7 @@ export const ACQUISITION = {
   headline: "Closer, on purpose.",
   body: "Answer thoughtful questions in private. Reveal together — only when you've both shared. One mutual reveal is enough to feel the difference: honesty without peeking, built into how the product works, not just promised in the app.",
   trustLine:
-    "Free for the core experience. Safety always free. Premium ($18/mo) is optional for Blueprint and digests.",
+    `Free for the core experience. Safety always free. Premium (${PREMIUM_MONTHLY_DISPLAY}) is optional for Blueprint and digests.`,
   inviteCta: "Invite your person",
   startCta: "Start free",
 } as const;
