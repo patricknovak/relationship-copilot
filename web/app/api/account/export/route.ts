@@ -91,6 +91,12 @@ export async function GET() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Where you chose to include your profile reflections in a Blueprint (0037).
+  const { data: blueprintConsents } = await supabase
+    .from("blueprint_intake_consent")
+    .select("connection_id, granted_at")
+    .eq("user_id", user.id);
+
   await logAudit(user.id, "account.export");
 
   const payload = {
@@ -106,6 +112,7 @@ export async function GET() {
     insights,
     safety_events: safetyEvents,
     subscription,
+    blueprint_intake_consents: blueprintConsents,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
