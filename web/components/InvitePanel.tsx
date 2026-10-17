@@ -11,10 +11,13 @@ export default function InvitePanel({
   connectionId,
   url,
   inviterName,
+  note = null,
 }: {
   connectionId: string;
   url: string;
   inviterName: string | null;
+  /** The inviter's optional personal note (migration 0035). */
+  note?: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [sending, startSending] = useTransition();
@@ -29,7 +32,7 @@ export default function InvitePanel({
     setCanShare(typeof navigator !== "undefined" && !!navigator.share);
   }, []);
 
-  const message = buildInviteMessage(inviterName, url);
+  const message = buildInviteMessage(inviterName, url, { note });
 
   // Fire-and-forget funnel mark — never blocks or changes the share UI.
   function noteShared() {

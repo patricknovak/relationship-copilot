@@ -377,6 +377,23 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      // Migration 0035. Creator-only under RLS; invite page reads server-side.
+      invite_notes: {
+        Row: {
+          connection_id: string;
+          author_id: string;
+          note: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          author_id: string;
+          note: string;
+          updated_at?: string;
+        };
+        Update: { note?: string; updated_at?: string };
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;

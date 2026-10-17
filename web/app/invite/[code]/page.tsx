@@ -43,6 +43,7 @@ type InvitePreview =
       type: ConnectionType;
       createdBy: string | null;
       inviterName: string | null;
+      note: string | null;
     }
   | { status: InviteFailureStatus };
 
@@ -93,12 +94,21 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
       .maybeSingle();
     inviterName = inviter?.display_name?.trim() || null;
   }
+
+  // The inviter's personal note (0035), shown only while the code is valid.
+  const { data: noteRow } = await admin
+    .from("invite_notes")
+    .select("note")
+    .eq("connection_id", conn!.id)
+    .maybeSingle();
+
   return {
     status: "ok",
     connectionId: conn!.id,
     type: conn!.type,
     createdBy: conn!.created_by,
     inviterName,
+    note: noteRow?.note ?? null,
   };
 }
 
@@ -194,6 +204,16 @@ export default async function InvitePage({
         {connectionLabel(invite.type)}
         {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
+      {invite.note && (
+        <figure className="mt-5 rounded-2xl bg-paper-warm px-4 py-3 text-left">
+          <blockquote className="whitespace-pre-wrap font-display text-lg leading-snug text-ink">
+            &ldquo;{invite.note}&rdquo;
+          </blockquote>
+          <figcaption className="mt-1 text-xs text-ink-soft">
+            {invite.inviterName ? `${invite.inviterName}, to you` : "From the person who invited you"}
+          </figcaption>
+        </figure>
+      )}
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
         You&apos;ll each answer the same thoughtful questions in a private space.
         Neither of you sees the other&apos;s answers until you&apos;ve both

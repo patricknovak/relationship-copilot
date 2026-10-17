@@ -174,6 +174,12 @@ or an account action.
 10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
+10e. **Personal note on the invite (code). Shipped 2026-10-17 (0035).**
+    The inviter can add a line or two ("I miss our long walks") that the
+    invitee sees on the invite page and that is quoted in the shared
+    message. Plain text, 280 characters, no links (the invite page is our
+    trusted domain). Creator-only under RLS, frozen once the invite is
+    used, and it goes with the author's account.
 11. **Web push (code).** Service worker + VAPID keys, same preference
     switches as email. Only after email proves the loop; adds a secret.
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the
