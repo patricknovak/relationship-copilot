@@ -42,6 +42,26 @@ create policy push_subscriptions_deny_clients
 
 grant all on public.push_subscriptions to service_role;
 
+-- Keep a person's 10 newest devices. Internal: only save_push_subscription
+-- (which runs as the owner) calls it, so no client role may execute it.
+create or replace function public.trim_push_subscriptions(p_user uuid)
+returns void
+language sql
+set search_path = ''
+as $$
+  delete from public.push_subscriptions s
+   using (
+     select endpoint,
+            row_number() over (order by created_at desc, endpoint) as rn
+       from public.push_subscriptions
+      where user_id = p_user
+   ) ranked
+   where s.endpoint = ranked.endpoint
+     and ranked.rn > 10;
+$$;
+
+revoke all on function public.trim_push_subscriptions(uuid) from public, anon, authenticated;
+
 -- Upsert the caller's device. Keeps at most 10 devices per person (oldest
 -- dropped), so a long-lived account can't grow the table without bound.
 create or replace function public.save_push_subscription(
@@ -68,15 +88,7 @@ begin
         created_at = now(),
         last_used_at = null;
 
-  delete from public.push_subscriptions s
-   using (
-     select endpoint,
-            row_number() over (order by created_at desc, endpoint) as rn
-       from public.push_subscriptions
-      where user_id = uid
-   ) ranked
-   where s.endpoint = ranked.endpoint
-     and ranked.rn > 10;
+  perform public.trim_push_subscriptions(uid);
 end;
 $$;
 
