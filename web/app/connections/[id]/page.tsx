@@ -16,6 +16,7 @@ import NoticeBanner from "@/components/NoticeBanner";
 import NudgePerson from "@/components/NudgePerson";
 import AddReminder from "@/components/AddReminder";
 import { setDisplayName } from "@/app/actions/profile";
+import { suggestedFirstName } from "@/lib/profileName";
 import {
   BOTH_JOINED,
   bothJoinedBody,
@@ -397,6 +398,7 @@ export default async function ConnectionPage({
               maxLength={80}
               placeholder="Your name"
               aria-label="Your name"
+              defaultValue={suggestedFirstName(user.user_metadata)}
               className="input flex-1"
             />
             <PendingButton className="btn-primary shrink-0" pendingLabel="Saving…">
