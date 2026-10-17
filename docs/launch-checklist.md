@@ -2,16 +2,30 @@
 
 Status audited 2026-07-31 against the real infrastructure (Supabase project
 `digbnrhwsifmycrxyquo`, Vercel project `relationship-copilot`, production at
-https://relationshipcopilot.com). Update the checkboxes as items land.
+https://relationshipcopilot.com); code status refreshed 2026-10-13 with
+PR #81 (migrations 0020–0030, notification email, see `docs/ROADMAP.md`
+§5 for the ordered list of what remains). Update the checkboxes as items
+land.
 
 ## Already done (verified)
 
-- [x] **Code** — MVP complete on `main`; CI runs typecheck, 54 vitest tests,
+- [x] **Code** — MVP complete on `main`; CI runs typecheck, 182 vitest tests (this branch),
       build, and the SQL/RLS reveal-gate tests. Local run: all green.
 - [x] **Database** — migrations 0001–0012 applied to the `relationship-copilot`
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
+- [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
+      against `supabase_migrations.schema_migrations` and the live tables).
+- [ ] **Migration 0037** (`blueprint_intake_consent`). Apply with this code;
+      without it the consent card can't save, and the Blueprint runs
+      without anyone's profile reflections, as it does today.
+- [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
+      to apply before or after the code ships: without it the invite page
+      simply omits the "they already answered" line. Service role only.
+- [ ] **Migration 0035** (`invite_notes`, the inviter's personal note).
+      Apply with this code. Without it nothing breaks; the hub's note form
+      just says it couldn't save, and the invite page shows no note.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
@@ -125,6 +139,73 @@ escalation uses the same client; the regex fast path still gates).
 - [x] `XAI_API_KEY` present in Vercel (since Jun 11).
 - [ ] Confirm `XAI_NO_TRAINING_DPA` in Vercel matches the real DPA status
       with xAI — only `true` once a no-training agreement is in place.
+
+### 4. Notification emails (optional, code shipped 2026-10-13)
+
+Roadmap item 3 (`docs/ROADMAP.md`). Nothing sends until these are set; the
+product behaves exactly as before without them.
+
+- [ ] Create a Resend **API key** (the domain already signs for Resend via
+      Supabase SMTP) and set `RESEND_API_KEY` in the hosting env. Optional
+      `EMAIL_FROM` (defaults to `Relationship Copilot
+      <noreply@relationshipcopilot.com>`). From then on "they joined",
+      "they answered, your turn", "you both answered" and "they wrote in a
+      discussion" emails go out after a join, submit or first reply, subject
+      to each person's Account → Notifications settings.
+- [ ] **"Still your turn" follow-up.** Apply migration **0036** (adds the
+      `turn_reminder` kind) before this code ships, or the follow-up's
+      once-only claim fails and nothing is sent. The Worker Cron Trigger
+      `40 * * * *` calls `/api/cron/turn-reminder` with the same
+      `CRON_SECRET`; it does nothing until email or push is configured.
+- [ ] **Web push (no account needed).** Apply migration **0034**
+      (`push_subscriptions`), then from `web/` run
+      `node scripts/vapid-keys.mjs --wrangler` once. It generates the pair
+      and stores `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as Worker secrets
+      without printing the private key. Until the cutover, also add both to
+      Vercel (Sensitive); `--print-private` shows the private key once.
+      Optional `VAPID_SUBJECT` (defaults to
+      `mailto:privacy@relationshipcopilot.com`). Then Account → "Turn on
+      notifications" on your own phone and answer something from a second
+      account to see one arrive. Generate the pair once: a new pair retires
+      every existing browser subscription.
+- [ ] Daily reminder email. On Cloudflare this is a Worker Cron Trigger
+      (`20 * * * *` in `web/wrangler.jsonc`), which calls
+      `/api/cron/daily-reminder` with the Worker's `CRON_SECRET` (already set
+      on the Worker). No pg_cron job, `pg_net` or SQL secret is needed. Check
+      Workers → Logs for a `cron_tick` line at :20 past the hour after the
+      cutover. Do not also schedule it in pg_cron, or the route is hit twice
+      an hour (harmless, since it is idempotent, but wasteful).
+
+      The route is idempotent (one email per person per connection per local
+      day, enforced by `notification_log`), zone-aware (migration 0025 gives
+      each connection a time zone; 9am–8pm local only) and only emails
+      people who opted in to "Today's question is ready". It does nothing
+      until `RESEND_API_KEY` is set.
+- [ ] `NOTIFY_SECRET` for signing unsubscribe links is set on the Worker
+      (it falls back to a server-only key if missing). One-click unsubscribe is at
+      `/api/notifications/unsubscribe` and also set as the
+      `List-Unsubscribe` header.
+- [ ] Apply migrations **0020** (daily pool, idempotent), **0021**
+      (`notification_log` + love-languages wording), **0022**
+      (`connection_has_premium`: one plan covers both people), **0023**
+      (`answer_reactions`, adds the table to the Realtime publication) and
+      **0024** (electives, idempotent), **0025** (connection time zones;
+      also moves the `assign-daily-prompts` pg_cron job from daily to hourly)
+      **0026** (`partner_joined`) and **0027** (`discussion_reply`
+      notification kinds), and **0028** (four free library articles for
+      siblings, coworkers, mentors and parent–teen; idempotent) and
+      **0029** (family, coworker and parent–teen onboarding packs extended
+      to 20 questions; idempotent, existing instances unchanged) and
+      **0030** (`connection_goals`, the shared "things we're trying" list)
+      to production.
+      0022 changes behaviour the moment it is applied: a free partner of a
+      subscriber can read and generate the Blueprint/digest for that
+      connection, as the pricing page now says.
+- [ ] **Annual plan (optional, roadmap item 8).** Create a yearly price in
+      Stripe (recommendation in the roadmap: $59.99/yr with a $9.99/mo
+      monthly), then set `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL` and
+      `NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY` (e.g. `$59.99/yr`). The yearly
+      button renders only when both are set; the webhook needs no change.
 
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 

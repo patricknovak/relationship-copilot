@@ -14,7 +14,7 @@ cd web
 npm run dev          # Next.js dev server (port 3000)
 npm test             # vitest unit tests
 npm run typecheck    # tsc --noEmit
-npm run lint         # next lint
+npm run lint         # eslint (flat config)
 npm run build        # production build
 
 # Database tests (needs a local Postgres, e.g. `docker compose up -d`)

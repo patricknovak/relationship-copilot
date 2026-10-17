@@ -46,3 +46,15 @@ describe("digestUserPrompt", () => {
     expect(msg.content).toContain("P2: (no answer)");
   });
 });
+
+describe("digestUserPrompt goals", () => {
+  it("adds the shared list only when present and caps it at ten", () => {
+    const items = [{ title: "Daily", question: "Q?", p1: "a", p2: "b" }];
+    expect(digestUserPrompt("friend", items).content).not.toContain("trying together");
+    const goals = Array.from({ length: 12 }, (_, i) => `goal ${i}`);
+    const c = digestUserPrompt("friend", items, goals).content;
+    expect(c).toContain("trying together");
+    expect(c).toContain("- goal 9");
+    expect(c).not.toContain("- goal 10");
+  });
+});

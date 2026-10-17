@@ -18,19 +18,30 @@ export default async function LookingBack({
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  // Only need candidates near ~30 and ~365 days ago (± tolerance in
+  // pickRetrospectives). Bound the read so long-lived connections don't pull
+  // every revealed daily into memory.
+  const today = new Date().toISOString().slice(0, 10);
+  const oldest = new Date(`${today}T00:00:00Z`);
+  oldest.setUTCDate(oldest.getUTCDate() - (365 + 14));
+  const newest = new Date(`${today}T00:00:00Z`);
+  newest.setUTCDate(newest.getUTCDate() - (30 - 7));
   const { data: dailies } = await supabase
     .from("prompt_instances")
     .select("id, scheduled_for")
     .eq("connection_id", connectionId)
     .eq("kind", "daily")
     .eq("status", "revealed")
-    .not("scheduled_for", "is", null);
+    .not("scheduled_for", "is", null)
+    .gte("scheduled_for", oldest.toISOString().slice(0, 10))
+    .lte("scheduled_for", newest.toISOString().slice(0, 10));
 
   const picks = pickRetrospectives(
     (dailies ?? []).map((d) => ({
       id: d.id,
       scheduled_for: d.scheduled_for as string,
     })),
+    today,
   );
   if (picks.length === 0) return null;
 
@@ -83,7 +94,7 @@ export default async function LookingBack({
       <div className="mt-2 space-y-4">
         {cards.map(({ pick, question, myAnswer, theirAnswer }) => (
           <div key={pick.id} className="text-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/60">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/80">
               {pick.label} — {pick.scheduled_for}
             </p>
             <p className="mt-1 font-medium text-ink">{question}</p>
@@ -99,7 +110,7 @@ export default async function LookingBack({
             )}
             <Link
               href={`/connections/${connectionId}/prompts/${pick.id}`}
-              className="mt-1 inline-block text-xs text-brand-700 underline"
+              className="mt-1 inline-block text-xs text-brand-700 underline dark:text-brand-300"
             >
               Revisit →
             </Link>

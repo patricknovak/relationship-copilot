@@ -1,24 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { AuthLink } from "@/components/AuthHint";
 import { ACQUISITION } from "@/lib/firstRevealCopy";
 import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
+import { FOR_PAGES } from "@/lib/forPages";
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl("/") },
 };
 
-const TYPES = [
-  "Romantic partners",
-  "Friends",
-  "Family",
-  "Coworkers",
-  "Parents & teens",
-  "Siblings",
-  "Mentors",
-];
 
 const STAGES = [
   { label: "New love", note: "start with 20 questions" },
@@ -39,11 +32,11 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "What happens to what I write — and what does the AI see?",
-    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. The optional AI features send only the relevant answers — with names, emails, and phone numbers stripped out first — to generate a reflection for you, and that text isn't used to train models.",
+    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. Optional AI features strip names, emails, and phone numbers from the relevant answers before they leave our systems. Production AI stays off until a no-training agreement with the provider is in place.",
   },
   {
     q: "Is it really free?",
-    a: "The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the core library — is free. Premium ($18/mo) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.",
+    a: `The core experience — every relationship type, the onboarding questions, daily prompts, reveals, discussions, and the core library — is free. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests. Safety resources are never behind the paywall.`,
   },
   {
     q: "Is it only for couples?",
@@ -51,7 +44,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "What if I'm in an unsafe relationship?",
-    a: "Safety comes first and free. The app screens for signs of harm and, when it sees them, withholds AI output and surfaces support resources instead. There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
+    a: "Safety comes first and free. When answers look like they may involve harm, we surface support resources (and withhold optional AI reflections). There's a quick-exit button on the Safety page, and we never notify the other person when you view resources or leave a connection.",
   },
   {
     q: "Who built this?",
@@ -68,12 +61,9 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
 ];
 
-export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+// Static: no session read, so the page is prerendered at build. CTAs carry
+// both targets; the auth hint (components/AuthHint.tsx) shows the right one.
+export default function Home() {
   return (
     <div>
       {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
@@ -94,20 +84,23 @@ export default async function Home() {
             {ACQUISITION.body}
           </p>
           <div className="mt-9 flex animate-fade-up flex-wrap items-center justify-center gap-3 [animation-delay:200ms]">
-            <Link
-              href={user ? "/connections/new" : "/login?next=/connections/new"}
+            <AuthLink
+              signedInHref="/connections/new"
+              signedOutHref="/login?next=/connections/new"
               className="btn-primary !px-7 !py-3 !text-base"
             >
               {ACQUISITION.inviteCta}
-            </Link>
-            <Link
-              href={user ? "/connections" : "/login"}
+            </AuthLink>
+            <AuthLink
+              signedInHref="/connections"
+              signedOutHref="/login"
               className="btn-secondary !px-7 !py-3 !text-base"
+              signedInChildren="Open your connections"
             >
-              {user ? "Open your connections" : ACQUISITION.startCta}
-            </Link>
+              {ACQUISITION.startCta}
+            </AuthLink>
           </div>
-          <p className="mt-4 animate-fade-up text-xs text-ink-soft/70 [animation-delay:260ms]">
+          <p className="mt-4 animate-fade-up text-xs text-ink-soft/80 [animation-delay:260ms]">
             {ACQUISITION.trustLine}
           </p>
 
@@ -120,14 +113,14 @@ export default async function Home() {
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
-                  <p className="text-xs font-semibold text-brand-700">You</p>
+                  <p className="text-xs font-semibold text-brand-700 dark:text-brand-300">You</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                     When you notice the small stuff — like Tuesday, when you
                     just said &ldquo;I saw how hard that was.&rdquo;
                   </p>
                 </div>
                 <div className="relative overflow-hidden rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
-                  <p className="text-xs font-semibold text-brand-700">Them</p>
+                  <p className="text-xs font-semibold text-brand-700 dark:text-brand-300">Them</p>
                   <p
                     aria-hidden
                     className="mt-1.5 select-none text-sm leading-relaxed text-ink-soft blur-[7px]"
@@ -150,16 +143,39 @@ export default async function Home() {
           </div>
 
           <div className="mt-16 flex flex-wrap justify-center gap-2">
-            {TYPES.map((t, i) => (
-              <span
-                key={t}
-                className="chip animate-fade-up"
+            {FOR_PAGES.map((p, i) => (
+              <Link
+                key={p.slug}
+                href={`/for/${p.slug}`}
+                className="chip animate-fade-up hover:border-brand-400"
                 style={{ animationDelay: `${380 + i * 60}ms` }}
               >
-                {t}
-              </span>
+                {p.label}
+              </Link>
             ))}
           </div>
+          <p className="mt-6 animate-fade-up text-sm text-ink-soft [animation-delay:500ms]">
+            Or browse{" "}
+            <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+              questions to ask
+            </Link>
+            {" — "}
+            <Link
+              href="/questions/partners"
+              className="text-brand-700 underline dark:text-brand-300"
+            >
+              your partner
+            </Link>
+            {", "}
+            <Link href="/questions/friends" className="text-brand-700 underline dark:text-brand-300">
+              a friend
+            </Link>
+            {", or "}
+            <Link href="/questions/family" className="text-brand-700 underline dark:text-brand-300">
+              family
+            </Link>
+            .
+          </p>
         </div>
       </section>
 
@@ -195,17 +211,17 @@ export default async function Home() {
             <Feature
               icon={<IconSpark />}
               title="Grounded in research"
-              body="Questions are informed by research traditions like Gottman and attachment theory, and the science of closeness — with weaker ideas flagged honestly."
+              body="Questions are informed by research traditions like Gottman and attachment theory — and we rate evidence strength in the library so weaker ideas stay honest."
             />
             <Feature
               icon={<IconArc />}
               title="Cradle to grave"
-              body="New love, new parents, teens, caring for aging parents, grief — packs for the seasons most apps pretend don't exist."
+              body="Optional packs and library reads for seasons most apps skip — new love, new parents, teens, caregiving, grief."
             />
             <Feature
               icon={<IconFlame />}
               title="Streaks that forgive"
-              body="A daily rhythm worth keeping, without the guilt mechanics. Miss a day? Life happens. Pick it back up."
+              body="A daily rhythm without guilt mechanics. Miss yesterday? Catch up today and the streak holds. Miss longer and it resets gently."
             />
             <Feature
               icon={<IconLock />}
@@ -264,7 +280,7 @@ export default async function Home() {
                 {f.q}
                 <span
                   aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45"
+                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
                 >
                   +
                 </span>
@@ -286,12 +302,14 @@ export default async function Home() {
             by Friday.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={user ? "/connections" : "/login"}
+            <AuthLink
+              signedInHref="/connections"
+              signedOutHref="/login"
               className="btn-primary !px-7 !py-3 !text-base"
+              signedInChildren="Open your connections"
             >
-              {user ? "Open your connections" : "Start free"}
-            </Link>
+              Start free
+            </AuthLink>
             <Link href="/pricing" className="btn-ghost">
               See pricing
             </Link>
@@ -325,7 +343,7 @@ function Feature({
 }) {
   return (
     <div className="card card-hover">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-700">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300">
         {icon}
       </span>
       <h3 className="mt-4 font-semibold text-ink">{title}</h3>

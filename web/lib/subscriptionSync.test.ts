@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isEntitled, shouldApplySubscriptionEvent } from "./subscriptionSync";
+import {
+  isEntitled,
+  resolveSubscriptionPeriodEnd,
+  shouldApplySubscriptionEvent,
+} from "./subscriptionSync";
 
 describe("isEntitled", () => {
   it("requires the premium plan and an entitled status", () => {
@@ -37,5 +41,22 @@ describe("shouldApplySubscriptionEvent", () => {
     expect(shouldApplySubscriptionEvent(lapsed, "sub_new")).toBe(true);
     const pastDue = { stripe_subscription_id: "sub_old", plan: "premium", status: "past_due" };
     expect(shouldApplySubscriptionEvent(pastDue, "sub_new")).toBe(true);
+  });
+});
+
+describe("resolveSubscriptionPeriodEnd", () => {
+  it("prefers the first subscription item's current_period_end", () => {
+    expect(
+      resolveSubscriptionPeriodEnd({
+        current_period_end: 100,
+        items: { data: [{ current_period_end: 200 }] },
+      }),
+    ).toBe(200);
+  });
+
+  it("falls back to the legacy top-level field", () => {
+    expect(resolveSubscriptionPeriodEnd({ current_period_end: 100 })).toBe(100);
+    expect(resolveSubscriptionPeriodEnd({ items: { data: [] } })).toBe(null);
+    expect(resolveSubscriptionPeriodEnd({})).toBe(null);
   });
 });

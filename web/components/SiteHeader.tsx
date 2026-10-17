@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import HeaderNav from "@/components/HeaderNav";
 
 // Two overlapping rings — two people, one connection.
@@ -8,7 +7,7 @@ function LogoMark() {
     <svg
       viewBox="0 0 28 20"
       aria-hidden
-      className="h-5 w-7 text-brand-700"
+      className="h-5 w-7 text-brand-700 dark:text-brand-300"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.4"
@@ -19,12 +18,10 @@ function LogoMark() {
   );
 }
 
-export default async function SiteHeader() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+// No session read here: the root layout must not touch cookies, or no page
+// could be prerendered. HeaderNav renders both nav variants and the auth hint
+// (components/AuthHint.tsx) shows the right one before first paint.
+export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand-100/70 dark:border-surface-line bg-paper/80 backdrop-blur-md">
       <nav className="relative mx-auto flex h-16 max-w-5xl min-w-0 items-center justify-between gap-2 px-4">
@@ -35,7 +32,7 @@ export default async function SiteHeader() {
           <LogoMark />
           <span className="truncate">Relationship&nbsp;Copilot</span>
         </Link>
-        <HeaderNav signedIn={!!user} />
+        <HeaderNav />
       </nav>
     </header>
   );

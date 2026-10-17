@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { generateWeeklyDigest } from "@/app/actions/digest";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
+import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import PendingButton from "@/components/PendingButton";
 
 type Payload = {
@@ -37,14 +38,17 @@ export default async function WeeklyDigest({
     .limit(1)
     .maybeSingle();
 
-  const { data: isPremium } = await supabase.rpc("has_premium", {
-    uid: user.id,
+  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
+    p_conn: connectionId,
   });
 
-  const payload = (insight?.payload ?? null) as Payload | null;
-  const generatedAt = insight?.generated_at ?? null;
+  const rawPayload = insight?.payload ?? null;
+  const pending = isPendingInsightPayload(rawPayload);
+  const payload = (pending ? null : rawPayload) as Payload | null;
+  const generatedAt = pending ? null : (insight?.generated_at ?? null);
   const canRegenerate =
-    !generatedAt || Date.now() - new Date(generatedAt).getTime() >= MIN_GAP_MS;
+    !pending &&
+    (!generatedAt || Date.now() - new Date(generatedAt).getTime() >= MIN_GAP_MS);
   const generate = generateWeeklyDigest.bind(null, connectionId);
 
   // Only offer generation when the week actually has revealed answers —
@@ -82,7 +86,7 @@ export default async function WeeklyDigest({
       ) : payload ? (
         <div className="mt-2 space-y-3 text-sm text-ink-soft">
           {generatedAt && (
-            <p className="text-xs text-ink-soft/60">
+            <p className="text-xs text-ink-soft/80">
               From your week up to {generatedAt.slice(0, 10)}
             </p>
           )}
@@ -130,21 +134,21 @@ export default async function WeeklyDigest({
             <PendingButton pendingLabel="Writing your digest…">
               {payload ? "Generate this week's digest" : "Generate weekly digest"}
             </PendingButton>
-            <p className="mt-2 text-xs text-ink-soft/60">
+            <p className="mt-2 text-xs text-ink-soft/80">
               Your week&apos;s revealed answers are sent to our AI provider
               (xAI&apos;s Grok) with names and contact details removed, used
               only to write this digest.
             </p>
           </form>
         ) : (
-          <p className="mt-3 text-sm text-ink-soft/70">
+          <p className="mt-3 text-sm text-ink-soft/80">
             Answer a daily question together this week and the digest unlocks.
           </p>
         ))
       ) : (
         <p className="mt-3 text-sm text-ink-soft">
           Part of{" "}
-          <Link href="/pricing" className="text-brand-700 underline">
+          <Link href="/pricing" className="text-brand-700 underline dark:text-brand-300">
             Premium
           </Link>
           {" "}— your questions, reveals, and safety resources stay free.

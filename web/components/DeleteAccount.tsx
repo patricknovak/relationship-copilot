@@ -25,7 +25,7 @@ export default function DeleteAccount() {
 
   return (
     <div className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
-      <h2 className="text-sm font-medium text-rose-700">Delete account</h2>
+      <h2 className="text-sm font-medium text-rose-700 dark:text-rose-300">Delete account</h2>
       <p className="mt-1 text-sm text-ink-soft">
         This permanently deletes your profile, your answers, and your activity.
         If you share a connection with someone, they keep their own answers and

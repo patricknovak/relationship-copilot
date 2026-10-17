@@ -45,6 +45,12 @@ export default async function ExplorePage({
 
   const quizzes = (templates ?? []).filter((t) => t.kind === "quiz");
   const challenges = (templates ?? []).filter((t) => t.kind === "challenge");
+  // Latest state per template so the list says what you've already done.
+  const stateByTemplate = new Map<string, "revealed" | "open">();
+  for (const m of mine ?? []) {
+    if (!m.template_id || stateByTemplate.has(m.template_id)) continue;
+    stateByTemplate.set(m.template_id, m.status === "revealed" ? "revealed" : "open");
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -77,8 +83,8 @@ export default async function ExplorePage({
         </div>
       )}
 
-      <Group title="Challenges" items={challenges} connectionId={id} />
-      <Group title="Quizzes" items={quizzes} connectionId={id} />
+      <Group title="Challenges" items={challenges} connectionId={id} state={stateByTemplate} />
+      <Group title="Quizzes" items={quizzes} connectionId={id} state={stateByTemplate} />
 
       {mine && mine.length > 0 && (
         <section className="mt-10">
@@ -93,7 +99,7 @@ export default async function ExplorePage({
                   <span>
                     {(templates ?? []).find((t) => t.id === m.template_id)
                       ?.title ?? (KIND_LABEL[m.kind] ?? m.kind)}
-                    <span className="ml-2 text-xs text-ink-soft/60">
+                    <span className="ml-2 text-xs text-ink-soft/80">
                       {KIND_LABEL[m.kind] ?? m.kind}
                     </span>
                   </span>
@@ -114,10 +120,12 @@ function Group({
   title,
   items,
   connectionId,
+  state,
 }: {
   title: string;
   items: { id: string; title: string | null; description: string | null }[];
   connectionId: string;
+  state: Map<string, "revealed" | "open">;
 }) {
   if (items.length === 0) return null;
   return (
@@ -130,7 +138,19 @@ function Group({
             <li key={t.id} className="card card-hover !p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-display text-lg text-ink">{t.title}</p>
+                  <p className="font-display text-lg text-ink">
+                    {t.title}
+                    {state.get(t.id) === "revealed" && (
+                      <span className="ml-2 align-middle rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+                        Done
+                      </span>
+                    )}
+                    {state.get(t.id) === "open" && (
+                      <span className="ml-2 align-middle rounded-full bg-paper-warm px-2 py-0.5 text-xs font-medium text-ink-soft">
+                        In progress
+                      </span>
+                    )}
+                  </p>
                   {t.description && (
                     <p className="mt-1 text-sm leading-relaxed text-ink-soft">
                       {t.description}

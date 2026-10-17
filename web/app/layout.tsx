@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { FOR_PAGES } from "@/lib/forPages";
 import Link from "next/link";
 import { Fraunces, Inter } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 import ThemeScript from "@/components/ThemeScript";
+import { AuthHintScript } from "@/components/AuthHint";
 import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import { CANONICAL_ORIGIN } from "@/lib/site";
+import { CSP_NONCE_HEADER } from "@/lib/cspNonce";
 import "./globals.css";
 
 const display = Fraunces({
@@ -43,17 +47,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Per-request CSP nonce from proxy.ts — required for enforced script-src.
+  const nonce = (await headers()).get(CSP_NONCE_HEADER) ?? undefined;
+
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    // suppressHydrationWarning: ThemeScript and AuthHintScript set attributes
+    // on <html> before React hydrates (theme, data-auth). Applies to this
+    // element's own attributes only, not its children.
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        <ThemeScript />
+        <ThemeScript nonce={nonce} />
+        <AuthHintScript nonce={nonce} />
         {/* Consent Mode v2 defaults must run before GTM loads. */}
-        <ConsentDefaults />
+        <ConsentDefaults nonce={nonce} />
       </head>
       <body className="flex min-h-screen min-w-0 flex-col font-sans">
         <a
@@ -93,6 +108,16 @@ export default function RootLayout({
                       Pricing
                     </Link>
                   </li>
+                </ul>
+                <p className="mt-5 font-medium text-white">Questions for</p>
+                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+                  {FOR_PAGES.map((p) => (
+                    <li key={p.slug}>
+                      <Link href={`/for/${p.slug}`} className="hover:text-white">
+                        {p.label}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
                 <p className="mt-5 font-medium text-white">Trust</p>
                 <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
@@ -139,7 +164,7 @@ export default function RootLayout({
             </div>
           </div>
         </footer>
-        <Analytics />
+        <Analytics nonce={nonce} />
         <CookieConsent />
       </body>
     </html>

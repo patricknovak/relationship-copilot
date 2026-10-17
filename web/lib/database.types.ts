@@ -68,6 +68,7 @@ export interface Database {
           life_stage: string | null;
           start_date: string | null;
           metadata: Json;
+          timezone: string;
           created_at: string;
           updated_at: string;
         };
@@ -77,6 +78,7 @@ export interface Database {
           sub_type?: string | null;
           invite_code?: string | null;
           invite_expires_at?: string | null;
+          timezone?: string;
         };
         Update: Partial<
           Database["public"]["Tables"]["connections"]["Insert"]
@@ -221,7 +223,14 @@ export interface Database {
           model?: string | null;
           safety_flags?: Json;
         };
-        Update: never;
+        // Service-role only (no client UPDATE policy). Used to finalize
+        // rate-limit claim rows after Blueprint / digest generation.
+        Update: {
+          summary?: string | null;
+          payload?: Json;
+          model?: string | null;
+          safety_flags?: Json;
+        };
         Relationships: [];
       };
       safety_events: {
@@ -257,12 +266,12 @@ export interface Database {
       connection_funnel_steps: {
         Row: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at: string;
         };
         Insert: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at?: string;
         };
         Update: Partial<
@@ -314,6 +323,105 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      connection_goals: {
+        Row: {
+          id: string;
+          connection_id: string;
+          created_by: string | null;
+          body: string;
+          done_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          created_by: string;
+          body: string;
+        };
+        Update: { body?: string; done_at?: string | null };
+        Relationships: [];
+      };
+      answer_reactions: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+          created_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          target_user_id: string;
+          question_id: string;
+          emoji: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["answer_reactions"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      notification_log: {
+        Row: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
+          sent_at: string;
+        };
+        Insert: {
+          instance_id: string;
+          user_id: string;
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
+        };
+        Update: never;
+        Relationships: [];
+      };
+      // Migration 0034. No client DML (RPCs below); service role reads.
+      push_subscriptions: {
+        Row: {
+          endpoint: string;
+          user_id: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+          last_used_at: string | null;
+        };
+        Insert: {
+          endpoint: string;
+          user_id: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+          last_used_at?: string | null;
+        };
+        Update: { last_used_at?: string | null };
+        Relationships: [];
+      };
+      // Migration 0035. Creator-only under RLS; invite page reads server-side.
+      invite_notes: {
+        Row: {
+          connection_id: string;
+          author_id: string;
+          note: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          author_id: string;
+          note: string;
+          updated_at?: string;
+        };
+        Update: { note?: string; updated_at?: string };
+        Relationships: [];
+      };
+      // Migration 0037. Members read; each person grants/revokes their own.
+      blueprint_intake_consent: {
+        Row: { connection_id: string; user_id: string; granted_at: string };
+        Insert: { connection_id: string; user_id: string; granted_at?: string };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;
@@ -354,9 +462,45 @@ export interface Database {
     Functions: {
       accept_invite: { Args: { p_code: string }; Returns: string };
       has_premium: { Args: { uid: string }; Returns: boolean };
+      // True when any joined member of the connection holds premium and the
+      // caller is a member (migration 0022). Never says who pays.
+      connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
+      connection_today: { Args: { p_conn: string }; Returns: string };
       others_have_answered: {
         Args: { p_instance: string };
         Returns: boolean;
+      };
+      // Batch form (migration 0032). Same boolean-only privacy as the single RPC.
+      others_have_answered_many: {
+        Args: { p_instances: string[] };
+        Returns: { instance_id: string; answered: boolean }[];
+      };
+      // Invite page only (migration 0033): has the inviter answered the first
+      // questions? Boolean only; service role only, keyed by the invite code.
+      invite_inviter_has_answered: {
+        Args: { p_code: string };
+        Returns: boolean;
+      };
+      // Web push (migration 0034): the caller's own device rows only.
+      save_push_subscription: {
+        Args: { p_endpoint: string; p_p256dh: string; p_auth: string };
+        Returns: undefined;
+      };
+      delete_push_subscription: {
+        Args: { p_endpoint: string };
+        Returns: undefined;
+      };
+      // Migration 0036: service role only; ids, timezone and a first name.
+      turn_reminder_candidates: {
+        Args: { p_min_hours?: number; p_max_hours?: number; p_limit?: number };
+        Returns: {
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          answered_by_id: string;
+          answered_by_name: string | null;
+          timezone: string;
+        }[];
       };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
@@ -374,7 +518,7 @@ export interface Database {
       claim_funnel_step: {
         Args: {
           p_connection_id: string;
-          p_step: "invite_sent" | "partner_joined";
+          p_step: "invite_sent" | "partner_joined" | "answered_before_join";
         };
         Returns: boolean;
       };

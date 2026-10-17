@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { canonicalUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
+import { FOR_PAGES } from "@/lib/forPages";
+import { QUESTION_PAGES } from "@/lib/questionPages";
 
 // Public marketing pages plus published free library articles. Auth-only
 // surfaces (connections, account) stay out. Premium articles are excluded even
@@ -11,9 +13,20 @@ const STATIC: MetadataRoute.Sitemap = [
   { url: canonicalUrl("/pricing"), changeFrequency: "monthly", priority: 0.8 },
   { url: canonicalUrl("/safety"), changeFrequency: "monthly", priority: 0.8 },
   { url: canonicalUrl("/library"), changeFrequency: "weekly", priority: 0.7 },
+  { url: canonicalUrl("/questions"), changeFrequency: "weekly", priority: 0.8 },
+  ...QUESTION_PAGES.map((p) => ({
+    url: canonicalUrl(`/questions/${p.slug}`),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  })),
   { url: canonicalUrl("/login"), changeFrequency: "yearly", priority: 0.5 },
   { url: canonicalUrl("/privacy"), changeFrequency: "yearly", priority: 0.3 },
   { url: canonicalUrl("/terms"), changeFrequency: "yearly", priority: 0.3 },
+  ...FOR_PAGES.map((p) => ({
+    url: canonicalUrl(`/for/${p.slug}`),
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  })),
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

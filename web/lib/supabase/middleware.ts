@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNextPath } from "@/lib/redirect";
 
 // Routes that require a signed-in user. Everything else (landing, login,
 // /safety, /library, the invite landing) is public — safety resources must
@@ -42,20 +43,26 @@ export async function updateSession(request: NextRequest) {
   const needsAuth = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (!user && needsAuth) {
+    // Keep the full path *and* query in `next` (e.g. /connections/new?type=
+    // sibling from the /for pages), and nothing else on /login itself.
     const url = request.nextUrl.clone();
+    const next = `${pathname}${request.nextUrl.search}`;
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = "";
+    url.searchParams.set("next", next);
     return NextResponse.redirect(url);
   }
 
   // Already signed in? /login has nothing to offer — forward to the intended
-  // destination (e.g. an invite deep link) or the connections home.
+  // destination (e.g. an invite deep link) or the connections home. Use the
+  // same open-redirect guard as auth callbacks and the login page.
   if (user && pathname === "/login") {
-    const rawNext = request.nextUrl.searchParams.get("next") ?? "";
+    const target = safeNextPath(
+      request.nextUrl.searchParams.get("next"),
+      "/connections",
+    );
     const url = request.nextUrl.clone();
     url.search = "";
-    const target =
-      rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/connections";
     const [pathOnly, query = ""] = target.split("?", 2);
     url.pathname = pathOnly;
     url.search = query ? `?${query}` : "";

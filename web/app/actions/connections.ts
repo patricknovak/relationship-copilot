@@ -5,12 +5,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { isValidTimeZone } from "@/lib/dailyState";
+import { after } from "next/server";
+import { notifyPartnerJoined } from "@/lib/notify";
 import {
   CONNECTION_TYPES,
   FREE_CONNECTION_CAP,
 } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { normalizeInviteNote } from "@/lib/inviteNote";
 import {
   INVITE_SENT,
   PARTNER_JOINED,
@@ -89,9 +93,14 @@ export async function createConnection(formData: FormData) {
 
   // Creator membership is attached by a DB trigger; clients cannot insert
   // into connection_members directly. Invite expiry is set server-side.
+  // The creator's browser zone sets the daily-question day boundary for this
+  // connection (migration 0025); anything unknown falls back to UTC.
+  const tzRaw = String(formData.get("timezone") || "");
+  const timezone = isValidTimeZone(tzRaw) ? tzRaw : "UTC";
+
   const { data: conn, error } = await supabase
     .from("connections")
-    .insert({ type, created_by: user.id, invite_code: newInviteCode() })
+    .insert({ type, created_by: user.id, invite_code: newInviteCode(), timezone })
     .select("id")
     .single();
   if (error || !conn) {
@@ -105,6 +114,31 @@ export async function createConnection(formData: FormData) {
 
 // Leave a connection — archives it (reversible-friendly, and required for the
 // teen-revocable parent–teen track). RLS allows members to update.
+// Adopt the browser's zone for a connection still on the UTC default. Any
+// member may do this (RLS update policy; the column isn't guarded), and it
+// only ever moves a connection off UTC, never between real zones.
+export async function setConnectionTimezone(
+  connectionId: string,
+  timezone: string,
+): Promise<{ updated: boolean }> {
+  if (!connectionId || !isValidTimeZone(timezone) || timezone === "UTC") {
+    return { updated: false };
+  }
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { updated: false };
+
+  const { data: updated } = await supabase
+    .from("connections")
+    .update({ timezone })
+    .eq("id", connectionId)
+    .eq("timezone", "UTC")
+    .select("id");
+  return { updated: !!updated && updated.length > 0 };
+}
+
 export async function leaveConnection(connectionId: string) {
   const supabase = await createClient();
   const {
@@ -169,6 +203,10 @@ export async function acceptInvite(
     console.error("ensureOnboardingInstance after join failed", data, err);
   }
 
+  // Tell the inviter their person is in. Runs after the response; honours
+  // their "your turn" preference; once per connection via notification_log.
+  after(() => notifyPartnerJoined({ joinerUserId: user.id, connectionId: data }));
+
   revalidatePath("/connections");
   redirect(`/connections/${data}`);
 }
@@ -202,6 +240,39 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // the join completes automatically. Existing accounts can't be invited this
 // way (Supabase rejects re-inviting a registered email), so we tell the
 // inviter to share the link directly instead.
+// Save (or clear) the creator's personal note on a pending invite. RLS
+// (migration 0035) limits this to the connection's creator while pending.
+export async function setInviteNote(connectionId: string, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/login?next=/connections/${connectionId}`);
+
+  const result = normalizeInviteNote(formData.get("note"));
+  if ("error" in result) {
+    redirect(
+      `/connections/${connectionId}?notice=${result.error === "link" ? "note-link" : "note-long"}#invite`,
+    );
+  }
+
+  const { error } = result.note
+    ? await supabase.from("invite_notes").upsert(
+        {
+          connection_id: connectionId,
+          author_id: user.id,
+          note: result.note,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "connection_id" },
+      )
+    : await supabase.from("invite_notes").delete().eq("connection_id", connectionId);
+  if (error) redirect(`/connections/${connectionId}?notice=note-failed#invite`);
+
+  revalidatePath(`/connections/${connectionId}`);
+  redirect(`/connections/${connectionId}?notice=${result.note ? "note-saved" : "note-cleared"}#invite`);
+}
+
 export async function sendEmailInvite(
   connectionId: string,
   email: string,
@@ -229,6 +300,22 @@ export async function sendEmailInvite(
     .maybeSingle();
   if (!conn?.invite_code) {
     return { error: "This connection is no longer accepting invites." };
+  }
+
+  // Rate limit invite email (creates accounts via admin API). Users can read
+  // their own audit_log; count recent sends and stop before spam volume.
+  const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count: recentInvites } = await supabase
+    .from("audit_log")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("action", "connection.invite_email")
+    .gte("created_at", since);
+  if ((recentInvites ?? 0) >= 10) {
+    return {
+      error:
+        "You've sent quite a few invite emails recently — try sharing the link instead, or wait an hour.",
+    };
   }
 
   // Inviter display name only — never relationship type. Empty when unset so

@@ -1,6 +1,7 @@
 // In-product first-reveal prompt copy (Patrick-approved activation package).
 // Keep trust/privacy language aligned with LIVE Privacy / mutual-reveal FAQ.
 // Prefer "your person" — not couples-only.
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export const EMPTY_STATE = {
   headline: "Answer in private. Reveal together.",
@@ -54,6 +55,33 @@ export const WAITING_ON_THEM = {
     "You can change your mind before the reveal unlocks — until both have shared.",
 } as const;
 
+// Before your person has joined: answer your first questions now so the
+// reveal is one step away for them. The gate is unchanged (a solo answer can
+// never reveal; they see nothing until they share too).
+export const ANSWER_FIRST = {
+  headline: "Answer yours while you wait.",
+  primaryCta: "Answer yours now",
+  answeredHeadline: "Your answers are in.",
+  answeredBody:
+    "They stay private. When your person joins and shares theirs, you'll reveal together.",
+  answeredCta: "Invite your person",
+  reviewCta: "Review your answers (still private)",
+} as const;
+
+export function answerFirstBody(questionCount: number): string {
+  const what =
+    Number.isFinite(questionCount) && questionCount > 0
+      ? `your first ${questionCount} questions`
+      : "your first questions";
+  return `You can answer ${what} now, in private. Your person sees nothing until they've joined and shared theirs, and their reveal is one step away when they arrive.`;
+}
+
+// Shown to the invitee on the invite page when the inviter already answered.
+export function inviterAnsweredLine(inviterName: string | null | undefined): string {
+  const who = inviterName?.trim();
+  return `${who || "Your person"} has already answered. Join and answer yours to see both side by side.`;
+}
+
 export const WAITING_ON_YOU = {
   headline: "They're ready when you are.",
   body: "They've answered in private. Finish yours to unlock the reveal side by side.",
@@ -70,9 +98,17 @@ export const FIRST_REVEAL_UNLOCK = {
   tertiaryCta: "Continue to today's question",
 } as const;
 
+// Every reveal after the first: same facts, lower volume.
+export const REVEALED = {
+  headline: "Revealed together.",
+  body: "Both answers are below, side by side. Pick up the thread in the discussion if something surprised you.",
+  secondaryCta: "Talk about it",
+  tertiaryCta: "Back to today",
+} as const;
+
 export const SOFT_PREMIUM = {
   headline: "Want a deeper reflection?",
-  body: "Premium ($18/mo) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI uses redacted inputs — we don't train models on your intimate answers.",
+  body: `Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests. Reveals, discussion, the core library, and Safety stay free. Optional AI strips names, emails, and phones first — and stays off in production until a no-training provider agreement is in place.`,
   primaryCta: "See Premium",
   dismiss: "Not now",
 } as const;
@@ -94,7 +130,7 @@ export const ACQUISITION = {
   headline: "Closer, on purpose.",
   body: "Answer thoughtful questions in private. Reveal together — only when you've both shared. One mutual reveal is enough to feel the difference: honesty without peeking, built into how the product works, not just promised in the app.",
   trustLine:
-    "Free for the core experience. Safety always free. Premium ($18/mo) is optional for Blueprint and digests.",
+    `Free for the core experience. Safety always free. Premium (${PREMIUM_MONTHLY_DISPLAY}) is optional for Blueprint and digests.`,
   inviteCta: "Invite your person",
   startCta: "Start free",
 } as const;

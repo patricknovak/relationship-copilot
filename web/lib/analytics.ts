@@ -67,3 +67,23 @@ export function storeConsent(choice: ConsentChoice): void {
     // Non-fatal: the visitor simply gets asked again next visit.
   }
 }
+
+declare global {
+  interface Window {
+    dataLayer?: Record<string, unknown>[];
+  }
+}
+
+/**
+ * Push `questions_cta_click` to the dataLayer when the visitor is on a
+ * measurable path and has granted analytics consent. No-ops otherwise so we
+ * never measure behind auth or without consent.
+ */
+export function pushQuestionsCtaClick(page: string): void {
+  if (typeof window === "undefined") return;
+  const pathname = window.location.pathname || "/";
+  if (!isMeasurablePath(pathname)) return;
+  if (readStoredConsent() !== "granted") return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: "questions_cta_click", page });
+}

@@ -16,6 +16,8 @@ next-env.d.ts
 .env
 .env.local
 .env.*.local
+# Vercel env pulls for the Cloudflare move (scripts/cloudflare-env.mjs); real secrets.
+.env.cloudflare
 
 # IDE
 .vscode/
@@ -35,6 +37,17 @@ npm-debug.log*
 # Test coverage
 coverage/
 
+# Playwright
+web/playwright-report/
+web/test-results/
+web/blob-report/
+web/playwright/.cache/
+
 # Temp
 tmp/
 .tmp/
+
+.wrangler/
+.vinext/
+web/test-results/
+web/playwright-report/

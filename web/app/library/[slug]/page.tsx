@@ -64,7 +64,7 @@ export default async function ArticlePage({
       />
       <Link
         href="/library"
-        className="text-sm text-ink-soft/70 hover:text-ink"
+        className="text-sm text-ink-soft/80 hover:text-ink"
       >
         ← Library
       </Link>
@@ -78,7 +78,7 @@ export default async function ArticlePage({
         </p>
       )}
       {article.evidence_rating != null && (
-        <p className="mt-3 text-xs text-brand-600/90">
+        <p className="mt-3 text-xs text-brand-600/90 dark:text-brand-300">
           Evidence: {"★".repeat(article.evidence_rating)}
           <span className="text-brand-300">
             {"★".repeat(Math.max(0, 5 - article.evidence_rating))}
@@ -110,7 +110,48 @@ export default async function ArticlePage({
         )}
       </div>
 
-      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/70">
+      {slug === "36-questions" && (
+        <aside className="mt-10 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 dark:border-surface-line dark:bg-brand-900/20">
+          <p className="font-display text-lg text-ink">Try a curated list</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            Browse the questions you&apos;ll answer in Relationship Copilot,
+            then start a connection and answer in private.
+          </p>
+          <ul className="mt-3 space-y-1 text-sm">
+            <li>
+              <Link
+                href="/questions/partners"
+                className="text-brand-700 underline dark:text-brand-300"
+              >
+                Questions to ask your partner
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/questions/friends"
+                className="text-brand-700 underline dark:text-brand-300"
+              >
+                Questions to ask a friend
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/questions/family"
+                className="text-brand-700 underline dark:text-brand-300"
+              >
+                Questions to ask family
+              </Link>
+            </li>
+            <li>
+              <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+                All question lists
+              </Link>
+            </li>
+          </ul>
+        </aside>
+      )}
+
+      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/80">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
           Safety resources

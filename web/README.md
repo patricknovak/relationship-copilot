@@ -16,9 +16,11 @@ npm run dev                  # http://localhost:3000
 | Script | What |
 | --- | --- |
 | `npm run dev` | Dev server |
-| `npm run build` | Production build (also type-checks + lints) |
+| `npm run build` | Production build |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
+| `npm test` | Vitest unit tests (`lib/**/*.test.ts`) |
+| `npm run test:e2e` | Playwright against `next start` (build first). Optional `E2E_STORAGE_STATE` for a signed-in hub check; leave `RESEND_API_KEY` unset so drip/notification mail stays NO SEND. |
 
 ## What's here so far
 
@@ -33,10 +35,10 @@ npm run dev                  # http://localhost:3000
 
 ## Next
 
-Signup intake + zodiac, connection create + `/invite/[code]` accept, the
-20-question onboarding + mutual-reveal UI, then the Grok Blueprint and Stripe
-billing. The DB layer (RLS reveal gate, seeds) already lives in
-`../supabase/migrations`.
+See `../docs/ROADMAP.md`. The sections above describe the first slice; the
+app now covers connections, onboarding + mutual reveal, the daily loop,
+electives, the library, the premium AI Blueprint/digest, billing, account
+lifecycle, and notification email (`lib/notify.ts`, `lib/email.ts`).
 
 ## Auth provider config
 

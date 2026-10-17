@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/redirect";
 import { ATTACHMENT_ITEMS, scoreAttachment } from "@/lib/attachment";
 import type { Json } from "@/lib/database.types";
+import { withNotificationPrefs } from "@/lib/notifications";
 
 export async function saveProfile(formData: FormData) {
   const supabase = await createClient();
@@ -20,10 +21,16 @@ export async function saveProfile(formData: FormData) {
   const backWithError = (code: string): never =>
     redirect(`/onboarding?error=${code}&next=${encodeURIComponent(next)}`);
 
-  const displayName = String(formData.get("display_name") || "").trim();
+  const displayName = String(formData.get("display_name") || "")
+    .trim()
+    .slice(0, 80);
   const birthdayRaw = String(formData.get("birthday") || "").trim();
-  const goals = String(formData.get("goals") || "").trim();
-  const values = String(formData.get("values") || "").trim();
+  const goals = String(formData.get("goals") || "")
+    .trim()
+    .slice(0, 2000);
+  const values = String(formData.get("values") || "")
+    .trim()
+    .slice(0, 2000);
 
   if (!displayName) backWithError("name");
   // A birthday must be a real, past calendar date (the input enforces this in
@@ -99,4 +106,37 @@ export async function setDisplayName(formData: FormData) {
   revalidatePath(next);
   const sep = next.includes("?") ? "&" : "?";
   redirect(`${next}${sep}notice=named`);
+}
+
+// Account → Notifications. Checkboxes arrive only when checked, so every
+// known kind is written explicitly (unchecked = false). Merged into the
+// user's own preferences blob under RLS; no other key is touched.
+export async function updateNotificationPrefs(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/account");
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("preferences")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const next = withNotificationPrefs(existing?.preferences ?? {}, {
+    your_turn: formData.get("your_turn") === "on",
+    revealed: formData.get("revealed") === "on",
+    daily_ready: formData.get("daily_ready") === "on",
+    discussion_reply: formData.get("discussion_reply") === "on",
+  }) as unknown as Json;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ preferences: next })
+    .eq("id", user.id);
+  if (error) redirect("/account?error=prefs");
+
+  revalidatePath("/account");
+  redirect("/account?saved=notifications");
 }

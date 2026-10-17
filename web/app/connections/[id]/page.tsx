@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
-import { startOnboarding, ensureDaily } from "@/app/actions/prompts";
-import { leaveConnection, regenerateInvite } from "@/app/actions/connections";
+import { startOnboarding, ensureDaily, startElective } from "@/app/actions/prompts";
+import { pickWeeklySuggestion } from "@/lib/suggestion";
+import { leaveConnection, regenerateInvite, setInviteNote } from "@/app/actions/connections";
+import { INVITE_NOTE_MAX } from "@/lib/inviteNote";
 import { computeStreak } from "@/lib/streak";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
@@ -15,7 +17,10 @@ import NoticeBanner from "@/components/NoticeBanner";
 import NudgePerson from "@/components/NudgePerson";
 import AddReminder from "@/components/AddReminder";
 import { setDisplayName } from "@/app/actions/profile";
+import { suggestedFirstName } from "@/lib/profileName";
 import {
+  ANSWER_FIRST,
+  answerFirstBody,
   BOTH_JOINED,
   bothJoinedBody,
   EMPTY_STATE,
@@ -24,6 +29,9 @@ import {
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
+import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
+import TimezoneSync from "@/components/TimezoneSync";
+import SharedGoals from "@/components/SharedGoals";
 
 const NOTICES: Record<
   string,
@@ -31,7 +39,7 @@ const NOTICES: Record<
 > = {
   waiting: {
     tone: "info",
-    text: "Once your person joins, your first questions unlock for you both.",
+    text: "Once your person joins, you can start activities together.",
   },
   nopack: {
     tone: "error",
@@ -73,6 +81,23 @@ const NOTICES: Record<
     tone: "success",
     text: "Name saved. Your person will see that name next to your answers.",
   },
+  "note-saved": { tone: "success", text: "Note added. It shows on the invite and in the message you share." },
+  "note-cleared": { tone: "info", text: "Note removed from the invite." },
+  "note-long": { tone: "error", text: `Keep the note under ${INVITE_NOTE_MAX} characters.` },
+  "note-link": {
+    tone: "error",
+    text: "Links can't go in the note. The invite already carries the only link they need.",
+  },
+  "note-failed": { tone: "error", text: "Couldn't save the note just now. Try again in a moment." },
+  "goal-empty": { tone: "info", text: "Write the goal first, then add it." },
+  "goal-full": {
+    tone: "info",
+    text: "Twenty open goals is plenty — tick a few off before adding more.",
+  },
+  "goal-failed": {
+    tone: "error",
+    text: "Couldn't save that goal just now — try again in a moment.",
+  },
 };
 
 export default async function ConnectionPage({
@@ -91,7 +116,7 @@ export default async function ConnectionPage({
 
   const { data: conn } = await supabase
     .from("connections")
-    .select("id, type, status, invite_code, invite_expires_at, created_by")
+    .select("id, type, status, invite_code, invite_expires_at, created_by, timezone")
     .eq("id", id)
     .maybeSingle();
   if (!conn) notFound();
@@ -112,6 +137,22 @@ export default async function ConnectionPage({
       .eq("id", user.id)
       .maybeSingle();
     myName = me?.display_name?.trim() || null;
+  }
+
+  // The other person's name for the heading and the daily card. Read through
+  // the partner_profiles view, which exposes only display fields of people
+  // you share a connection with.
+  let themName: string | null = null;
+  const otherId = (members ?? [])
+    .map((m) => m.user_id)
+    .find((uid) => uid !== user?.id);
+  if (otherId) {
+    const { data: them } = await supabase
+      .from("partner_profiles")
+      .select("display_name")
+      .eq("id", otherId)
+      .maybeSingle();
+    themName = them?.display_name?.trim() || null;
   }
 
   let { data: instance } = await supabase
@@ -140,6 +181,17 @@ export default async function ConnectionPage({
     }
   }
 
+  // The creator's personal note on a pending invite (RLS: creator only).
+  let inviteNote: string | null = null;
+  if (user && conn.created_by === user.id && joinedCount < 2) {
+    const { data: noteRow } = await supabase
+      .from("invite_notes")
+      .select("note")
+      .eq("connection_id", id)
+      .maybeSingle();
+    inviteNote = noteRow?.note ?? null;
+  }
+
   const questionCount = Array.isArray(instance?.questions)
     ? (instance.questions as PromptQuestion[]).length
     : 0;
@@ -162,19 +214,113 @@ export default async function ConnectionPage({
     }
   }
 
-  // Daily streak (gamification) from revealed daily instances.
+  // Daily streak (gamification) from revealed daily instances. Only the
+  // recent window matters — streaks longer than ~14 months aren't shown as a
+  // bigger number in a way that needs the full history.
   let streak = 0;
   {
+    const today = todayIn(conn.timezone);
+    const from = new Date(`${today}T00:00:00Z`);
+    from.setUTCDate(from.getUTCDate() - 400);
     const { data: dailies } = await supabase
       .from("prompt_instances")
       .select("scheduled_for")
       .eq("connection_id", id)
       .eq("kind", "daily")
-      .eq("status", "revealed");
+      .eq("status", "revealed")
+      .gte("scheduled_for", from.toISOString().slice(0, 10));
     const dates = (dailies ?? [])
       .map((d) => d.scheduled_for)
       .filter((x): x is string => !!x);
-    streak = computeStreak(dates);
+    streak = computeStreak(dates, today);
+  }
+
+  // Today's question, inline. The instance is pre-created by cron for active
+  // connections; ensure_daily_prompt is the idempotent fallback (members
+  // only). Both answer flags are read under RLS / via the boolean-only RPC, so
+  // the card never sees the other person's words early.
+  let today: {
+    id: string;
+    text: string;
+    state: ReturnType<typeof dailyState>;
+  } | null = null;
+  if (conn.status === "active" && user) {
+    const date = todayIn(conn.timezone);
+    let { data: daily } = await supabase
+      .from("prompt_instances")
+      .select("id, status, questions")
+      .eq("connection_id", id)
+      .eq("kind", "daily")
+      .eq("scheduled_for", date)
+      .maybeSingle();
+    if (!daily) {
+      const { data: ensuredId } = await supabase.rpc("ensure_daily_prompt", {
+        p_conn: id,
+        p_date: date,
+      });
+      if (ensuredId) {
+        const { data: created } = await supabase
+          .from("prompt_instances")
+          .select("id, status, questions")
+          .eq("id", ensuredId)
+          .maybeSingle();
+        daily = created;
+      }
+    }
+    if (daily) {
+      const { data: mine } = await supabase
+        .from("prompt_responses")
+        .select("id")
+        .eq("instance_id", daily.id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      let theyAnswered = daily.status === "revealed";
+      if (!mine && !theyAnswered) {
+        const { data: others } = await supabase.rpc("others_have_answered", {
+          p_instance: daily.id,
+        });
+        theyAnswered = !!others;
+      }
+      const qs = Array.isArray(daily.questions)
+        ? (daily.questions as PromptQuestion[])
+        : [];
+      today = {
+        id: daily.id,
+        text: qs[0]?.text ?? "",
+        state: dailyState({
+          hasInstance: true,
+          status: daily.status,
+          iAnswered: !!mine,
+          theyAnswered,
+        }),
+      };
+    }
+  }
+
+  // One suggested quiz or challenge the pair hasn't started, rotating
+  // weekly so the hub keeps offering something new without nagging.
+  let suggestion: { id: string; kind: string; title: string; description: string | null } | null = null;
+  if (conn.status === "active" && joinedCount >= 2) {
+    const [{ data: electives }, { data: started }] = await Promise.all([
+      supabase
+        .from("prompt_templates")
+        .select("id, kind, title, description")
+        .in("kind", ["quiz", "challenge"])
+        .eq("active", true)
+        .or(`relationship_type.eq.${conn.type},relationship_type.is.null`)
+        .order("id"),
+      supabase
+        .from("prompt_instances")
+        .select("template_id")
+        .eq("connection_id", id)
+        .in("kind", ["quiz", "challenge"]),
+    ]);
+    const done = new Set((started ?? []).map((s) => s.template_id).filter(Boolean));
+    suggestion = pickWeeklySuggestion(
+      (electives ?? []).map((t) => ({ ...t, title: t.title ?? "", kind: t.kind })),
+      done,
+      todayIn(conn.timezone),
+    );
   }
 
   // Zodiac compatibility (entertainment only). Computed server-side so
@@ -206,13 +352,20 @@ export default async function ConnectionPage({
       })
     : null;
   const newLink = regenerateInvite.bind(null, id);
+  const saveNote = setInviteNote.bind(null, id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <Link href="/connections" className="text-sm text-ink-soft/80 hover:text-ink-soft">
         ← All connections
       </Link>
-      <h1 className="mt-2 text-3xl">{connectionLabel(conn.type)}</h1>
+      {conn.timezone === "UTC" && conn.status !== "archived" && (
+        <TimezoneSync connectionId={id} />
+      )}
+      <p className="eyebrow mt-3">{connectionLabel(conn.type)}</p>
+      <h1 className="mt-1 text-3xl">
+        {themName ?? (joinedCount >= 2 ? "Your person" : connectionLabel(conn.type))}
+      </h1>
       {streak > 0 && (
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200">
           🔥 {streak}-day streak
@@ -268,6 +421,7 @@ export default async function ConnectionPage({
               maxLength={80}
               placeholder="Your name"
               aria-label="Your name"
+              defaultValue={suggestedFirstName(user.user_metadata)}
               className="input flex-1"
             />
             <PendingButton className="btn-primary shrink-0" pendingLabel="Saving…">
@@ -292,18 +446,48 @@ export default async function ConnectionPage({
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+        <section id="invite" className="card mt-6 scroll-mt-24 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Email it, text it, or share the link — once they join, you can both
-            start your first questions.
+            Email it, text it, or share the link. Once they join and answer,
+            you&apos;ll reveal together.
           </p>
           <InvitePanel
             connectionId={id}
             url={inviteUrl}
             inviterName={myName}
+            note={inviteNote}
+            inviterAnswered={!!myResponse}
           />
-          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/70">
+          {user && conn.created_by === user.id && (
+            <details className="mt-4 rounded-2xl border border-brand-100 bg-white/70 p-3 dark:border-brand-800/60 dark:bg-surface/60" open={!!inviteNote}>
+              <summary className="cursor-pointer text-sm font-medium text-brand-800 dark:text-brand-200">
+                {inviteNote ? "Your note" : "Add a personal note (optional)"}
+              </summary>
+              <form action={saveNote} className="mt-2 space-y-2">
+                <textarea
+                  name="note"
+                  rows={2}
+                  maxLength={INVITE_NOTE_MAX}
+                  defaultValue={inviteNote ?? ""}
+                  placeholder="Why you want to do this with them, in a line or two."
+                  className="input min-h-16 text-sm"
+                />
+                <div className="flex items-center gap-3">
+                  <PendingButton
+                    className="btn-secondary shrink-0 whitespace-nowrap !px-4 !py-2 text-sm"
+                    pendingLabel="Saving…"
+                  >
+                    Save note
+                  </PendingButton>
+                  <span className="text-xs text-ink-soft/80">
+                    They see it on the invite page. Clear it to remove it.
+                  </span>
+                </div>
+              </form>
+            </details>
+          )}
+          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/80">
             {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
             <PendingButton
               className="underline hover:text-ink-soft"
@@ -317,7 +501,7 @@ export default async function ConnectionPage({
 
       {/* Invite expired (or never issued) and still waiting on the other person */}
       {!inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section className="card mt-6 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
+        <section id="invite" className="card mt-6 scroll-mt-24 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
           <h2 className="text-lg text-amber-900 dark:text-amber-200">
             Your invite link has expired
           </h2>
@@ -331,6 +515,38 @@ export default async function ConnectionPage({
         </section>
       )}
 
+      {/* Answer-first: the inviter can answer the first set before their
+          person joins. A solo answer can never reveal (maybe_reveal_instance
+          needs two joined members), so this only shortens their path. */}
+      {joinedCount < 2 && conn.status !== "archived" && user && (
+        <section className="card mt-6">
+          {myResponse ? (
+            <>
+              <h2 className="text-lg">{ANSWER_FIRST.answeredHeadline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{ANSWER_FIRST.answeredBody}</p>
+              <Link
+                href={`/connections/${id}/onboarding`}
+                className="btn-secondary mt-3 inline-flex !px-4 !py-2 text-sm"
+              >
+                {ANSWER_FIRST.reviewCta}
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg">{ANSWER_FIRST.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                {answerFirstBody(questionCount)}
+              </p>
+              <form action={begin} className="mt-3">
+                <PendingButton className="btn-secondary" pendingLabel="Opening…">
+                  {ANSWER_FIRST.primaryCta}
+                </PendingButton>
+              </form>
+            </>
+          )}
+        </section>
+      )}
+
       {/* Both joined — first shared set / mutual-reveal activation */}
       {joinedCount >= 2 && conn.status !== "archived" && (
         <section className="card mt-6">
@@ -339,7 +555,7 @@ export default async function ConnectionPage({
               {/* Fallback if ensureOnboardingInstance failed at join time */}
               <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/70">{EMPTY_STATE.trustLine}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{EMPTY_STATE.trustLine}</p>
               <form action={begin} className="mt-3">
                 <PendingButton pendingLabel="Setting up…">
                   {EMPTY_STATE.primaryCta}
@@ -352,7 +568,7 @@ export default async function ConnectionPage({
               <p className="mt-1 text-sm">
                 <Link
                   href={`/connections/${id}/onboarding`}
-                  className="text-brand-700 underline"
+                  className="text-brand-700 underline dark:text-brand-300"
                 >
                   See your answers side by side →
                 </Link>
@@ -376,14 +592,14 @@ export default async function ConnectionPage({
                   {WAITING_ON_THEM.secondaryCta}
                 </Link>
               </div>
-              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_THEM.helper}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_THEM.helper}</p>
             </>
           ) : othersAnsweredOnboarding ? (
             <>
               {instance && <RevealWatcher instanceId={instance.id} />}
               <h2 className="text-lg">{WAITING_ON_YOU.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_YOU.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/70">{WAITING_ON_YOU.trustLine}</p>
+              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_YOU.trustLine}</p>
               <Link
                 href={`/connections/${id}/onboarding`}
                 className="mt-3 inline-flex btn-primary"
@@ -418,8 +634,49 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Daily question */}
-      {conn.status === "active" && (
+      {/* Daily question, shown inline with where you both are on it */}
+      {conn.status === "active" && today && (
+        <section
+          id="today"
+          className={`card mt-6 scroll-mt-24 ${
+            today.state === "your_turn" || today.state === "answer"
+              ? "!border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:!bg-brand-900/20"
+              : ""
+          }`}
+        >
+          {today.state !== "revealed" && <RevealWatcher instanceId={today.id} />}
+          <p className="eyebrow">Today&apos;s question</p>
+          <h2 className="mt-1 text-lg">{dailyCardCopy(today.state, themName).headline}</h2>
+          {today.text && (
+            <p className="mt-2 font-display text-xl leading-snug text-ink">
+              &ldquo;{today.text}&rdquo;
+            </p>
+          )}
+          <p className="mt-2 text-sm text-ink-soft">
+            {dailyCardCopy(today.state, themName).body}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/connections/${id}/prompts/${today.id}`}
+              className={
+                today.state === "waiting" || today.state === "revealed"
+                  ? "btn-secondary !px-4 !py-2 text-sm"
+                  : "btn-primary"
+              }
+            >
+              {dailyCardCopy(today.state, themName).cta}
+            </Link>
+            {today.state === "waiting" && (
+              <NudgePerson
+                connectionUrl={`${base}/connections/${id}`}
+                inviterName={myName}
+                variant="finish"
+              />
+            )}
+          </div>
+        </section>
+      )}
+      {conn.status === "active" && !today && (
         <section className="card mt-6">
           <h2 className="text-lg">Today&apos;s question</h2>
           <p className="mt-1 text-sm text-ink-soft">
@@ -437,14 +694,33 @@ export default async function ConnectionPage({
       {conn.status === "active" && (
         <section className="card mt-6">
           <h2 className="text-lg">Quizzes &amp; challenges</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Playful activities and reflections to do together.
-          </p>
+          {suggestion ? (
+            <div className="mt-2 rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/50 dark:bg-brand-900/15 p-4">
+              <p className="eyebrow">
+                This week&apos;s {suggestion.kind === "quiz" ? "quiz" : "challenge"}
+              </p>
+              <p className="mt-1 font-display text-lg leading-snug text-ink">
+                {suggestion.title}
+              </p>
+              {suggestion.description && (
+                <p className="mt-1 text-sm text-ink-soft">{suggestion.description}</p>
+              )}
+              <form action={startElective.bind(null, id, suggestion.id)} className="mt-3">
+                <PendingButton className="btn-secondary !px-4 !py-2 text-sm" pendingLabel="Starting…">
+                  Start together
+                </PendingButton>
+              </form>
+            </div>
+          ) : (
+            <p className="mt-1 text-sm text-ink-soft">
+              Playful activities and reflections to do together.
+            </p>
+          )}
           <Link
             href={`/connections/${id}/explore`}
-            className="mt-2 inline-block text-sm text-brand-700 underline"
+            className="mt-3 inline-block text-sm text-brand-700 underline dark:text-brand-300"
           >
-            Explore activities →
+            Explore all activities →
           </Link>
         </section>
       )}
@@ -459,15 +735,31 @@ export default async function ConnectionPage({
           </p>
           <Link
             href={`/connections/${id}/blueprint`}
-            className="mt-2 inline-block text-sm text-brand-700 underline"
+            className="mt-2 inline-block text-sm text-brand-700 underline dark:text-brand-300"
           >
             View Blueprint →
           </Link>
         </section>
       )}
 
+      {/* Shared goals — both-edit, visible immediately */}
+      {conn.status === "active" && (
+        <SharedGoals connectionId={id} themName={themName} />
+      )}
+
       {/* Looking back — free retrospectives once there's history */}
       {conn.status === "active" && <LookingBack connectionId={id} />}
+
+      {conn.status === "active" && (
+        <p className="mt-4 text-sm">
+          <Link
+            href={`/connections/${id}/history`}
+            className="text-brand-700 underline dark:text-brand-300"
+          >
+            Everything you&apos;ve revealed →
+          </Link>
+        </p>
+      )}
 
       {/* Weekly digest (AI; premium generates, both can read) */}
       {conn.status === "active" && <WeeklyDigest connectionId={id} />}
@@ -477,20 +769,33 @@ export default async function ConnectionPage({
         <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Star match ✨</h2>
           <p className="mt-1 text-sm text-ink-soft">{compat.blurb}</p>
-          <p className="mt-2 text-xs text-ink-soft/60">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-2 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
         </section>
       )}
 
-      {/* Leave — anyone can step away (teen-revocable). */}
+      {/* Leave — anyone can step away (teen-revocable). One extra tap so a
+          stray click can't archive a shared space. */}
       {conn.status !== "archived" && (
-        <form action={leave} className="mt-10 border-t border-gray-100 pt-6">
-          <PendingButton
-            className="text-sm text-ink-soft/80 hover:text-rose-600"
-            pendingLabel="Leaving…"
-          >
+        <details className="mt-10 border-t border-gray-100 pt-6">
+          <summary className="cursor-pointer list-none text-sm text-ink-soft/80 hover:text-rose-600">
             Leave this connection
-          </PendingButton>
-        </form>
+          </summary>
+          <div className="mt-3 rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
+            <p className="text-sm text-ink-soft">
+              This archives the connection for both of you. Nothing new can be
+              started here afterwards, you each keep what you wrote, and the
+              other person isn&apos;t notified. You can always start a new one.
+            </p>
+            <form action={leave} className="mt-3">
+              <PendingButton
+                className="btn-secondary !border-rose-300 !px-4 !py-2 text-sm !text-rose-700 hover:!bg-rose-50 dark:!text-rose-300 dark:hover:!bg-rose-950/40"
+                pendingLabel="Leaving…"
+              >
+                Yes, leave this connection
+              </PendingButton>
+            </form>
+          </div>
+        </details>
       )}
     </div>
   );

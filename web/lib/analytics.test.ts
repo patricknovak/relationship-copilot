@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { isMeasurablePath, shouldPromptForConsent } from "./analytics";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  CONSENT_STORAGE_KEY,
+  isMeasurablePath,
+  pushQuestionsCtaClick,
+  shouldPromptForConsent,
+} from "./analytics";
 
 // The point of these tests is the privacy boundary: no authenticated route
 // may ever be measurable, because its path can carry a connection or invite
@@ -13,6 +18,8 @@ describe("isMeasurablePath", () => {
       "/safety",
       "/library",
       "/library/some-article",
+      "/questions",
+      "/questions/partners",
       "/login",
       "/privacy",
       "/terms",
@@ -49,5 +56,52 @@ describe("shouldPromptForConsent", () => {
 
   it("never shows inside the app", () => {
     expect(shouldPromptForConsent("/connections/abc")).toBe(false);
+  });
+});
+
+describe("pushQuestionsCtaClick", () => {
+  function stubWindow(pathname: string, consent: "granted" | "denied" | null) {
+    const store = new Map<string, string>();
+    if (consent) store.set(CONSENT_STORAGE_KEY, consent);
+    const dataLayer: Record<string, unknown>[] = [];
+    const fakeWindow = {
+      location: { pathname },
+      localStorage: {
+        getItem: (k: string) => store.get(k) ?? null,
+        setItem: (k: string, v: string) => {
+          store.set(k, v);
+        },
+        removeItem: (k: string) => {
+          store.delete(k);
+        },
+      },
+      dataLayer,
+    };
+    vi.stubGlobal("window", fakeWindow);
+    return dataLayer;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("pushes questions_cta_click with page when consent is granted", () => {
+    const dataLayer = stubWindow("/questions/partners", "granted");
+    pushQuestionsCtaClick("partners");
+    expect(dataLayer).toEqual([
+      { event: "questions_cta_click", page: "partners" },
+    ]);
+  });
+
+  it("no-ops without consent", () => {
+    const dataLayer = stubWindow("/questions", "denied");
+    pushQuestionsCtaClick("hub");
+    expect(dataLayer).toEqual([]);
+  });
+
+  it("no-ops on private paths", () => {
+    const dataLayer = stubWindow("/connections/abc", "granted");
+    pushQuestionsCtaClick("partners");
+    expect(dataLayer).toEqual([]);
   });
 });

@@ -6,34 +6,52 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e:core": "playwright test -c playwright.core.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "build:vinext": "vite build",
+    "start:vinext": "wrangler dev --config dist/server/wrangler.json",
+    "deploy:vinext": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.117.2",
-    "next": "^15.5.26",
+    "@supabase/supabase-js": "^2.117.3",
+    "@vinext/cloudflare": "1.1.0",
+    "next": "^16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "stripe": "^17.7.0"
+    "react-server-dom-webpack": "^19.3.0",
+    "server-only": "^0.0.1",
+    "stripe": "^23.0.0",
+    "vinext": "1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
+    "@cloudflare/vite-plugin": "^1.63.1",
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^25.9.9",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.18.0",
-    "eslint-config-next": "^15.5.26",
+    "@vitejs/plugin-react": "^5.2.0",
+    "@vitejs/plugin-rsc": "^0.5.36",
+    "autoprefixer": "^10.6.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.0",
     "postcss": "^8.5.29",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3",
-    "vitest": "^4.1.11"
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.149.0"
   },
   "engines": {
     "node": "24.x"
   },
   "overrides": {
-    "postcss": "$postcss"
-  }
+    "postcss": "^8.5.29",
+    "source-map-js": ">=1.2.2"
+  },
+  "type": "module"
 }

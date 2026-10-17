@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ACQUISITION,
+  ANSWER_FIRST,
+  answerFirstBody,
+  inviterAnsweredLine,
   BOTH_JOINED,
   bothJoinedBody,
   EMPTY_STATE,
@@ -99,5 +102,22 @@ describe("firstRevealCopy", () => {
   it("uses Closer, on purpose sparingly on unlock + brand", () => {
     expect(FIRST_REVEAL_UNLOCK.subhead).toBe("Closer, on purpose.");
     expect(ACQUISITION.headline).toBe("Closer, on purpose.");
+  });
+
+  it("answer-first copy states the gate honestly and counts real questions", () => {
+    expect(answerFirstBody(20)).toContain("your first 20 questions");
+    expect(answerFirstBody(0)).toContain("your first questions");
+    expect(answerFirstBody(Number.NaN)).not.toMatch(/\d/);
+    for (const text of [answerFirstBody(12), ANSWER_FIRST.answeredBody]) {
+      expect(text.toLowerCase()).toContain("your person");
+      expect(text.toLowerCase()).toMatch(/private|sees nothing/);
+    }
+    expect(ANSWER_FIRST.answeredCta.toLowerCase()).toContain("your person");
+  });
+
+  it("names the inviter on the invite page when known", () => {
+    expect(inviterAnsweredLine("Sam")).toMatch(/^Sam has already answered/);
+    expect(inviterAnsweredLine("  ")).toMatch(/^Your person has already answered/);
+    expect(inviterAnsweredLine(null)).toContain("answer yours");
   });
 });

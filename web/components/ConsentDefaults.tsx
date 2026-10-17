@@ -10,7 +10,7 @@ import { CONSENT_STORAGE_KEY } from "@/lib/analytics";
 // app: we run no ad products, and the privacy policy promises we don't share
 // with advertisers. Only analytics_storage is ever flipped, and only by an
 // explicit click in the consent banner.
-export default function ConsentDefaults() {
+export default function ConsentDefaults({ nonce }: { nonce?: string }) {
   const js = `(function(){
 window.dataLayer=window.dataLayer||[];
 function gtag(){dataLayer.push(arguments);}
@@ -31,6 +31,10 @@ gtag('consent','update',{'analytics_storage':'granted'});
 }catch(e){}
 })();`;
   return (
-    <script id="consent-defaults" dangerouslySetInnerHTML={{ __html: js }} />
+    <script
+      id="consent-defaults"
+      nonce={nonce}
+      dangerouslySetInnerHTML={{ __html: js }}
+    />
   );
 }
