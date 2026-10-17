@@ -377,6 +377,27 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      // Migration 0034. No client DML (RPCs below); service role reads.
+      push_subscriptions: {
+        Row: {
+          endpoint: string;
+          user_id: string;
+          p256dh: string;
+          auth: string;
+          created_at: string;
+          last_used_at: string | null;
+        };
+        Insert: {
+          endpoint: string;
+          user_id: string;
+          p256dh: string;
+          auth: string;
+          created_at?: string;
+          last_used_at?: string | null;
+        };
+        Update: { last_used_at?: string | null };
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;
@@ -429,6 +450,15 @@ export interface Database {
       others_have_answered_many: {
         Args: { p_instances: string[] };
         Returns: { instance_id: string; answered: boolean }[];
+      };
+      // Web push (migration 0034): the caller's own device rows only.
+      save_push_subscription: {
+        Args: { p_endpoint: string; p_p256dh: string; p_auth: string };
+        Returns: undefined;
+      };
+      delete_push_subscription: {
+        Args: { p_endpoint: string };
+        Returns: undefined;
       };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };

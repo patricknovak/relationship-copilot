@@ -174,8 +174,15 @@ or an account action.
 10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
-11. **Web push (code).** Service worker + VAPID keys, same preference
-    switches as email. Only after email proves the loop; adds a secret.
+11. **Web push (code). Shipped 2026-10-17 (0034); needs a VAPID key pair (launch checklist §4).**
+    Moved ahead of "email first": push needs no third-party account (the
+    keys are self-generated and browser push services are free), while
+    email still waits on `RESEND_API_KEY`. Same preference switches and
+    once-only log as email; a notification goes out on every channel that
+    is set up. Payloads are RFC 8291-encrypted to the browser and carry a
+    first name and a generic line only. Account → "Notifications on this
+    device"; signing out stops a shared browser's alerts. iPhone needs the
+    site added to the Home Screen first (the toggle says so).
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the
     `workers.dev` test deploy is waiting on a go. Keep Vercel as fallback.
 
