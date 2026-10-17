@@ -32,7 +32,6 @@ comment on table public.push_subscriptions is
 alter table public.push_subscriptions enable row level security;
 revoke all on public.push_subscriptions from public, anon, authenticated;
 
-drop policy if exists push_subscriptions_deny_clients on public.push_subscriptions;
 create policy push_subscriptions_deny_clients
   on public.push_subscriptions
   as restrictive
