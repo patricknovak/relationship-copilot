@@ -113,11 +113,12 @@ Done: test deploy to `relationship-copilot.patricknovak1.workers.dev`, parity ch
    - Stripe → Webhooks → send a test event; expect 200.
    - `/opengraph-image` twice; the second response is a cache HIT (`cf-cache-status` or `age`).
    - Workers → Logs: a `cron_tick` line at :20 past the hour with status 200.
-5. **Agent PR:**
-   - Add `routes` with `custom_domain: true` for both hosts to `wrangler.jsonc`, so a deploy can't drift from the dashboard.
-   - Drop the deploy gate and the Vercel-specific comments.
+5. **Agent PR (ready as a draft; merge only after steps 3–4 pass):**
+   - `routes` with `custom_domain: true` for both hosts in `wrangler.jsonc`, so a deploy can't drift from the dashboard.
+   - The `CLOUDFLARE_DEPLOY` gate is gone: every push to `main` deploys the Worker.
+   - Vercel-specific comments updated.
 6. **Patrick:** pause Vercel and disconnect Git. Delete the project after 30 days.
 
 ## 6. Rollback
 
-Remove the Worker custom domains, recreate the §4 records (DNS-only), and unpause Vercel. The TTL is short.
+Remove the Worker custom domains, recreate the §4 records (DNS-only), and unpause Vercel. If the step 5 PR has merged, also revert it (or set `CLOUDFLARE_DEPLOY` handling back): its pinned `routes` would re-attach the custom domains on the next deploy. The TTL is short.
