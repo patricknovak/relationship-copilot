@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import ThemeToggle from "@/components/ThemeToggle";
 import { AuthSwitch } from "@/components/AuthHint";
+import { forgetPushOnThisDevice } from "@/components/pushDevice";
 
 const SIGNED_IN_LINKS = [
   { href: "/connections", label: "Connections" },
@@ -28,6 +29,10 @@ const SIGNED_OUT_LINKS = [
 export default function HeaderNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // Signing out on a shared browser stops this device's notifications.
+  const forgetPush = () => {
+    void forgetPushOnThisDevice();
+  };
 
   const linkCls = (href: string) =>
     `rounded-full px-3 py-1.5 transition ${
@@ -73,7 +78,7 @@ export default function HeaderNav() {
           signedIn={
             <>
               {desktop(SIGNED_IN_LINKS)}
-              <form action={signOut}>
+              <form action={signOut} onSubmit={forgetPush}>
                 <button className="rounded-full px-3 py-1.5 text-ink-soft/70 hover:bg-surface-line/60 hover:text-ink">
                   Sign out
                 </button>
@@ -126,6 +131,7 @@ export default function HeaderNav() {
                   {mobile(SIGNED_IN_LINKS)}
                   <form
                     action={signOut}
+                    onSubmit={forgetPush}
                     className="border-t border-brand-100/70 dark:border-surface-line pt-2"
                   >
                     <button className="block w-full rounded-xl px-3 py-2.5 text-left text-base text-ink-soft hover:bg-surface-line/60">

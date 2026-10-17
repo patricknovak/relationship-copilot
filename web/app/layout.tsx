@@ -56,7 +56,14 @@ export default async function RootLayout({
   const nonce = (await headers()).get(CSP_NONCE_HEADER) ?? undefined;
 
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    // suppressHydrationWarning: ThemeScript and AuthHintScript set attributes
+    // on <html> before React hydrates (theme, data-auth). Applies to this
+    // element's own attributes only, not its children.
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <ThemeScript nonce={nonce} />
         <AuthHintScript nonce={nonce} />

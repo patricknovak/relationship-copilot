@@ -12,6 +12,7 @@ import {
 import type { ConnectionType } from "@/lib/database.types";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
+import { inviterAnsweredLine } from "@/lib/firstRevealCopy";
 
 // Static for every code — never look up the invite in generateMetadata.
 // Unfurl caches and search indexes must not see inviter names, relationship
@@ -44,6 +45,7 @@ type InvitePreview =
       createdBy: string | null;
       inviterName: string | null;
       note: string | null;
+      inviterAnswered: boolean;
     }
   | { status: InviteFailureStatus };
 
@@ -107,6 +109,11 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
           .eq("connection_id", conn!.id)
           .maybeSingle()
       : { data: null };
+  // Answer-first (0033): a boolean "they already answered", never content.
+  // Failure just hides the line.
+  const { data: answered } = await admin.rpc("invite_inviter_has_answered", {
+    p_code: normalized,
+  });
 
   return {
     status: "ok",
@@ -115,6 +122,7 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
     createdBy: conn!.created_by,
     inviterName,
     note: noteRow?.note ?? null,
+    inviterAnswered: answered === true,
   };
 }
 
@@ -226,6 +234,11 @@ export default async function InvitePage({
         shared — then you reveal together. It&apos;s free, and you can leave
         anytime.
       </p>
+      {invite.inviterAnswered && (
+        <p className="mt-4 rounded-2xl bg-brand-50/80 px-4 py-3 text-sm font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
+          {inviterAnsweredLine(invite.inviterName)}
+        </p>
+      )}
 
       {user ? (
         <AutoAcceptInvite code={code} />

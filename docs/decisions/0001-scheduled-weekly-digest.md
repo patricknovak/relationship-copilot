@@ -1,0 +1,45 @@
+# Decision needed: how the weekly digest becomes automatic (roadmap 14b)
+
+Status: **proposed**, waiting on Patrick. Written 2026-10-17.
+
+## The problem
+
+The weekly digest is a manual button. Today `generateWeeklyDigest`
+(`web/app/actions/digest.ts`) runs in a member's session, so the RLS reveal
+gate bounds exactly what it can read. A cron job has no session. Running it
+from cron means reading revealed answers with the service role, which
+CLAUDE.md invariant 1 forbids ("never read responses through the admin
+client for display").
+
+Nothing here is urgent: AI is off in production until the provider
+agreement closes (roadmap item 6), so no digest can run either way.
+
+## Options
+
+| | How it works | Invariant 1 | Reaches people who don't open the app | Cost to build |
+|---|---|---|---|---|
+| **A. Generate on visit** | When a premium member opens the hub and the last digest is 7+ days old, the existing action runs in their session (after the page renders, in `after()`). | Unchanged | No; it runs when someone visits | Small: a hub check, reusing the action |
+| **B. Narrow definer function + cron** | A `revealed_responses_for_digest(conn, since)` function, service role only, that returns answers only from revealed instances. A weekly cron calls it, then redacts, screens and generates as today. | Amended: one audited exception, revealed-only by construction | Yes: the digest is ready, and a "your digest is ready" notification can go out | Medium: migration and SQL tests, a cron route and a Worker trigger |
+| **C. Keep manual** | Status quo. | Unchanged | No | None |
+
+## Recommendation
+
+**A now, B only when there's a reason to send digests to people who
+aren't opening the app.**
+
+- A keeps the guarantee that the RLS gate decides what the AI sees, with
+  no new privileged read path. It reuses all the existing safety,
+  redaction, rate-limit and premium code. And it makes the digest feel
+  automatic for anyone who visits weekly, which is the habit we're
+  building.
+- B is the right design once digest emails or pushes exist, since a
+  digest nobody visits can't be delivered by A. If we go there, the
+  function should take a connection id, return only rows whose instance
+  is `revealed`, be granted to `service_role` only, and be covered by an
+  SQL test proving it never returns an open instance's answers. The
+  invariant gets one sentence: "except `revealed_responses_for_digest`,
+  which returns revealed answers only, for the digest cron."
+
+## What I need from you
+
+Pick A, B, or C. A is about an hour of work, including tests.
