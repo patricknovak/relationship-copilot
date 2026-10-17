@@ -46,6 +46,20 @@ begin
   raise notice 'PASS: a solo answer stays open and the invite lookup sees it';
 end $$;
 
+-- The funnel step records answer-first exactly once, only while alone.
+set role authenticated;
+set "test.user_id" = 'a1700000-0000-0000-0000-000000000001';
+do $$
+declare a boolean; b boolean;
+begin
+  select public.claim_funnel_step('a1700000-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'answered_before_join') into a;
+  select public.claim_funnel_step('a1700000-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'answered_before_join') into b;
+  assert a is true, 'EXPECTED the first answered_before_join claim to succeed';
+  assert b is false, 'EXPECTED answered_before_join to be once-only';
+  raise notice 'PASS: answered_before_join claimed once while alone';
+end $$;
+reset role;
+
 -- Browsers cannot call the lookup.
 do $$
 begin
@@ -99,6 +113,19 @@ begin
   reset role;
 
   raise notice 'PASS: joining reveals nothing; B only learns that A answered';
+end $$;
+
+-- After B joins, the step can't be claimed for a connection that wasn't
+-- answered first (fresh connection, B's own), nor again here.
+do $$
+declare c boolean;
+begin
+  set local role authenticated;
+  set local "test.user_id" = 'a1700000-0000-0000-0000-000000000002';
+  select public.claim_funnel_step('a1700000-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'answered_before_join') into c;
+  assert c is false, 'EXPECTED no answered_before_join claim once two members have joined';
+  reset role;
+  raise notice 'PASS: answered_before_join refused after the join';
 end $$;
 
 -- B answers: now, and only now, it reveals.

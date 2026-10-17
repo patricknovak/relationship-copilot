@@ -266,12 +266,12 @@ export interface Database {
       connection_funnel_steps: {
         Row: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at: string;
         };
         Insert: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at?: string;
         };
         Update: Partial<
@@ -452,7 +452,7 @@ export interface Database {
       claim_funnel_step: {
         Args: {
           p_connection_id: string;
-          p_step: "invite_sent" | "partner_joined";
+          p_step: "invite_sent" | "partner_joined" | "answered_before_join";
         };
         Returns: boolean;
       };

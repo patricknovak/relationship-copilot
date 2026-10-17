@@ -8,6 +8,9 @@ import { detectSafetySignals } from "@/lib/safety";
 import {
   scheduleFirstMutualRevealCompleted,
   shouldTrackFirstMutualReveal,
+  ANSWERED_BEFORE_JOIN,
+  scheduleGa4Event,
+  shouldTrackFunnelStep,
 } from "@/lib/ga4";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
@@ -201,6 +204,24 @@ export async function submitResponse(input: {
       .from("connections")
       .update({ status: "active", onboarding_done: true })
       .eq("id", connectionId);
+  }
+
+  // Funnel (roadmap §6): answering first, before the other person joins.
+  // Once-only and validated in claim_funnel_step (0033); anonymous GA4 event.
+  if (instance.kind === "onboarding" && !revealed) {
+    const { count: joined } = await supabase
+      .from("connection_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("connection_id", instance.connection_id)
+      .not("joined_at", "is", null);
+    if ((joined ?? 0) < 2) {
+      const { data: claimedStep, error: stepError } = await supabase.rpc("claim_funnel_step", {
+        p_connection_id: instance.connection_id,
+        p_step: ANSWERED_BEFORE_JOIN,
+      });
+      if (stepError) console.error("[ga4] claim_funnel_step failed", stepError.message);
+      else if (shouldTrackFunnelStep(claimedStep === true)) scheduleGa4Event(ANSWERED_BEFORE_JOIN);
+    }
   }
 
   // Tell the other person it's their turn (or that the reveal is open), after

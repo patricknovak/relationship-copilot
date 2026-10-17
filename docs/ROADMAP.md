@@ -255,3 +255,8 @@ fills: pairs with a revealed daily in the last 7 days (the habit), day-30
 retention of pairs, notification open-to-answer rate, and premium
 conversion after the first Blueprint. All of these are derivable from
 `prompt_instances` and `relationship_insights` without new tracking.
+
+Answer-first (10d) is measured by the `answered_before_join` funnel step
+(`connection_funnel_steps`, plus an anonymous GA4 event): compare the share
+of connections reaching `partner_joined`, and the first mutual reveal, with
+and without it.
