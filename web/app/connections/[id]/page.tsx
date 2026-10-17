@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily, startElective } from "@/app/actions/prompts";
 import { pickWeeklySuggestion } from "@/lib/suggestion";
-import { leaveConnection, regenerateInvite } from "@/app/actions/connections";
+import { leaveConnection, regenerateInvite, setInviteNote } from "@/app/actions/connections";
+import { INVITE_NOTE_MAX } from "@/lib/inviteNote";
 import { computeStreak } from "@/lib/streak";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
@@ -16,7 +17,10 @@ import NoticeBanner from "@/components/NoticeBanner";
 import NudgePerson from "@/components/NudgePerson";
 import AddReminder from "@/components/AddReminder";
 import { setDisplayName } from "@/app/actions/profile";
+import { suggestedFirstName } from "@/lib/profileName";
 import {
+  ANSWER_FIRST,
+  answerFirstBody,
   BOTH_JOINED,
   bothJoinedBody,
   EMPTY_STATE,
@@ -35,7 +39,7 @@ const NOTICES: Record<
 > = {
   waiting: {
     tone: "info",
-    text: "Once your person joins, your first questions unlock for you both.",
+    text: "Once your person joins, you can start activities together.",
   },
   nopack: {
     tone: "error",
@@ -77,6 +81,14 @@ const NOTICES: Record<
     tone: "success",
     text: "Name saved. Your person will see that name next to your answers.",
   },
+  "note-saved": { tone: "success", text: "Note added. It shows on the invite and in the message you share." },
+  "note-cleared": { tone: "info", text: "Note removed from the invite." },
+  "note-long": { tone: "error", text: `Keep the note under ${INVITE_NOTE_MAX} characters.` },
+  "note-link": {
+    tone: "error",
+    text: "Links can't go in the note. The invite already carries the only link they need.",
+  },
+  "note-failed": { tone: "error", text: "Couldn't save the note just now. Try again in a moment." },
   "goal-empty": { tone: "info", text: "Write the goal first, then add it." },
   "goal-full": {
     tone: "info",
@@ -167,6 +179,17 @@ export default async function ConnectionPage({
     } catch (err) {
       console.error("lazy ensureOnboardingInstance failed", id, err);
     }
+  }
+
+  // The creator's personal note on a pending invite (RLS: creator only).
+  let inviteNote: string | null = null;
+  if (user && conn.created_by === user.id && joinedCount < 2) {
+    const { data: noteRow } = await supabase
+      .from("invite_notes")
+      .select("note")
+      .eq("connection_id", id)
+      .maybeSingle();
+    inviteNote = noteRow?.note ?? null;
   }
 
   const questionCount = Array.isArray(instance?.questions)
@@ -329,6 +352,7 @@ export default async function ConnectionPage({
       })
     : null;
   const newLink = regenerateInvite.bind(null, id);
+  const saveNote = setInviteNote.bind(null, id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -397,6 +421,7 @@ export default async function ConnectionPage({
               maxLength={80}
               placeholder="Your name"
               aria-label="Your name"
+              defaultValue={suggestedFirstName(user.user_metadata)}
               className="input flex-1"
             />
             <PendingButton className="btn-primary shrink-0" pendingLabel="Saving…">
@@ -421,17 +446,47 @@ export default async function ConnectionPage({
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+        <section id="invite" className="card mt-6 scroll-mt-24 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Email it, text it, or share the link — once they join, you can both
-            start your first questions.
+            Email it, text it, or share the link. Once they join and answer,
+            you&apos;ll reveal together.
           </p>
           <InvitePanel
             connectionId={id}
             url={inviteUrl}
             inviterName={myName}
+            note={inviteNote}
+            inviterAnswered={!!myResponse}
           />
+          {user && conn.created_by === user.id && (
+            <details className="mt-4 rounded-2xl border border-brand-100 bg-white/70 p-3 dark:border-brand-800/60 dark:bg-surface/60" open={!!inviteNote}>
+              <summary className="cursor-pointer text-sm font-medium text-brand-800 dark:text-brand-200">
+                {inviteNote ? "Your note" : "Add a personal note (optional)"}
+              </summary>
+              <form action={saveNote} className="mt-2 space-y-2">
+                <textarea
+                  name="note"
+                  rows={2}
+                  maxLength={INVITE_NOTE_MAX}
+                  defaultValue={inviteNote ?? ""}
+                  placeholder="Why you want to do this with them, in a line or two."
+                  className="input min-h-16 text-sm"
+                />
+                <div className="flex items-center gap-3">
+                  <PendingButton
+                    className="btn-secondary shrink-0 whitespace-nowrap !px-4 !py-2 text-sm"
+                    pendingLabel="Saving…"
+                  >
+                    Save note
+                  </PendingButton>
+                  <span className="text-xs text-ink-soft/70">
+                    They see it on the invite page. Clear it to remove it.
+                  </span>
+                </div>
+              </form>
+            </details>
+          )}
           <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/70">
             {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
             <PendingButton
@@ -446,7 +501,7 @@ export default async function ConnectionPage({
 
       {/* Invite expired (or never issued) and still waiting on the other person */}
       {!inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section className="card mt-6 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
+        <section id="invite" className="card mt-6 scroll-mt-24 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
           <h2 className="text-lg text-amber-900 dark:text-amber-200">
             Your invite link has expired
           </h2>
@@ -457,6 +512,38 @@ export default async function ConnectionPage({
           <form action={newLink} className="mt-3">
             <PendingButton pendingLabel="Creating…">Get a new link</PendingButton>
           </form>
+        </section>
+      )}
+
+      {/* Answer-first: the inviter can answer the first set before their
+          person joins. A solo answer can never reveal (maybe_reveal_instance
+          needs two joined members), so this only shortens their path. */}
+      {joinedCount < 2 && conn.status !== "archived" && user && (
+        <section className="card mt-6">
+          {myResponse ? (
+            <>
+              <h2 className="text-lg">{ANSWER_FIRST.answeredHeadline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">{ANSWER_FIRST.answeredBody}</p>
+              <Link
+                href={`/connections/${id}/onboarding`}
+                className="btn-secondary mt-3 inline-flex !px-4 !py-2 text-sm"
+              >
+                {ANSWER_FIRST.reviewCta}
+              </Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg">{ANSWER_FIRST.headline}</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                {answerFirstBody(questionCount)}
+              </p>
+              <form action={begin} className="mt-3">
+                <PendingButton className="btn-secondary" pendingLabel="Opening…">
+                  {ANSWER_FIRST.primaryCta}
+                </PendingButton>
+              </form>
+            </>
+          )}
         </section>
       )}
 

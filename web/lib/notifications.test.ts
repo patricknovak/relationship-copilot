@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPushCopy,
   ALL_OFF,
   buildNotificationEmail,
   DEFAULT_PREFS,
@@ -117,5 +118,32 @@ describe("unsubscribe token", () => {
     expect(u.pathname).toBe("/api/notifications/unsubscribe");
     expect(u.searchParams.get("u")).toBe("user-1");
     expect(u.searchParams.get("t")).toBe(unsubscribeToken("user-1", secret));
+  });
+});
+
+describe("buildPushCopy", () => {
+  const kinds = ["your_turn", "revealed", "daily_ready", "partner_joined", "discussion_reply"] as const;
+
+  it("uses a first name only and stays generic for lock screens", () => {
+    for (const kind of [...kinds, "turn_reminder"] as const) {
+      const copy = buildPushCopy(kind, "Sam Rivera", "inst-1");
+      expect(copy.title.length).toBeLessThanOrEqual(80);
+      expect(copy.body.length).toBeLessThanOrEqual(200);
+      expect(`${copy.title} ${copy.body}`).not.toContain("Rivera");
+      expect(copy.tag).toContain("inst-1");
+    }
+    expect(buildPushCopy("your_turn", "Sam Rivera", "x").title).toBe("Sam answered");
+    expect(buildPushCopy("your_turn", null, "x").title).toBe("Your person answered");
+  });
+
+  it("gives each event its own collapse tag", () => {
+    const tags = new Set(kinds.map((k) => buildPushCopy(k, "Sam", "i").tag));
+    expect(tags.size).toBe(kinds.length);
+  });
+
+  it("lets the turn reminder replace the first your-turn nudge", () => {
+    const reminder = buildPushCopy("turn_reminder", "Sam Rivera", "i");
+    expect(reminder.tag).toBe(buildPushCopy("your_turn", "Sam", "i").tag);
+    expect(reminder.title).toBe("Sam is still waiting");
   });
 });

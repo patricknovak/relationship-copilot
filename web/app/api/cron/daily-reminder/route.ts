@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authorizeCronBearer } from "@/lib/cronAuth";
-import { emailConfigured } from "@/lib/email";
-import { notifyUser } from "@/lib/notify";
+import { notificationsConfigured, notifyUser } from "@/lib/notify";
 import { todayIn } from "@/lib/dailyState";
 import {
   answeredByInstance,
@@ -33,8 +32,8 @@ async function run(req: Request) {
   if (!authorizeCronBearer(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (!emailConfigured()) {
-    return NextResponse.json({ skipped: "email not configured" });
+  if (!notificationsConfigured()) {
+    return NextResponse.json({ skipped: "notifications not configured" });
   }
 
   const admin = createAdminClient();

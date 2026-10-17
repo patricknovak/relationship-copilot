@@ -17,6 +17,12 @@ land.
       RLS enabled on every table.
 - [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
       against `supabase_migrations.schema_migrations` and the live tables).
+- [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
+      to apply before or after the code ships: without it the invite page
+      simply omits the "they already answered" line. Service role only.
+- [ ] **Migration 0035** (`invite_notes`, the inviter's personal note).
+      Apply with this code. Without it nothing breaks; the hub's note form
+      just says it couldn't save, and the invite page shows no note.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
@@ -147,7 +153,18 @@ product behaves exactly as before without them.
       `turn_reminder` kind) before this code ships, or the follow-up's
       once-only claim fails and nothing is sent. The Worker Cron Trigger
       `40 * * * *` calls `/api/cron/turn-reminder` with the same
-      `CRON_SECRET`; it does nothing until email is configured.
+      `CRON_SECRET`; it does nothing until email or push is configured.
+- [ ] **Web push (no account needed).** Apply migration **0034**
+      (`push_subscriptions`), then from `web/` run
+      `node scripts/vapid-keys.mjs --wrangler` once. It generates the pair
+      and stores `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as Worker secrets
+      without printing the private key. Until the cutover, also add both to
+      Vercel (Sensitive); `--print-private` shows the private key once.
+      Optional `VAPID_SUBJECT` (defaults to
+      `mailto:privacy@relationshipcopilot.com`). Then Account → "Turn on
+      notifications" on your own phone and answer something from a second
+      account to see one arrive. Generate the pair once: a new pair retires
+      every existing browser subscription.
 - [ ] Daily reminder email. On Cloudflare this is a Worker Cron Trigger
       (`20 * * * *` in `web/wrangler.jsonc`), which calls
       `/api/cron/daily-reminder` with the Worker's `CRON_SECRET` (already set
