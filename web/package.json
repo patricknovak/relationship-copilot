@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e:core": "playwright test -c playwright.core.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "build:vinext": "vite build",

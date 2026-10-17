@@ -1,4 +1,5 @@
 import { CANONICAL_ORIGIN } from "@/lib/site";
+import { PREMIUM_MONTHLY_DISPLAY, PREMIUM_MONTHLY_USD } from "@/lib/pricing";
 
 /**
  * Homepage JSON-LD. Claims only mirror public marketing copy (About + Pricing).
@@ -49,14 +50,14 @@ export function homepageJsonLd() {
         offers: {
           "@type": "Offer",
           name: "Premium",
-          price: "18.00",
+          price: PREMIUM_MONTHLY_USD,
           priceCurrency: "USD",
           description:
-            "Premium ($18/mo) adds the AI Relationship Blueprint and weekly digests. Core prompts and safety resources stay free.",
+            `Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Relationship Blueprint and weekly digests. Core prompts and safety resources stay free.`,
           url: `${CANONICAL_ORIGIN}/pricing`,
           priceSpecification: {
             "@type": "UnitPriceSpecification",
-            price: "18.00",
+            price: PREMIUM_MONTHLY_USD,
             priceCurrency: "USD",
             billingDuration: "P1M",
           },

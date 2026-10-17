@@ -39,6 +39,14 @@ describe("buildInviteMessage", () => {
     expect(msg).toContain(URL_);
   });
 
+  it("says the inviter already answered only when told so", () => {
+    const plain = buildInviteMessage("Sam", URL_);
+    expect(plain).not.toContain("already answered");
+    const answered = buildInviteMessage("Sam", URL_, { inviterAnswered: true });
+    expect(answered).toContain("I've already answered mine");
+    expect(answered.endsWith(URL_)).toBe(true);
+  });
+
   it("falls back to a first-person opener without a name", () => {
     for (const name of [null, undefined, "  "]) {
       const msg = buildInviteMessage(name, URL_);

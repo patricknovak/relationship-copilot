@@ -2,6 +2,7 @@
 // Listed questions are copied verbatim from onboarding seed packs
 // (supabase/migrations/0003_seed_content.sql; family q13–q15 from 0029).
 // Do not invent new question text here.
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
 export type QuestionSource = {
   file: string;
@@ -54,7 +55,7 @@ export const QUESTIONS_SHARED_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What does Premium cost?",
-    a: "Premium is $18/mo and optional. Free covers up to 3 connections, with the questions, mutual reveal, and Safety resources included.",
+    a: `Premium is ${PREMIUM_MONTHLY_DISPLAY} and optional. Free covers up to 3 connections, with the questions, mutual reveal, and Safety resources included.`,
   },
 ];
 
