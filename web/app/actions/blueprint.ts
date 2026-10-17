@@ -159,9 +159,28 @@ export async function generateBlueprint(connectionId: string) {
       members: Object.values(intakeRaw).filter(Boolean).length,
     });
   }
-  const intakeText = Object.values(intakeRaw)
-    .map((x) => (x ? `${x.goals ?? ""} ${x.values ?? ""}` : ""))
-    .join("\n");
+  // Each person's reflections are screened on their own. A high-severity
+  // signal drops that person's reflections from the prompt and is logged for
+  // review under its author, but never withholds the shared Blueprint: that
+  // would let the other member learn that something written in private was
+  // flagged. (Shared answers keep the existing withhold-and-support path.)
+  for (const uid of Object.keys(intakeRaw)) {
+    const x = intakeRaw[uid];
+    if (!x) continue;
+    const own = await assessSafety(`${x.goals ?? ""}\n${x.values ?? ""}`, redactor.redact);
+    if (own.severity === "high") {
+      intakeRaw[uid] = null;
+      await admin.from("safety_events").insert({
+        user_id: uid,
+        category: own.categories[0] ?? "abuse",
+        surfaced_resources: {
+          categories: own.categories,
+          source: "blueprint_intake",
+          surfaced: false,
+        } as Json,
+      });
+    }
+  }
   const redactIntake = (x: BlueprintIntake | null | undefined): BlueprintIntake | null =>
     x
       ? {
@@ -177,7 +196,6 @@ export async function generateBlueprint(connectionId: string) {
   const rawAll = [
     ...questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`),
     ...recentRaw,
-    intakeText,
   ].join("\n");
   const signal = await assessSafety(rawAll, redactor.redact);
 

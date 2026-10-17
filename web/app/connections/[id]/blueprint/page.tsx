@@ -212,7 +212,9 @@ export default async function BlueprintPage({
         </div>
       )}
 
-      {user && isPremium && conn.status !== "archived" && (
+      {/* Shown on premium connections, and always to someone who opted in,
+          so consent can be withdrawn even after a plan lapses. */}
+      {user && (isPremium || iShare) && conn.status !== "archived" && (
         <section className="card mt-8 !p-4">
           <h2 className="font-semibold">Your profile reflections</h2>
           <p className="mt-1 text-sm text-ink-soft">
