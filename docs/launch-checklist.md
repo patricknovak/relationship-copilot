@@ -18,8 +18,8 @@ land.
 - [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
       against `supabase_migrations.schema_migrations` and the live tables).
 - [ ] **Migration 0037** (`blueprint_intake_consent`). Apply with this code;
-      without it the Blueprint page shows no consent card's state and the
-      Blueprint simply runs without anyone's profile reflections.
+      without it the consent card can't save, and the Blueprint runs
+      without anyone's profile reflections, as it does today.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
