@@ -211,10 +211,13 @@ or an account action.
 
 13. **Blueprint v2: longitudinal.** First step shipped 2026-10-13: the
     prompt now appends the pair's last 20 revealed daily answers and asks
-    for "then vs now". Still open: using each person's private intake
-    (goals, values, attachment) in a *shared* Blueprint needs an explicit
-    consent step, since intake is collected as private; do not feed it in
-    silently.
+    for "then vs now". Consent step shipped 2026-10-17 (0037): each person
+    can choose, per connection, to include their private profile
+    reflections (goals, values, attachment label). Both see who opted in;
+    the text is read server-side only for those who did, redacted and
+    safety-screened like answers, never shown word for word, and the model
+    is told not to quote or attribute it. Revoking affects future
+    Blueprints only.
 14. **Shared goals and rituals. Shipped 2026-10-13 (0030):** a both-edit
     "things we're trying" list on the hub (members only, visible
     immediately, survives a member's deletion), fed to the weekly digest as

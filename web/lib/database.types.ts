@@ -415,6 +415,13 @@ export interface Database {
         Update: { note?: string; updated_at?: string };
         Relationships: [];
       };
+      // Migration 0037. Members read; each person grants/revokes their own.
+      blueprint_intake_consent: {
+        Row: { connection_id: string; user_id: string; granted_at: string };
+        Insert: { connection_id: string; user_id: string; granted_at?: string };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;

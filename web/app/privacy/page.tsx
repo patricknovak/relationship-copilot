@@ -41,7 +41,9 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-semibold text-ink">AI features</h2>
         <p>
           If you use an AI feature (the Relationship Blueprint or weekly
-          digest), the answers involved are sent to our AI provider
+          digest), the answers involved, and your profile reflections if you
+          chose to include them in a connection&apos;s Blueprint, are sent to
+          our AI provider
           (xAI&apos;s Grok) with names, email addresses, and phone numbers
           removed first (best-effort redaction). They are used only to produce
           that reflection. Production AI stays off until a no-training

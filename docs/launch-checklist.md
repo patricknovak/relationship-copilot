@@ -17,6 +17,9 @@ land.
       RLS enabled on every table.
 - [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
       against `supabase_migrations.schema_migrations` and the live tables).
+- [ ] **Migration 0037** (`blueprint_intake_consent`). Apply with this code;
+      without it the consent card can't save, and the Blueprint runs
+      without anyone's profile reflections, as it does today.
 - [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
       to apply before or after the code ships: without it the invite page
       simply omits the "they already answered" line. Service role only.

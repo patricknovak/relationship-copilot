@@ -92,6 +92,11 @@ export async function GET() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Where you chose to include your profile reflections in a Blueprint (0037).
+  const { data: blueprintConsents } = await supabase
+    .from("blueprint_intake_consent")
+    .select("connection_id, granted_at")
+    .eq("user_id", user.id);
   // Personal notes you wrote on your invites (0035; creator-only RLS).
   const { data: inviteNotes } = await supabase
     .from("invite_notes")
@@ -125,6 +130,7 @@ export async function GET() {
     insights,
     safety_events: safetyEvents,
     subscription,
+    blueprint_intake_consents: blueprintConsents,
     invite_notes: inviteNotes,
     push_devices: pushDevices,
   };
