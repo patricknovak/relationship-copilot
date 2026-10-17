@@ -366,13 +366,13 @@ export interface Database {
         Row: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
           sent_at: string;
         };
         Insert: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
         };
         Update: never;
         Relationships: [];

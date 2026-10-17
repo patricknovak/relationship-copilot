@@ -174,6 +174,13 @@ or an account action.
 10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
+10f. **One "still your turn" follow-up (code). Shipped 2026-10-17 (0036).**
+    "Your turn" fires once, when the other person submits. A first-questions
+    set, quiz or challenge that then waits 36 hours gets one more nudge
+    ("Ann is still waiting on your answers"), inside the recipient's local
+    9am–8pm window, never after a week, and never for dailies (they have
+    their own reminder). Same "your turn" switch; once per set per person.
+    Worker Cron Trigger `40 * * * *` → `/api/cron/turn-reminder`.
 11. **Web push (code).** Service worker + VAPID keys, same preference
     switches as email. Only after email proves the loop; adds a secret.
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the

@@ -8,6 +8,7 @@ import {
   answeredByInstance,
   displayNameMap,
   filterConnectionsInSendWindow,
+  localHour,
   membersByConnection,
   partitionDailyInstances,
 } from "@/lib/dailyReminderBatch";
@@ -27,19 +28,6 @@ const MAX_CONNECTIONS = 10_000; // hard cap per run, keeps the route bounded
 const SEND_HOUR_FROM = 9; // local hour, inclusive
 const SEND_HOUR_TO = 20; // local hour, inclusive
 
-function localHour(tz: string, now: Date): number {
-  try {
-    const h = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      hour: "numeric",
-      hour12: false,
-    }).format(now);
-    const n = Number.parseInt(h, 10);
-    return Number.isFinite(n) ? n % 24 : now.getUTCHours();
-  } catch {
-    return now.getUTCHours();
-  }
-}
 
 async function run(req: Request) {
   if (!authorizeCronBearer(req)) {

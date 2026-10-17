@@ -15,8 +15,8 @@ land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0030** (2026-10-13, this branch) are not yet applied;
-      see §4 below. 0020 is idempotent (skips if batch already seeded).
+- [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
+      against `supabase_migrations.schema_migrations` and the live tables).
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
@@ -143,6 +143,11 @@ product behaves exactly as before without them.
       "they answered, your turn", "you both answered" and "they wrote in a
       discussion" emails go out after a join, submit or first reply, subject
       to each person's Account → Notifications settings.
+- [ ] **"Still your turn" follow-up.** Apply migration **0036** (adds the
+      `turn_reminder` kind) before this code ships, or the follow-up's
+      once-only claim fails and nothing is sent. The Worker Cron Trigger
+      `40 * * * *` calls `/api/cron/turn-reminder` with the same
+      `CRON_SECRET`; it does nothing until email is configured.
 - [ ] Daily reminder email. On Cloudflare this is a Worker Cron Trigger
       (`20 * * * *` in `web/wrangler.jsonc`), which calls
       `/api/cron/daily-reminder` with the Worker's `CRON_SECRET` (already set

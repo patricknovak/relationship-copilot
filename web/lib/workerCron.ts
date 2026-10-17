@@ -9,6 +9,9 @@ export const CRON_ROUTES: Record<string, string> = {
   // Hourly: the reminder route emails each connection once per local day,
   // inside its own 9am–8pm window (app/api/cron/daily-reminder).
   "20 * * * *": "/api/cron/daily-reminder",
+  // Hourly: one "still your turn" follow-up per set that has waited 36h+,
+  // inside the recipient's local window (app/api/cron/turn-reminder).
+  "40 * * * *": "/api/cron/turn-reminder",
 };
 
 export const DEFAULT_ORIGIN = "https://relationshipcopilot.com";
