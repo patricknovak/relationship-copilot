@@ -430,6 +430,18 @@ export interface Database {
         Args: { p_instances: string[] };
         Returns: { instance_id: string; answered: boolean }[];
       };
+      // Migration 0036: service role only; ids, timezone and a first name.
+      turn_reminder_candidates: {
+        Args: { p_min_hours?: number; p_max_hours?: number; p_limit?: number };
+        Returns: {
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          answered_by_id: string;
+          answered_by_name: string | null;
+          timezone: string;
+        }[];
+      };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
         Returns: string;
