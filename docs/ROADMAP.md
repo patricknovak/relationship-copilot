@@ -235,7 +235,9 @@ tested; the reveal gate is untouched.
 5. The AI provider decision (`XAI_NO_TRAINING_DPA`, or a provider whose
    terms already exclude training), which unlocks everything premium.
 6. Decide the price (recommendation: $9.99/mo or $59.99/yr, one plan covers
-   both people) and update the four places that say $18/mo.
+   both people). The list price is one constant now: change
+   `PREMIUM_MONTHLY_USD` in `web/lib/pricing.ts` together with the Stripe
+   price; a test fails if a price is hard-coded anywhere else.
 
 **Next engineering items**, once the above lands: scheduled weekly digest
 (needs the design call in 14b), web push (11), Cloudflare cutover (12).
