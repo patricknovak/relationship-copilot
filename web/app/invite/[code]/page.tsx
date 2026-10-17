@@ -56,7 +56,7 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
 
   const { data: conn } = await admin
     .from("connections")
-    .select("id, type, created_by, invite_expires_at")
+    .select("id, type, created_by, invite_expires_at, status")
     .eq("invite_code", normalized)
     .maybeSingle();
 
@@ -95,12 +95,18 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
     inviterName = inviter?.display_name?.trim() || null;
   }
 
-  // The inviter's personal note (0035), shown only while the code is valid.
-  const { data: noteRow } = await admin
-    .from("invite_notes")
-    .select("note")
-    .eq("connection_id", conn!.id)
-    .maybeSingle();
+  // The inviter's personal note (0035), shown only while the code is valid
+  // and the connection is still waiting for them. Leaving archives the
+  // connection without burning the code, so a leaver's note must not keep
+  // showing to whoever has the link.
+  const { data: noteRow } =
+    conn!.status === "pending"
+      ? await admin
+          .from("invite_notes")
+          .select("note")
+          .eq("connection_id", conn!.id)
+          .maybeSingle()
+      : { data: null };
 
   return {
     status: "ok",
