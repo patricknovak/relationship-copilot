@@ -91,6 +91,12 @@ export async function GET() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Personal notes you wrote on your invites (0035; creator-only RLS).
+  const { data: inviteNotes } = await supabase
+    .from("invite_notes")
+    .select("connection_id, note, updated_at")
+    .eq("author_id", user.id);
+
   await logAudit(user.id, "account.export");
 
   const payload = {
@@ -106,6 +112,7 @@ export async function GET() {
     insights,
     safety_events: safetyEvents,
     subscription,
+    invite_notes: inviteNotes,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
