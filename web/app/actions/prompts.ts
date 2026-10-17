@@ -36,8 +36,13 @@ async function logSafety(userId: string, text: string): Promise<boolean> {
 }
 
 // Ensure the connection's onboarding instance exists (idempotent via the
-// sentinel-date unique constraint), then go to the onboarding flow. Requires
-// both members to have joined so the reveal can't trigger prematurely.
+// sentinel-date unique constraint), then go to the onboarding flow.
+//
+// Answer-first: the inviter may start before their person joins. That is safe
+// because the reveal trigger (maybe_reveal_instance, migration 0014) only
+// reveals once more than one member has joined and every joined member has
+// answered, and RLS (instances_insert) still requires the caller to be a
+// member. Electives and dailies keep their both-joined requirement.
 export async function startOnboarding(connectionId: string) {
   const supabase = await createClient();
   const {
@@ -45,13 +50,14 @@ export async function startOnboarding(connectionId: string) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { count: joined } = await supabase
-    .from("connection_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("connection_id", connectionId)
-    .not("joined_at", "is", null);
-  if ((joined ?? 0) < 2) {
-    redirect(`/connections/${connectionId}?notice=waiting`);
+  // A connection someone left (archived) or blocked never starts a new set.
+  const { data: conn } = await supabase
+    .from("connections")
+    .select("status")
+    .eq("id", connectionId)
+    .maybeSingle();
+  if (!conn || conn.status === "archived" || conn.status === "blocked") {
+    redirect(`/connections/${connectionId}`);
   }
 
   const instanceId = await ensureOnboardingInstance(supabase, connectionId);

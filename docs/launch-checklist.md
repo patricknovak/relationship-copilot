@@ -15,8 +15,11 @@ land.
       Supabase project (us-east-1, ACTIVE_HEALTHY); pg_cron enabled;
       `assign-daily-prompts` scheduled daily 08:05 UTC; seed content loaded;
       RLS enabled on every table.
-- [ ] **Migrations 0020–0030** (2026-10-13, this branch) are not yet applied;
-      see §4 below. 0020 is idempotent (skips if batch already seeded).
+- [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
+      against `supabase_migrations.schema_migrations` and the live tables).
+- [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
+      to apply before or after the code ships: without it the invite page
+      simply omits the "they already answered" line. Service role only.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the

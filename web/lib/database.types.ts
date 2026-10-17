@@ -430,6 +430,12 @@ export interface Database {
         Args: { p_instances: string[] };
         Returns: { instance_id: string; answered: boolean }[];
       };
+      // Invite page only (migration 0033): has the inviter answered the first
+      // questions? Boolean only; service role only, keyed by the invite code.
+      invite_inviter_has_answered: {
+        Args: { p_code: string };
+        Returns: boolean;
+      };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
         Returns: string;

@@ -54,6 +54,33 @@ export const WAITING_ON_THEM = {
     "You can change your mind before the reveal unlocks — until both have shared.",
 } as const;
 
+// Before your person has joined: answer your first questions now so the
+// reveal is one step away for them. The gate is unchanged (a solo answer can
+// never reveal; they see nothing until they share too).
+export const ANSWER_FIRST = {
+  headline: "Answer yours while you wait.",
+  primaryCta: "Answer yours now",
+  answeredHeadline: "Your answers are in.",
+  answeredBody:
+    "They stay private. When your person joins and shares theirs, you'll reveal together.",
+  answeredCta: "Invite your person",
+  reviewCta: "Review your answers (still private)",
+} as const;
+
+export function answerFirstBody(questionCount: number): string {
+  const what =
+    Number.isFinite(questionCount) && questionCount > 0
+      ? `your first ${questionCount} questions`
+      : "your first questions";
+  return `You can answer ${what} now, in private. Your person sees nothing until they've joined and shared theirs, and their reveal is one step away when they arrive.`;
+}
+
+// Shown to the invitee on the invite page when the inviter already answered.
+export function inviterAnsweredLine(inviterName: string | null | undefined): string {
+  const who = inviterName?.trim();
+  return `${who || "Your person"} has already answered. Join and answer yours to see both side by side.`;
+}
+
 export const WAITING_ON_YOU = {
   headline: "They're ready when you are.",
   body: "They've answered in private. Finish yours to unlock the reveal side by side.",

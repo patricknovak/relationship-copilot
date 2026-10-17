@@ -11,12 +11,16 @@ export function isInviteCodeFormat(code: string): boolean {
 export function buildInviteMessage(
   inviterName: string | null | undefined,
   url: string,
+  options: { inviterAnswered?: boolean } = {},
 ): string {
   const who = inviterName?.trim();
   const opener = who
     ? `${who} invited you to connect on Relationship Copilot.`
     : `Join me on Relationship Copilot.`;
-  return `${opener} We each answer the same questions in private, then reveal together — designed so neither of us sees the other's answers until we've both shared. It's free. Tap to join: ${url}`;
+  const answered = options.inviterAnswered
+    ? " I've already answered mine, so we can reveal as soon as you answer yours."
+    : "";
+  return `${opener} We each answer the same questions in private, then reveal together — designed so neither of us sees the other's answers until we've both shared.${answered} It's free. Tap to join: ${url}`;
 }
 
 // The `?&body=` form is the one that works across both iOS and Android;
