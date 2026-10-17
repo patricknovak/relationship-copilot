@@ -174,6 +174,14 @@ or an account action.
 10c. **History of past reveals (code). Shipped 2026-10-13 (`/connections/[id]/history`).** "Looking back" resurfaces two
     moments; there is no way to browse everything a pair has revealed.
     A per-connection history page, newest first, read under RLS.
+10d. **Answer first, while you wait (code). Shipped 2026-10-17 (0033).**
+    The inviter could do nothing until their person joined, and the invitee
+    had no reason to hurry. Now the inviter can answer the first set right
+    away; the hub, the question page and the share message say so, and the
+    invite page tells the invitee "Sam has already answered". The gate is
+    unchanged: the reveal trigger needs two joined members, and the invitee
+    sees nothing until they share (`supabase/tests/17_answer_first_test.sql`).
+    Dailies and activities still start once both are in.
 11. **Web push (code).** Service worker + VAPID keys, same preference
     switches as email. Only after email proves the loop; adds a secret.
 12. **Cloudflare cutover (Patrick + code).** Playbook is written; the
@@ -252,3 +260,8 @@ fills: pairs with a revealed daily in the last 7 days (the habit), day-30
 retention of pairs, notification open-to-answer rate, and premium
 conversion after the first Blueprint. All of these are derivable from
 `prompt_instances` and `relationship_insights` without new tracking.
+
+Answer-first (10d) is measured by the `answered_before_join` funnel step
+(`connection_funnel_steps`, plus an anonymous GA4 event): compare the share
+of connections reaching `partner_joined`, and the first mutual reveal, with
+and without it.

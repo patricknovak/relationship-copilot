@@ -266,12 +266,12 @@ export interface Database {
       connection_funnel_steps: {
         Row: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at: string;
         };
         Insert: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined";
+          step: "invite_sent" | "partner_joined" | "answered_before_join";
           claimed_at?: string;
         };
         Update: Partial<
@@ -430,6 +430,12 @@ export interface Database {
         Args: { p_instances: string[] };
         Returns: { instance_id: string; answered: boolean }[];
       };
+      // Invite page only (migration 0033): has the inviter answered the first
+      // questions? Boolean only; service role only, keyed by the invite code.
+      invite_inviter_has_answered: {
+        Args: { p_code: string };
+        Returns: boolean;
+      };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
         Returns: string;
@@ -446,7 +452,7 @@ export interface Database {
       claim_funnel_step: {
         Args: {
           p_connection_id: string;
-          p_step: "invite_sent" | "partner_joined";
+          p_step: "invite_sent" | "partner_joined" | "answered_before_join";
         };
         Returns: boolean;
       };

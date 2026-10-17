@@ -21,7 +21,12 @@ export const FIRST_MUTUAL_REVEAL_COMPLETED = "first_mutual_reveal_completed";
 export const INVITE_SENT = "invite_sent";
 export const PARTNER_JOINED = "partner_joined";
 
-export type FunnelStep = typeof INVITE_SENT | typeof PARTNER_JOINED;
+/** Inviter submitted their first answers before their person joined (0033). */
+export const ANSWERED_BEFORE_JOIN = "answered_before_join";
+export type FunnelStep =
+  | typeof INVITE_SENT
+  | typeof PARTNER_JOINED
+  | typeof ANSWERED_BEFORE_JOIN;
 
 /** True when this completed reveal is the connection's first. */
 export function isConnectionFirstReveal(revealedInstanceCount: number): boolean {
