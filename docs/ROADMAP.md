@@ -259,8 +259,9 @@ tested; the reveal gate is untouched.
 
 **What only Patrick can do next**, in order of unlock:
 
-1. Apply migrations 0020–0030 to production (launch checklist, "Already
-   done" and §4).
+1. Generate the web push keys once (`node scripts/vapid-keys.mjs
+   --wrangler` from `web/`, checklist §4). Migrations through 0037 are
+   applied to production.
 2. Stripe activation + customer portal configuration, then a live
    checkout test (checklist §1). Optionally create the annual price.
 3. The Turnstile secret in Supabase so email sign-in works (checklist §2).

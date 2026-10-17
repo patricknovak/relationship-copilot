@@ -17,15 +17,13 @@ land.
       RLS enabled on every table.
 - [x] **Migrations 0020–0032 applied to production** (verified 2026-10-17
       against `supabase_migrations.schema_migrations` and the live tables).
-- [ ] **Migration 0037** (`blueprint_intake_consent`). Apply with this code;
-      without it the consent card can't save, and the Blueprint runs
-      without anyone's profile reflections, as it does today.
-- [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
-      to apply before or after the code ships: without it the invite page
-      simply omits the "they already answered" line. Service role only.
-- [ ] **Migration 0035** (`invite_notes`, the inviter's personal note).
-      Apply with this code. Without it nothing breaks; the hub's note form
-      just says it couldn't save, and the invite page shows no note.
+- [x] **Migrations 0033–0037 applied to production** (2026-10-17, via the
+      Supabase MCP, each just before its PR merged): answer-first lookup and
+      funnel step (0033), `push_subscriptions` (0034), `invite_notes` (0035),
+      the `turn_reminder` notification kind (0036) and
+      `blueprint_intake_consent` (0037). 0034 went in as three statements
+      (table, trim helper, RPCs) and was recorded once in
+      `schema_migrations`; the repo file is the same SQL.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the
@@ -152,13 +150,11 @@ product behaves exactly as before without them.
       "they answered, your turn", "you both answered" and "they wrote in a
       discussion" emails go out after a join, submit or first reply, subject
       to each person's Account → Notifications settings.
-- [ ] **"Still your turn" follow-up.** Apply migration **0036** (adds the
-      `turn_reminder` kind) before this code ships, or the follow-up's
-      once-only claim fails and nothing is sent. The Worker Cron Trigger
+- [ ] **"Still your turn" follow-up.** Migration 0036 is applied. The Worker Cron Trigger
       `40 * * * *` calls `/api/cron/turn-reminder` with the same
       `CRON_SECRET`; it does nothing until email or push is configured.
-- [ ] **Web push (no account needed).** Apply migration **0034**
-      (`push_subscriptions`), then from `web/` run
+- [ ] **Web push (no account needed).** Migration 0034 is applied. From
+      `web/` run
       `node scripts/vapid-keys.mjs --wrangler` once. It generates the pair
       and stores `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` as Worker secrets
       without printing the private key. Until the cutover, also add both to
