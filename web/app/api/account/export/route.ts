@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 
@@ -91,6 +92,19 @@ export async function GET() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Devices with notifications on (0034). Server-only table, so read with
+  // the service role, scoped to this signed-in user. The endpoint works like
+  // a credential, so only its push service host and dates are exported.
+  const { data: pushRows } = await createAdminClient()
+    .from("push_subscriptions")
+    .select("endpoint, created_at, last_used_at")
+    .eq("user_id", user.id);
+  const pushDevices = (pushRows ?? []).map((r) => ({
+    push_service: new URL(r.endpoint).host,
+    created_at: r.created_at,
+    last_used_at: r.last_used_at,
+  }));
+
   await logAudit(user.id, "account.export");
 
   const payload = {
@@ -106,6 +120,7 @@ export async function GET() {
     insights,
     safety_events: safetyEvents,
     subscription,
+    push_devices: pushDevices,
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
