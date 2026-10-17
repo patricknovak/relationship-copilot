@@ -84,12 +84,12 @@ export default function AddReminder({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-ink-soft/70 underline hover:text-ink-soft"
+          className="text-ink-soft/80 underline hover:text-ink-soft"
         >
           Cancel
         </button>
       </div>
-      <p className="text-xs text-ink-soft/70">
+      <p className="text-xs text-ink-soft/80">
         Defaults to tomorrow at 7:00 PM, for 15 minutes. Change it here or in
         your calendar. It&apos;s saved to your own calendar. Email nudges
         are optional, under Account.

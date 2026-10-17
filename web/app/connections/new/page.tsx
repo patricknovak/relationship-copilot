@@ -101,7 +101,7 @@ export default async function NewConnectionPage({
             ))}
             <li className="text-sm text-ink-soft">…and {Math.max(0, packSize - preview.length)} more, once you both join.</li>
           </ol>
-          <p className="mt-3 text-xs text-ink-soft/70">
+          <p className="mt-3 text-xs text-ink-soft/80">
             Previewing another type?{" "}
             {CONNECTION_TYPES.filter((t) => t.value !== preselected).map((t, i) => (
               <span key={t.value}>

@@ -46,7 +46,7 @@ export default async function SharedGoals({
               <span className="flex-1 text-sm text-ink">{g.body}</span>
               <form action={removeGoal.bind(null, connectionId, g.id)}>
                 <PendingButton
-                  className="text-xs text-ink-soft/50 hover:text-rose-600"
+                  className="text-xs text-ink-soft/80 hover:text-rose-600"
                   pendingLabel="…"
                 >
                   Remove
@@ -73,12 +73,12 @@ export default async function SharedGoals({
 
       {done.length > 0 && (
         <details className="mt-3">
-          <summary className="cursor-pointer text-xs text-ink-soft/70">
+          <summary className="cursor-pointer text-xs text-ink-soft/80">
             Done ({done.length})
           </summary>
           <ul className="mt-2 space-y-1.5">
             {done.map((g) => (
-              <li key={g.id} className="flex items-center gap-2 text-sm text-ink-soft/70">
+              <li key={g.id} className="flex items-center gap-2 text-sm text-ink-soft/80">
                 <span className="line-through">{g.body}</span>
                 <form action={toggleGoal.bind(null, connectionId, g.id, false)}>
                   <PendingButton className="text-xs underline hover:text-ink" pendingLabel="…">

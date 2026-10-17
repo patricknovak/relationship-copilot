@@ -113,7 +113,7 @@ export default function SafetyPage() {
             <h2 className="text-base font-sans font-semibold tracking-normal">
               {r.name}
             </h2>
-            <p className="mt-1 font-medium text-brand-700">{r.contact}</p>
+            <p className="mt-1 font-medium text-brand-700 dark:text-brand-300">{r.contact}</p>
             <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
             {r.href && (
               <a
@@ -136,7 +136,7 @@ export default function SafetyPage() {
             <h3 className="text-base font-sans font-semibold tracking-normal">
               {r.name}
             </h3>
-            <p className="mt-1 font-medium text-brand-700">{r.contact}</p>
+            <p className="mt-1 font-medium text-brand-700 dark:text-brand-300">{r.contact}</p>
             <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
             {r.href && (
               <a

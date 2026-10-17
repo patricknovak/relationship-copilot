@@ -33,7 +33,7 @@ export default function Error({
             Your connections
           </Link>
         </div>
-        <p className="mt-8 text-xs text-ink-soft/70">
+        <p className="mt-8 text-xs text-ink-soft/80">
           In crisis?{" "}
           <Link href="/safety" className="underline">
             Safety resources

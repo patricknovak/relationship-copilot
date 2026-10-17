@@ -139,7 +139,7 @@ export default async function PricingPage({
                 {f.q}
                 <span
                   aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45"
+                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
                 >
                   +
                 </span>
@@ -179,16 +179,16 @@ function Plan({
       <ul className="mt-5 space-y-2.5 text-sm text-ink-soft">
         {features.map((f) => (
           <li key={f} className="flex gap-2.5">
-            <span className="mt-0.5 text-brand-600">✓</span>
+            <span className="mt-0.5 text-brand-600 dark:text-brand-300">✓</span>
             {f}
           </li>
         ))}
       </ul>
       <div className="mt-7">{children}</div>
-      <p className="mt-5 text-xs leading-relaxed text-ink-soft/70">
+      <p className="mt-5 text-xs leading-relaxed text-ink-soft/80">
         Safety resources are always free.
       </p>
-      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft/70">
+      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft/80">
         <Link href="/safety" className="underline hover:text-ink-soft">
           Safety
         </Link>

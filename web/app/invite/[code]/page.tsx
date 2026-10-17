@@ -211,7 +211,7 @@ export default async function InvitePage({
           >
             Accept &amp; join free
           </Link>
-          <p className="mt-3 text-xs text-ink-soft/70">
+          <p className="mt-3 text-xs text-ink-soft/80">
             Continue with Google — no password to invent.
           </p>
         </>

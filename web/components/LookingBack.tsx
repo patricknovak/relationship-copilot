@@ -94,7 +94,7 @@ export default async function LookingBack({
       <div className="mt-2 space-y-4">
         {cards.map(({ pick, question, myAnswer, theirAnswer }) => (
           <div key={pick.id} className="text-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/60">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/80">
               {pick.label} — {pick.scheduled_for}
             </p>
             <p className="mt-1 font-medium text-ink">{question}</p>
@@ -110,7 +110,7 @@ export default async function LookingBack({
             )}
             <Link
               href={`/connections/${connectionId}/prompts/${pick.id}`}
-              className="mt-1 inline-block text-xs text-brand-700 underline"
+              className="mt-1 inline-block text-xs text-brand-700 underline dark:text-brand-300"
             >
               Revisit →
             </Link>

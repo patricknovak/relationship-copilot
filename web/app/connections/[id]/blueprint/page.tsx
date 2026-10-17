@@ -118,7 +118,7 @@ export default async function BlueprintPage({
           {isPremium && (
             <div className="flex flex-wrap items-center gap-3">
               {insight?.generated_at && (
-                <p className="text-xs text-ink-soft/60">
+                <p className="text-xs text-ink-soft/80">
                   Generated{" "}
                   {new Date(insight.generated_at).toLocaleDateString(undefined, {
                     year: "numeric",
@@ -162,7 +162,7 @@ export default async function BlueprintPage({
         </div>
       ) : (
         <div className="mt-6 card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-          <h2 className="font-semibold text-brand-700">A Premium feature</h2>
+          <h2 className="font-semibold text-brand-700 dark:text-brand-300">A Premium feature</h2>
           <p className="mt-1 text-sm text-ink-soft">
             The AI Relationship Blueprint and weekly digests are part of Premium.
             One Premium plan covers both people in a connection. Your core
@@ -178,7 +178,7 @@ export default async function BlueprintPage({
         </div>
       )}
 
-      <p className="mt-8 text-xs text-ink-soft/60">
+      <p className="mt-8 text-xs text-ink-soft/80">
         This is relationship-wellness guidance, not therapy or diagnosis. If
         you&apos;re struggling, our{" "}
         <Link href="/safety" className="underline">
@@ -186,7 +186,7 @@ export default async function BlueprintPage({
         </Link>{" "}
         are always free.
       </p>
-      <p className="mt-2 text-xs text-ink-soft/60">
+      <p className="mt-2 text-xs text-ink-soft/80">
         How this works: to generate a Blueprint, your written answers are sent
         to our AI provider (xAI&apos;s Grok) with names, email addresses, and
         phone numbers removed first. They are used only to produce this

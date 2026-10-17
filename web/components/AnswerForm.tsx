@@ -154,7 +154,7 @@ export default function AnswerForm({
             value={answers[q.id] ?? ""}
             onChange={(v) => setAnswer(q.id, v)}
           />
-          <p className="mt-2 text-xs text-ink-soft/70">{MICROCOPY.belowQuestion}</p>
+          <p className="mt-2 text-xs text-ink-soft/80">{MICROCOPY.belowQuestion}</p>
         </div>
       ))}
 

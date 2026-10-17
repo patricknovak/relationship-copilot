@@ -57,7 +57,7 @@ export default async function QuestionsTypePage({
       />
       <Link
         href="/questions"
-        className="text-sm text-ink-soft/70 hover:text-ink"
+        className="text-sm text-ink-soft/80 hover:text-ink"
       >
         ← All question lists
       </Link>
@@ -83,7 +83,7 @@ export default async function QuestionsTypePage({
         <div className="mt-5">
           <QuestionsCta page={page.slug} />
         </div>
-        <p className="mt-3 text-xs text-ink-soft/70">{QUESTIONS_SIGN_IN_HINT}</p>
+        <p className="mt-3 text-xs text-ink-soft/80">{QUESTIONS_SIGN_IN_HINT}</p>
       </section>
 
       <section className="mt-12">
@@ -95,7 +95,7 @@ export default async function QuestionsTypePage({
                 {f.q}
                 <span
                   aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45"
+                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
                 >
                   +
                 </span>
@@ -108,11 +108,11 @@ export default async function QuestionsTypePage({
 
       <p className="mt-10 text-sm text-ink-soft">
         Also see{" "}
-        <Link href={`/for/${page.forSlug}`} className="text-brand-700 underline">
+        <Link href={`/for/${page.forSlug}`} className="text-brand-700 underline dark:text-brand-300">
           questions for {page.forLabel}
         </Link>{" "}
         and the{" "}
-        <Link href="/questions" className="text-brand-700 underline">
+        <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
           full questions hub
         </Link>
         .

@@ -196,7 +196,7 @@ export default async function ConnectionsPage() {
           <ConnectionList items={rows.filter((c) => c.status !== "archived")} />
           {rows.some((c) => c.status === "archived") && (
             <details className="mt-8">
-              <summary className="cursor-pointer text-sm text-ink-soft/70">
+              <summary className="cursor-pointer text-sm text-ink-soft/80">
                 Archived ({rows.filter((c) => c.status === "archived").length})
               </summary>
               <div className="mt-3 opacity-70">

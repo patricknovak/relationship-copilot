@@ -99,7 +99,7 @@ export default function Home() {
               {ACQUISITION.startCta}
             </AuthLink>
           </div>
-          <p className="mt-4 animate-fade-up text-xs text-ink-soft/70 [animation-delay:260ms]">
+          <p className="mt-4 animate-fade-up text-xs text-ink-soft/80 [animation-delay:260ms]">
             {ACQUISITION.trustLine}
           </p>
 
@@ -112,14 +112,14 @@ export default function Home() {
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
-                  <p className="text-xs font-semibold text-brand-700">You</p>
+                  <p className="text-xs font-semibold text-brand-700 dark:text-brand-300">You</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
                     When you notice the small stuff — like Tuesday, when you
                     just said &ldquo;I saw how hard that was.&rdquo;
                   </p>
                 </div>
                 <div className="relative overflow-hidden rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/60 dark:bg-brand-900/20 p-4">
-                  <p className="text-xs font-semibold text-brand-700">Them</p>
+                  <p className="text-xs font-semibold text-brand-700 dark:text-brand-300">Them</p>
                   <p
                     aria-hidden
                     className="mt-1.5 select-none text-sm leading-relaxed text-ink-soft blur-[7px]"
@@ -155,22 +155,22 @@ export default function Home() {
           </div>
           <p className="mt-6 animate-fade-up text-sm text-ink-soft [animation-delay:500ms]">
             Or browse{" "}
-            <Link href="/questions" className="text-brand-700 underline">
+            <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
               questions to ask
             </Link>
             {" — "}
             <Link
               href="/questions/partners"
-              className="text-brand-700 underline"
+              className="text-brand-700 underline dark:text-brand-300"
             >
               your partner
             </Link>
             {", "}
-            <Link href="/questions/friends" className="text-brand-700 underline">
+            <Link href="/questions/friends" className="text-brand-700 underline dark:text-brand-300">
               a friend
             </Link>
             {", or "}
-            <Link href="/questions/family" className="text-brand-700 underline">
+            <Link href="/questions/family" className="text-brand-700 underline dark:text-brand-300">
               family
             </Link>
             .
@@ -279,7 +279,7 @@ export default function Home() {
                 {f.q}
                 <span
                   aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45"
+                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
                 >
                   +
                 </span>
@@ -342,7 +342,7 @@ function Feature({
 }) {
   return (
     <div className="card card-hover">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-700">
+      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300">
         {icon}
       </span>
       <h3 className="mt-4 font-semibold text-ink">{title}</h3>
