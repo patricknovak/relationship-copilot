@@ -283,7 +283,11 @@ export function buildPushCopy(
     case "partner_joined":
       return { title: `${who} joined`, body: "Your first questions are ready.", tag: `joined-${instanceId}` };
     case "daily_ready":
-    default:
       return { title: "Today's question is ready", body: "Answer in private. It reveals when you both have.", tag: `daily-${instanceId}` };
+    default: {
+      // Exhaustive: a new NotificationKind must get its own push copy.
+      const unhandled: never = kind;
+      throw new Error(`no push copy for ${String(unhandled)}`);
+    }
   }
 }
