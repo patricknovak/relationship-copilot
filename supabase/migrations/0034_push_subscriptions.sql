@@ -69,14 +69,15 @@ begin
         created_at = now(),
         last_used_at = null;
 
-  delete from public.push_subscriptions
-   where user_id = uid
-     and endpoint not in (
-       select endpoint from public.push_subscriptions
-        where user_id = uid
-        order by created_at desc
-        limit 10
-     );
+  delete from public.push_subscriptions s
+   using (
+     select endpoint,
+            row_number() over (order by created_at desc, endpoint) as rn
+       from public.push_subscriptions
+      where user_id = uid
+   ) ranked
+   where s.endpoint = ranked.endpoint
+     and ranked.rn > 10;
 end;
 $$;
 
