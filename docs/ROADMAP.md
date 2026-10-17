@@ -188,6 +188,13 @@ or an account action.
     message. Plain text, 280 characters, no links (the invite page is our
     trusted domain). Creator-only under RLS, frozen once the invite is
     used, and it goes with the author's account.
+10f. **One "still your turn" follow-up (code). Shipped 2026-10-17 (0036).**
+    "Your turn" fires once, when the other person submits. A first-questions
+    set, quiz or challenge that then waits 36 hours gets one more nudge
+    ("Ann is still waiting on your answers"), inside the recipient's local
+    9am–8pm window, never after a week, and never for dailies (they have
+    their own reminder). Same "your turn" switch; once per set per person.
+    Worker Cron Trigger `40 * * * *` → `/api/cron/turn-reminder`.
 11. **Web push (code). Shipped 2026-10-17 (0034); needs a VAPID key pair (launch checklist §4).**
     Moved ahead of "email first": push needs no third-party account (the
     keys are self-generated and browser push services are free), while

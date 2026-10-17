@@ -45,7 +45,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
 - **Cutover branch (`claude/cloudflare-cutover`):**
   - `web/.env.production` holds the public `NEXT_PUBLIC_*` build values (Supabase URL and anon key, site URL, Stripe price, auth providers, GTM). They ship in the browser bundle anyway; the values were checked against Vercel's live bundles. CI no longer passes them as repo variables, because an unset variable arrives empty and overrides the file.
   - `wrangler.jsonc` sets non-secret `vars` (`APP_ORIGIN`, `GA4_MEASUREMENT_ID`, `EMAIL_FROM`) on every deploy. Secrets are set once and persist across deploys.
-  - **Cron:** `triggers.crons = ["20 * * * *"]`. `worker/index.ts` `scheduled()` calls `/api/cron/daily-reminder` in-process with `CRON_SECRET`, inside `waitUntil`, and logs one JSON line per tick (`cron_tick` or `cron_tick_failed`). The mapping is in `lib/workerCron.ts`, and a test checks it against `wrangler.jsonc`. No pg_cron job or SQL secret is needed.
+  - **Cron:** `triggers.crons = ["20 * * * *", "40 * * * *"]` (daily reminder; "still your turn" follow-up). `worker/index.ts` `scheduled()` calls `/api/cron/daily-reminder` in-process with `CRON_SECRET`, inside `waitUntil`, and logs one JSON line per tick (`cron_tick` or `cron_tick_failed`). The mapping is in `lib/workerCron.ts`, and a test checks it against `wrangler.jsonc`. No pg_cron job or SQL secret is needed.
   - **`/api/health`** returns `{ ok, commit }` with no-store, so a deploy can be checked from outside.
   - **HSTS** is app-owned (see §1).
 - **Cloudflare optimizations:**

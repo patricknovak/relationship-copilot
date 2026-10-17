@@ -149,6 +149,11 @@ product behaves exactly as before without them.
       "they answered, your turn", "you both answered" and "they wrote in a
       discussion" emails go out after a join, submit or first reply, subject
       to each person's Account → Notifications settings.
+- [ ] **"Still your turn" follow-up.** Apply migration **0036** (adds the
+      `turn_reminder` kind) before this code ships, or the follow-up's
+      once-only claim fails and nothing is sent. The Worker Cron Trigger
+      `40 * * * *` calls `/api/cron/turn-reminder` with the same
+      `CRON_SECRET`; it does nothing until email or push is configured.
 - [ ] **Web push (no account needed).** Apply migration **0034**
       (`push_subscriptions`), then from `web/` run
       `node scripts/vapid-keys.mjs --wrangler` once. It generates the pair

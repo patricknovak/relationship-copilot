@@ -366,13 +366,13 @@ export interface Database {
         Row: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
           sent_at: string;
         };
         Insert: {
           instance_id: string;
           user_id: string;
-          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply";
+          kind: "your_turn" | "revealed" | "daily_ready" | "partner_joined" | "discussion_reply" | "turn_reminder";
         };
         Update: never;
         Relationships: [];
@@ -482,6 +482,18 @@ export interface Database {
       delete_push_subscription: {
         Args: { p_endpoint: string };
         Returns: undefined;
+      };
+      // Migration 0036: service role only; ids, timezone and a first name.
+      turn_reminder_candidates: {
+        Args: { p_min_hours?: number; p_max_hours?: number; p_limit?: number };
+        Returns: {
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          answered_by_id: string;
+          answered_by_name: string | null;
+          timezone: string;
+        }[];
       };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
