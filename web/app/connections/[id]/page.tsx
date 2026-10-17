@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily, startElective } from "@/app/actions/prompts";
 import { pickWeeklySuggestion } from "@/lib/suggestion";
-import { leaveConnection, regenerateInvite } from "@/app/actions/connections";
+import { leaveConnection, regenerateInvite, setInviteNote } from "@/app/actions/connections";
+import { INVITE_NOTE_MAX } from "@/lib/inviteNote";
 import { computeStreak } from "@/lib/streak";
 import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import InvitePanel from "@/components/InvitePanel";
@@ -80,6 +81,14 @@ const NOTICES: Record<
     tone: "success",
     text: "Name saved. Your person will see that name next to your answers.",
   },
+  "note-saved": { tone: "success", text: "Note added. It shows on the invite and in the message you share." },
+  "note-cleared": { tone: "info", text: "Note removed from the invite." },
+  "note-long": { tone: "error", text: `Keep the note under ${INVITE_NOTE_MAX} characters.` },
+  "note-link": {
+    tone: "error",
+    text: "Links can't go in the note. The invite already carries the only link they need.",
+  },
+  "note-failed": { tone: "error", text: "Couldn't save the note just now. Try again in a moment." },
   "goal-empty": { tone: "info", text: "Write the goal first, then add it." },
   "goal-full": {
     tone: "info",
@@ -170,6 +179,17 @@ export default async function ConnectionPage({
     } catch (err) {
       console.error("lazy ensureOnboardingInstance failed", id, err);
     }
+  }
+
+  // The creator's personal note on a pending invite (RLS: creator only).
+  let inviteNote: string | null = null;
+  if (user && conn.created_by === user.id && joinedCount < 2) {
+    const { data: noteRow } = await supabase
+      .from("invite_notes")
+      .select("note")
+      .eq("connection_id", id)
+      .maybeSingle();
+    inviteNote = noteRow?.note ?? null;
   }
 
   const questionCount = Array.isArray(instance?.questions)
@@ -332,6 +352,7 @@ export default async function ConnectionPage({
       })
     : null;
   const newLink = regenerateInvite.bind(null, id);
+  const saveNote = setInviteNote.bind(null, id);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -435,8 +456,37 @@ export default async function ConnectionPage({
             connectionId={id}
             url={inviteUrl}
             inviterName={myName}
+            note={inviteNote}
             inviterAnswered={!!myResponse}
           />
+          {user && conn.created_by === user.id && (
+            <details className="mt-4 rounded-2xl border border-brand-100 bg-white/70 p-3 dark:border-brand-800/60 dark:bg-surface/60" open={!!inviteNote}>
+              <summary className="cursor-pointer text-sm font-medium text-brand-800 dark:text-brand-200">
+                {inviteNote ? "Your note" : "Add a personal note (optional)"}
+              </summary>
+              <form action={saveNote} className="mt-2 space-y-2">
+                <textarea
+                  name="note"
+                  rows={2}
+                  maxLength={INVITE_NOTE_MAX}
+                  defaultValue={inviteNote ?? ""}
+                  placeholder="Why you want to do this with them, in a line or two."
+                  className="input min-h-16 text-sm"
+                />
+                <div className="flex items-center gap-3">
+                  <PendingButton
+                    className="btn-secondary shrink-0 whitespace-nowrap !px-4 !py-2 text-sm"
+                    pendingLabel="Saving…"
+                  >
+                    Save note
+                  </PendingButton>
+                  <span className="text-xs text-ink-soft/70">
+                    They see it on the invite page. Clear it to remove it.
+                  </span>
+                </div>
+              </form>
+            </details>
+          )}
           <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/70">
             {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
             <PendingButton

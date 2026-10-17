@@ -92,6 +92,11 @@ export async function GET() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Personal notes you wrote on your invites (0035; creator-only RLS).
+  const { data: inviteNotes } = await supabase
+    .from("invite_notes")
+    .select("connection_id, note, updated_at")
+    .eq("author_id", user.id);
   // Devices with notifications on (0034). Server-only table, so read with
   // the service role, scoped to this signed-in user. The endpoint works like
   // a credential, so only its push service host and dates are exported.
@@ -120,6 +125,7 @@ export async function GET() {
     insights,
     safety_events: safetyEvents,
     subscription,
+    invite_notes: inviteNotes,
     push_devices: pushDevices,
   };
 

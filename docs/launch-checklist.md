@@ -20,6 +20,9 @@ land.
 - [ ] **Migration 0033** (`invite_inviter_has_answered`, answer-first). Safe
       to apply before or after the code ships: without it the invite page
       simply omits the "they already answered" line. Service role only.
+- [ ] **Migration 0035** (`invite_notes`, the inviter's personal note).
+      Apply with this code. Without it nothing breaks; the hub's note form
+      just says it couldn't save, and the invite page shows no note.
 - [x] **Migrations 0012–0015 applied to production** (2026-09-27, via the
       Supabase MCP). 0012 (`others_have_answered`) had never been applied, so
       the "they've answered, your turn" state was silently falling back to the

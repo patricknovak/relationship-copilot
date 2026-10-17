@@ -39,6 +39,13 @@ describe("buildInviteMessage", () => {
     expect(msg).toContain(URL_);
   });
 
+  it("quotes the inviter's personal note right after the opener", () => {
+    const msg = buildInviteMessage("Sam", URL_, { note: "I miss our talks." });
+    expect(msg).toMatch(/^Sam invited you to connect on Relationship Copilot\. “I miss our talks\.” We each/);
+    expect(buildInviteMessage("Sam", URL_, { note: "  " })).not.toContain("“");
+    expect(buildInviteMessage("Sam", URL_, { note: null })).not.toContain("“");
+  });
+
   it("says the inviter already answered only when told so", () => {
     const plain = buildInviteMessage("Sam", URL_);
     expect(plain).not.toContain("already answered");

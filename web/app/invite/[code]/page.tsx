@@ -44,6 +44,7 @@ type InvitePreview =
       type: ConnectionType;
       createdBy: string | null;
       inviterName: string | null;
+      note: string | null;
       inviterAnswered: boolean;
     }
   | { status: InviteFailureStatus };
@@ -57,7 +58,7 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
 
   const { data: conn } = await admin
     .from("connections")
-    .select("id, type, created_by, invite_expires_at")
+    .select("id, type, created_by, invite_expires_at, status")
     .eq("invite_code", normalized)
     .maybeSingle();
 
@@ -96,6 +97,18 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
     inviterName = inviter?.display_name?.trim() || null;
   }
 
+  // The inviter's personal note (0035), shown only while the code is valid
+  // and the connection is still waiting for them. Leaving archives the
+  // connection without burning the code, so a leaver's note must not keep
+  // showing to whoever has the link.
+  const { data: noteRow } =
+    conn!.status === "pending"
+      ? await admin
+          .from("invite_notes")
+          .select("note")
+          .eq("connection_id", conn!.id)
+          .maybeSingle()
+      : { data: null };
   // Answer-first (0033): a boolean "they already answered", never content.
   // Failure just hides the line.
   const { data: answered } = await admin.rpc("invite_inviter_has_answered", {
@@ -108,6 +121,7 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
     type: conn!.type,
     createdBy: conn!.created_by,
     inviterName,
+    note: noteRow?.note ?? null,
     inviterAnswered: answered === true,
   };
 }
@@ -204,6 +218,16 @@ export default async function InvitePage({
         {connectionLabel(invite.type)}
         {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
+      {invite.note && (
+        <figure className="mt-5 rounded-2xl bg-paper-warm px-4 py-3 text-left">
+          <blockquote className="whitespace-pre-wrap font-display text-lg leading-snug text-ink">
+            &ldquo;{invite.note}&rdquo;
+          </blockquote>
+          <figcaption className="mt-1 text-xs text-ink-soft">
+            {invite.inviterName ? `${invite.inviterName}, to you` : "From the person who invited you"}
+          </figcaption>
+        </figure>
+      )}
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
         You&apos;ll each answer the same thoughtful questions in a private space.
         Neither of you sees the other&apos;s answers until you&apos;ve both

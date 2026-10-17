@@ -182,6 +182,12 @@ or an account action.
     unchanged: the reveal trigger needs two joined members, and the invitee
     sees nothing until they share (`supabase/tests/17_answer_first_test.sql`).
     Dailies and activities still start once both are in.
+10e. **Personal note on the invite (code). Shipped 2026-10-17 (0035).**
+    The inviter can add a line or two ("I miss our long walks") that the
+    invitee sees on the invite page and that is quoted in the shared
+    message. Plain text, 280 characters, no links (the invite page is our
+    trusted domain). Creator-only under RLS, frozen once the invite is
+    used, and it goes with the author's account.
 11. **Web push (code). Shipped 2026-10-17 (0034); needs a VAPID key pair (launch checklist §4).**
     Moved ahead of "email first": push needs no third-party account (the
     keys are self-generated and browser push services are free), while
