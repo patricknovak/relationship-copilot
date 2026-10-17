@@ -11,8 +11,10 @@ import { grokChat } from "@/lib/grok";
 import {
   blueprintSystemPrompt,
   blueprintUserPrompt,
+  intakeFromProfile,
   MAX_RECENT_FOR_BLUEPRINT,
   parseBlueprint,
+  type BlueprintIntake,
   type BlueprintQa,
 } from "@/lib/blueprint";
 import {
@@ -136,12 +138,46 @@ export async function generateBlueprint(connectionId: string) {
     }
   }
 
+  // Opt-in profile reflections (roadmap 13, migration 0037). Intake is
+  // private to its owner under RLS, so it is read with the service role, and
+  // only for members of THIS connection who chose to include it, after the
+  // membership (RLS read of the connection and responses), premium and reveal
+  // checks above. It is never displayed; it is redacted below like answers.
+  const { data: consents } = await supabase
+    .from("blueprint_intake_consent")
+    .select("user_id")
+    .eq("connection_id", connectionId);
+  const sharing = ids.filter((uid) => (consents ?? []).some((c) => c.user_id === uid));
+  const intakeRaw: Record<string, BlueprintIntake | null> = {};
+  if (sharing.length > 0) {
+    const { data: intakeRows } = await admin
+      .from("profiles")
+      .select("id, intake")
+      .in("id", sharing);
+    for (const row of intakeRows ?? []) intakeRaw[row.id] = intakeFromProfile(row.intake);
+    await logAudit(user.id, "blueprint.intake_included", connectionId, {
+      members: Object.values(intakeRaw).filter(Boolean).length,
+    });
+  }
+  const intakeText = Object.values(intakeRaw)
+    .map((x) => (x ? `${x.goals ?? ""} ${x.values ?? ""}` : ""))
+    .join("\n");
+  const redactIntake = (x: BlueprintIntake | null | undefined): BlueprintIntake | null =>
+    x
+      ? {
+          goals: x.goals ? redactor.redact(x.goals) : undefined,
+          values: x.values ? redactor.redact(x.values) : undefined,
+          attachmentStyle: x.attachmentStyle,
+        }
+      : null;
+
   // Safety assessment: regex fast path runs on the RAW text; the model-backed
   // classifier (which catches paraphrase) sees only redacted text and can
   // raise severity but never lower it. Model failure degrades to regex-only.
   const rawAll = [
     ...questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`),
     ...recentRaw,
+    intakeText,
   ].join("\n");
   const signal = await assessSafety(rawAll, redactor.redact);
 
@@ -175,7 +211,13 @@ export async function generateBlueprint(connectionId: string) {
   let bp;
   try {
     const content = await grokChat(
-      [blueprintSystemPrompt(), blueprintUserPrompt(conn!.type, qa, recentQa)],
+      [
+        blueprintSystemPrompt(),
+        blueprintUserPrompt(conn!.type, qa, recentQa, {
+          p1: redactIntake(intakeRaw[m1]),
+          p2: redactIntake(intakeRaw[m2]),
+        }),
+      ],
       { json: true },
     );
     bp = parseBlueprint(content);
@@ -200,4 +242,34 @@ export async function generateBlueprint(connectionId: string) {
   revalidatePath(`/connections/${connectionId}`);
   // Land on a clean URL (drops any stale ?error= from a previous attempt).
   redirect(`/connections/${connectionId}/blueprint`);
+}
+
+// Include (or stop including) your own private profile reflections in this
+// connection's Blueprint. RLS (0037) lets you write only your own row, and
+// only for a connection you're in. Revoking affects future Blueprints only.
+export async function setBlueprintIntakeConsent(connectionId: string, formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect(`/login?next=/connections/${connectionId}/blueprint`);
+
+  const share = formData.get("share") === "on";
+  const { error } = share
+    ? await supabase
+        .from("blueprint_intake_consent")
+        .upsert(
+          { connection_id: connectionId, user_id: user.id },
+          { onConflict: "connection_id,user_id", ignoreDuplicates: true },
+        )
+    : await supabase
+        .from("blueprint_intake_consent")
+        .delete()
+        .eq("connection_id", connectionId)
+        .eq("user_id", user.id);
+  if (error) redirect(`/connections/${connectionId}/blueprint?error=consent`);
+
+  await logAudit(user.id, share ? "blueprint.intake_consent" : "blueprint.intake_revoke", connectionId);
+  revalidatePath(`/connections/${connectionId}/blueprint`);
+  redirect(`/connections/${connectionId}/blueprint?notice=${share ? "intake-on" : "intake-off"}`);
 }
