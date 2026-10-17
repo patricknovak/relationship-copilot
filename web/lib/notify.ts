@@ -7,8 +7,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { emailConfigured, sendEmail } from "@/lib/email";
+import { parsePushSubscription, sendPush, vapidFromEnv, type VapidConfig } from "@/lib/webPush";
 import {
   buildNotificationEmail,
+  buildPushCopy,
   parseNotificationPrefs,
   PREF_FOR_KIND,
   unsubscribeUrl,
@@ -28,14 +30,77 @@ export function notifySecret(): string | null {
 
 type Admin = ReturnType<typeof createAdminClient>;
 
+// Email (Resend + NOTIFY_SECRET) and web push (VAPID) are independent
+// channels; the whole system is on when either is.
+function emailReady(): boolean {
+  return emailConfigured() && !!notifySecret();
+}
+
+export function notificationsConfigured(): boolean {
+  return emailReady() || !!vapidFromEnv();
+}
+
+// Deliver one push to every device the user opted in on. Dead subscriptions
+// (404/410) are deleted. Returns how many devices accepted it.
+async function pushToUser(
+  admin: Admin,
+  userId: string,
+  vapid: VapidConfig,
+  message: { title: string; body: string; url: string; tag: string },
+): Promise<number> {
+  const { data: rows } = await admin
+    .from("push_subscriptions")
+    .select("endpoint, p256dh, auth")
+    .eq("user_id", userId);
+  let delivered = 0;
+  for (const row of rows ?? []) {
+    // Re-validate before the server POSTs anywhere (SSRF allowlist).
+    const sub = parsePushSubscription({
+      endpoint: row.endpoint,
+      keys: { p256dh: row.p256dh, auth: row.auth },
+    });
+    if (!sub) {
+      await admin.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+      continue;
+    }
+    try {
+      const timed: typeof fetch = (url, init) =>
+        fetch(url, { ...init, signal: AbortSignal.timeout(10_000) });
+      const result = await sendPush(sub, message, vapid, timed);
+      if (result === "sent") {
+        delivered += 1;
+        await admin
+          .from("push_subscriptions")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("endpoint", row.endpoint);
+      } else if (result === "gone") {
+        await admin.from("push_subscriptions").delete().eq("endpoint", row.endpoint);
+      }
+    } catch (err) {
+      console.error("[notify] push failed", err instanceof Error ? err.message : err);
+    }
+  }
+  return delivered;
+}
+
+async function hasPushDevice(admin: Admin, userId: string): Promise<boolean> {
+  const { count } = await admin
+    .from("push_subscriptions")
+    .select("endpoint", { count: "exact", head: true })
+    .eq("user_id", userId);
+  return (count ?? 0) > 0;
+}
+
 async function recipientEmail(admin: Admin, userId: string): Promise<string | null> {
   const { data, error } = await admin.auth.admin.getUserById(userId);
   if (error || !data.user?.email) return null;
   return data.user.email;
 }
 
-// Send one notification to one user about one instance, exactly once.
-// Returns what happened so cron can report counts; never throws.
+// Send one notification to one user about one instance, exactly once, on
+// every channel that is set up (email and/or web push). The once-only claim
+// covers the event, not the channel. Returns what happened so cron can
+// report counts; never throws.
 export async function notifyUser(input: {
   admin?: Admin;
   userId: string;
@@ -47,7 +112,9 @@ export async function notifyUser(input: {
 }): Promise<"sent" | "skipped_pref" | "skipped_dup" | "skipped_config" | "failed"> {
   const admin = input.admin ?? createAdminClient();
   const secret = notifySecret();
-  if (!emailConfigured() || !secret) return "skipped_config";
+  const emailOn = emailReady();
+  const vapid = vapidFromEnv();
+  if (!emailOn && !vapid) return "skipped_config";
 
   try {
     const { data: profile } = await admin
@@ -58,7 +125,12 @@ export async function notifyUser(input: {
     const prefs = parseNotificationPrefs(profile?.preferences);
     if (!prefs[PREF_FOR_KIND[input.kind]]) return "skipped_pref";
 
-    // Claim first; a conflict means this exact email already went out.
+    // Push-only setup and this person has no device: nothing to send, and
+    // no claim, so a later device or email setup still gets the next event.
+    const pushOn = !!vapid && (await hasPushDevice(admin, input.userId));
+    if (!emailOn && !pushOn) return "skipped_config";
+
+    // Claim first; a conflict means this exact notification already went out.
     const { data: claimed, error: claimError } = await admin
       .from("notification_log")
       .insert({
@@ -69,10 +141,10 @@ export async function notifyUser(input: {
       .select("instance_id");
     if (claimError || !claimed || claimed.length === 0) return "skipped_dup";
 
-    // From here on, any failure before a confirmed send releases the claim
-    // so a later trigger can retry. A send that times out after the provider
+    // From here on, if no channel confirms delivery the claim is released so
+    // a later trigger can retry. A send that times out after the provider
     // accepted it is the one at-least-once case; a rare duplicate beats a
-    // silently lost email.
+    // silently lost notification.
     const release = () =>
       admin
         .from("notification_log")
@@ -81,36 +153,52 @@ export async function notifyUser(input: {
         .eq("user_id", input.userId)
         .eq("kind", input.kind);
 
-    let result: Awaited<ReturnType<typeof sendEmail>>;
+    const site = siteUrl();
+    const path =
+      input.kind === "partner_joined"
+        ? `/connections/${input.connectionId}`
+        : `/connections/${input.connectionId}/prompts/${input.instanceId}`;
+
+    let emailed = false;
+    let pushed = 0;
     try {
-      const to = await recipientEmail(admin, input.userId);
-      if (!to) {
-        await release();
-        return "failed";
+      if (emailOn && secret) {
+        const to = await recipientEmail(admin, input.userId);
+        if (to) {
+          const unsub = unsubscribeUrl(site, input.userId, secret);
+          const email = buildNotificationEmail({
+            kind: input.kind,
+            themName: input.themName,
+            questionText: input.questionText ?? null,
+            instanceUrl: `${site}${path}`,
+            unsubscribeUrl: unsub,
+          });
+          const result = await sendEmail({ to, ...email, unsubscribeUrl: unsub });
+          emailed = result.sent;
+        }
       }
-      const site = siteUrl();
-      const unsub = unsubscribeUrl(site, input.userId, secret);
-      const email = buildNotificationEmail({
-        kind: input.kind,
-        themName: input.themName,
-        questionText: input.questionText ?? null,
-        instanceUrl:
-          input.kind === "partner_joined"
-            ? `${site}/connections/${input.connectionId}`
-            : `${site}/connections/${input.connectionId}/prompts/${input.instanceId}`,
-        unsubscribeUrl: unsub,
-      });
-      result = await sendEmail({ to, ...email, unsubscribeUrl: unsub });
+      if (pushOn && vapid) {
+        const copy = buildPushCopy(input.kind, input.themName, input.instanceId);
+        pushed = await pushToUser(admin, input.userId, vapid, { ...copy, url: path });
+      }
     } catch (err) {
-      await release();
+      if (!emailed && pushed === 0) await release();
       throw err;
     }
-    if (!result.sent) {
+    if (!emailed && pushed === 0) {
       await release();
       return "failed";
     }
-    // PII-minimal audit: kind and instance only.
-    await logAudit(input.userId, "notify.email", input.instanceId, { kind: input.kind });
+    // PII-minimal audit: kind, instance and channels only.
+    if (emailed) {
+      await logAudit(input.userId, "notify.email", input.instanceId, { kind: input.kind });
+    }
+    if (pushed > 0) {
+      await logAudit(input.userId, "notify.push", input.instanceId, {
+        kind: input.kind,
+        devices: pushed,
+      });
+    }
     return "sent";
   } catch (err) {
     console.error("[notify] notifyUser failed", err);
@@ -127,7 +215,7 @@ export async function notifyOtherMembersAfterSubmit(input: {
   connectionId: string;
   revealed: boolean;
 }): Promise<void> {
-  if (!emailConfigured()) return;
+  if (!notificationsConfigured()) return;
   const admin = createAdminClient();
   try {
     const { data: members } = await admin
@@ -169,7 +257,7 @@ export async function notifyPartnerJoined(input: {
   joinerUserId: string;
   connectionId: string;
 }): Promise<void> {
-  if (!emailConfigured()) return;
+  if (!notificationsConfigured()) return;
   const admin = createAdminClient();
   try {
     const { data: onboarding } = await admin
@@ -219,7 +307,7 @@ export async function notifyDiscussionReply(input: {
   instanceId: string;
   connectionId: string;
 }): Promise<void> {
-  if (!emailConfigured()) return;
+  if (!notificationsConfigured()) return;
   const admin = createAdminClient();
   try {
     const { data: members } = await admin

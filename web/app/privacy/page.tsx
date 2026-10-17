@@ -53,6 +53,18 @@ export default function PrivacyPage() {
           output and show help instead. Safety features are free for everyone.
         </p>
 
+        <h2 className="text-lg font-semibold text-ink">Notifications</h2>
+        <p>
+          If you turn on notifications on a device, your browser gives us an
+          address at its push service (Google, Apple, Mozilla, or Microsoft,
+          depending on the browser). We store that address and its keys and
+          use them only to send short alerts such as &ldquo;Sam
+          answered&rdquo;. Each alert is encrypted so the push service
+          can&apos;t read it, and none ever contains your answers. Turning
+          notifications off or deleting your account removes it; signing out
+          stops notifications on that device.
+        </p>
+
         <h2 className="text-lg font-semibold text-ink">
           Cookies and analytics
         </h2>

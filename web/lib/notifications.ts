@@ -10,7 +10,8 @@ export type NotificationKind =
   | "revealed"
   | "daily_ready"
   | "partner_joined"
-  | "discussion_reply";
+  | "discussion_reply"
+  | "turn_reminder";
 
 // Which preference switch governs each kind. partner_joined rides on
 // your_turn: both mean "they moved, it's your move".
@@ -20,6 +21,7 @@ export const PREF_FOR_KIND: Record<NotificationKind, keyof NotificationPrefs> = 
   daily_ready: "daily_ready",
   partner_joined: "your_turn",
   discussion_reply: "discussion_reply",
+  turn_reminder: "your_turn",
 };
 
 export interface NotificationPrefs {
@@ -169,12 +171,21 @@ export function buildNotificationEmail(
       lead = `${who} accepted your invite on Relationship Copilot. Your first questions are unlocked for you both: answer in private, and they reveal when you've both shared.`;
       cta = "Start answering";
       break;
+    case "turn_reminder":
+      subject = `${who} is still waiting on your answers`;
+      lead = `${who} answered a while ago. Their answers stay private until you share yours, so whenever you're ready, finish yours to see both side by side. This is the only reminder we'll send for it.`;
+      cta = "Finish your answers";
+      break;
     case "daily_ready":
-    default:
       subject = "Today's question is ready";
       lead = `A new question is waiting for you and ${who}. Answer in private; it reveals when you both have.`;
       cta = "Answer today's question";
       break;
+    default: {
+      // Exhaustive: a new NotificationKind must get its own email copy.
+      const unhandled: never = input.kind;
+      throw new Error(`no email copy for ${String(unhandled)}`);
+    }
   }
 
   const question =
@@ -254,4 +265,43 @@ export function unsubscribeUrl(
   u.searchParams.set("u", userId);
   u.searchParams.set("t", unsubscribeToken(userId, secret));
   return u.toString();
+}
+
+// ---------------------------------------------------------------------------
+// Push copy. Lock screens are semi-public, so a push says even less than the
+// email: a first name and a generic line, never answer text or the question.
+// ---------------------------------------------------------------------------
+
+export interface PushNotificationCopy {
+  title: string;
+  body: string;
+  tag: string;
+}
+
+export function buildPushCopy(
+  kind: NotificationKind,
+  themName: string | null,
+  instanceId: string,
+): PushNotificationCopy {
+  const who = firstName(themName) ?? "Your person";
+  switch (kind) {
+    case "your_turn":
+      return { title: `${who} answered`, body: "Your turn. Answer to reveal both.", tag: `turn-${instanceId}` };
+    case "revealed":
+      return { title: "You both answered", body: "The reveal is open. Read it side by side.", tag: `reveal-${instanceId}` };
+    case "discussion_reply":
+      return { title: `${who} replied`, body: "They wrote under something you both answered.", tag: `reply-${instanceId}` };
+    case "partner_joined":
+      return { title: `${who} joined`, body: "Your first questions are ready.", tag: `joined-${instanceId}` };
+    case "turn_reminder":
+      // Same tag as your_turn, so the reminder replaces the first nudge.
+      return { title: `${who} is still waiting`, body: "Answer when you have a minute. It reveals when you both have.", tag: `turn-${instanceId}` };
+    case "daily_ready":
+      return { title: "Today's question is ready", body: "Answer in private. It reveals when you both have.", tag: `daily-${instanceId}` };
+    default: {
+      // Exhaustive: a new NotificationKind must get its own push copy.
+      const unhandled: never = kind;
+      throw new Error(`no push copy for ${String(unhandled)}`);
+    }
+  }
 }

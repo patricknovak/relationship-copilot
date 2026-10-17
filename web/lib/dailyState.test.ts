@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { dailyBadge, dailyCardCopy, dailyState, isValidTimeZone, todayIn, todayUtc } from "./dailyState";
+import {
+  dailyBadge,
+  dailyCardCopy,
+  dailyState,
+  firstSetBadge,
+  isValidTimeZone,
+  todayIn,
+  todayUtc,
+} from "./dailyState";
 
 describe("dailyState", () => {
   it("is none without an instance", () => {
@@ -106,5 +114,21 @@ describe("isValidTimeZone", () => {
     expect(isValidTimeZone("Not/AZone")).toBe(false);
     expect(isValidTimeZone("")).toBe(false);
     expect(isValidTimeZone(null)).toBe(false);
+  });
+});
+
+describe("firstSetBadge", () => {
+  it("tells the invitee it's their turn on the first set", () => {
+    expect(firstSetBadge("your_turn", true)).toEqual({ label: "Your turn", tone: "action" });
+  });
+  it("tells an inviter who answered first that the invite is pending", () => {
+    expect(firstSetBadge("waiting", false)?.label).toBe("Answered · invite pending");
+    expect(firstSetBadge("waiting", true)?.label).toBe("Waiting on them");
+  });
+  it("nudges both to start once both are in, and stays quiet before that", () => {
+    expect(firstSetBadge("answer", true)).toEqual({ label: "First questions", tone: "action" });
+    expect(firstSetBadge("none", true)?.label).toBe("First questions");
+    expect(firstSetBadge("answer", false)).toBeNull();
+    expect(firstSetBadge("revealed", true)).toBeNull();
   });
 });
