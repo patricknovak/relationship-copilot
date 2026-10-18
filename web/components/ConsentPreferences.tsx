@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   GTM_ID,
+  notifyConsentChange,
   readStoredConsent,
   storeConsent,
   type ConsentChoice,
@@ -47,6 +48,7 @@ export default function ConsentPreferences() {
       analytics_storage: next === "granted" ? "granted" : "denied",
     });
     if (next === "denied") clearGaCookies();
+    notifyConsentChange();
   }
 
   const label =

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   GTM_ID,
+  notifyConsentChange,
   readStoredConsent,
   shouldPromptForConsent,
   storeConsent,
@@ -72,6 +73,8 @@ export default function CookieConsent() {
       // Only analytics. Advertising signals stay denied permanently.
       window.gtag?.("consent", "update", { analytics_storage: "granted" });
     }
+    // Analytics listens and injects gtm.js in this same page view on Accept.
+    notifyConsentChange();
   }
 
   if (!show) return null;

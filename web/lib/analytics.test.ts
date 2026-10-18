@@ -3,6 +3,7 @@ import {
   CONSENT_STORAGE_KEY,
   isMeasurablePath,
   pushQuestionsCtaClick,
+  shouldLoadGtm,
   shouldPromptForConsent,
 } from "./analytics";
 
@@ -56,6 +57,17 @@ describe("shouldPromptForConsent", () => {
 
   it("never shows inside the app", () => {
     expect(shouldPromptForConsent("/connections/abc")).toBe(false);
+  });
+});
+
+describe("shouldLoadGtm", () => {
+  it("loads only on measurable paths with granted consent", () => {
+    expect(shouldLoadGtm("/", "granted")).toBe(true);
+    expect(shouldLoadGtm("/pricing", "granted")).toBe(true);
+    expect(shouldLoadGtm("/", "denied")).toBe(false);
+    expect(shouldLoadGtm("/", null)).toBe(false);
+    expect(shouldLoadGtm("/connections", "granted")).toBe(false);
+    expect(shouldLoadGtm("/invite/ABC", "granted")).toBe(false);
   });
 });
 
