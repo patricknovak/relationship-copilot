@@ -51,7 +51,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
 - **Cloudflare optimizations:**
   - **Prerendering.** The header and the public pages no longer read cookies. A tiny inline script (`lib/authHint.ts`) sets `<html data-auth="in">` before first paint when a Supabase session cookie exists, and CSS shows the matching nav and CTAs. It is a display hint only; every protected route is still checked on the server. 13 routes now prerender (`/`, `/about`, `/privacy`, `/safety`, `/terms`, the seven `/for/*` pages, not-found), up from one, and are served from the static cache (`x-vinext-cache: HIT`) with the proxy's headers still applied.
   - **Login redirects keep the query string.** `/connections/new?type=sibling` now round-trips through `/login?next=…`.
-  - **Placement** is targeted at the Supabase host, so the Worker runs next to the database (`cf-placement: local-IAD`).
+  - **Placement** is pinned to `aws:us-east-1`, the Supabase region, so the Worker runs next to the database. (Targeting the Supabase hostname picked Prague after the cutover, because Supabase is behind Cloudflare's anycast.)
   - **OG image edge cache.** vinext renders the two OG images on every request (1–2.5 s of WASM). `worker/index.ts` caches successful image responses in the Cache API for 7 days, keyed by the App Router content hash; all invite codes share one key because the invite image never varies by code (`lib/edgeCache.ts`). The Cache API is a no-op on `workers.dev`, so the first HIT can only be seen on the real domain.
 
 ## 3. URL parity (live Vercel vs. the deployed Worker on `workers.dev`)
@@ -113,11 +113,12 @@ Done: test deploy to `relationship-copilot.patricknovak1.workers.dev`, parity ch
    - Stripe → Webhooks → send a test event; expect 200.
    - `/opengraph-image` twice; the second response is a cache HIT (`cf-cache-status` or `age`).
    - Workers → Logs: a `cron_tick` line at :20 past the hour with status 200.
-5. **Agent PR:**
-   - Add `routes` with `custom_domain: true` for both hosts to `wrangler.jsonc`, so a deploy can't drift from the dashboard.
-   - Drop the deploy gate and the Vercel-specific comments.
+5. **Agent PR (merged 2026-10-18 as #101):**
+   - `routes` with `custom_domain: true` for both hosts in `wrangler.jsonc`, so a deploy can't drift from the dashboard.
+   - The `CLOUDFLARE_DEPLOY` gate is gone: every push to `main` deploys the Worker.
+   - Vercel-specific comments updated.
 6. **Patrick, retire Vercel.** Project → Settings → Git → Disconnect, so it stops building. Settings → Domains → remove both domains. Integrations → remove the **Supabase** integration from the project (it only injects the `POSTGRES_*` and `SUPABASE_*` variables the app no longer reads; the Supabase project itself is unaffected). Delete the project after 30 days.
 
 ## 6. Rollback
 
-Remove the Worker custom domains, recreate the §4 records (DNS-only), and unpause Vercel. The TTL is short.
+Remove the Worker custom domains, recreate the §4 records (DNS-only), and unpause Vercel. If the step 5 PR has merged, also revert it (or set `CLOUDFLARE_DEPLOY` handling back): its pinned `routes` would re-attach the custom domains on the next deploy. The TTL is short.
