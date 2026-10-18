@@ -14,6 +14,23 @@ export const CRON_ROUTES: Record<string, string> = {
   "40 * * * *": "/api/cron/turn-reminder",
 };
 
+/**
+ * Sentry cron monitor for a schedule: the route's last segment
+ * ("daily-reminder", "turn-reminder"), so a monitor keeps its history if the
+ * schedule changes. Undefined for an unknown schedule (no check-in).
+ */
+export function cronMonitorSlug(cron: string): string | undefined {
+  return CRON_ROUTES[cron]?.split("/").filter(Boolean).pop();
+}
+
+/** A cron route answered with a non-2xx status. Path and status only. */
+export class CronRouteError extends Error {
+  constructor(path: string, status: number) {
+    super(`cron route ${path} returned ${status}`);
+    this.name = "CronRouteError";
+  }
+}
+
 export const DEFAULT_ORIGIN = "https://relationshipcopilot.com";
 
 export interface CronEnv {

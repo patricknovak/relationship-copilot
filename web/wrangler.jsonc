@@ -19,7 +19,7 @@
     "crons": ["20 * * * *", "40 * * * *"]
   },
   // Non-secret runtime config. Secrets (Supabase service role, Stripe, xAI,
-  // GA4 API secret, Resend, CRON_SECRET, NOTIFY_SECRET) are Worker secrets,
+  // GA4 API secret, Resend, CRON_SECRET, NOTIFY_SECRET, SENTRY_DSN) are Worker secrets,
   // set with `npx wrangler secret put NAME --name relationship-copilot`;
   // deploys never touch them. NEXT_PUBLIC_* are build-time (.env.production).
   "vars": {
