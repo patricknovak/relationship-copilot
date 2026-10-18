@@ -98,10 +98,12 @@ jobs:
     needs: [web, database, e2e-core]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # A newer push cancels an older deploy so it cannot finish last.
+    # Deploys queue instead of cancelling each other (a cancelled newer run
+    # once let an older commit deploy last), and each one checks it is still
+    # the tip of main before it ships.
     concurrency:
       group: deploy-cloudflare
-      cancel-in-progress: true
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: web
@@ -120,7 +122,16 @@ jobs:
       # deploys.
       - name: Build (Cloudflare)
         run: npm run build:vinext
+      - name: Deploy only the current tip of main
+        run: |
+          tip="$(git ls-remote --quiet origin refs/heads/main | cut -f1)"
+          if [ "$tip" != "$GITHUB_SHA" ]; then
+            echo "::notice::main moved to $tip while this run was queued; a newer run deploys it. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+        id: tip
       - name: Check Cloudflare credentials
+        if: steps.tip.outputs.skip != 'true'
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "::error::Set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repo secrets; nothing was deployed."
@@ -130,6 +141,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Deploy to Cloudflare Workers
+        if: steps.tip.outputs.skip != 'true'
         run: npx wrangler deploy --config dist/server/wrangler.json --var GIT_COMMIT_SHA:${{ github.sha }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
