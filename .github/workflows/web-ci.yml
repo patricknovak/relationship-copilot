@@ -98,12 +98,14 @@ jobs:
     needs: [web, database, e2e-core]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Deploys queue instead of cancelling each other (a cancelled newer run
-    # once let an older commit deploy last), and each one checks it is still
-    # the tip of main before it ships.
-    concurrency:
-      group: deploy-cloudflare
-      cancel-in-progress: false
+    # No concurrency group here on purpose. GitHub keeps at most one pending
+    # job per group and cancels the older pending one when another arrives,
+    # so three merges in a row cancelled the deploy of the newest commit
+    # (2026-10-18, run 39149333763) while the two older runs skipped via the
+    # tip check below. Without a group every run reaches the tip check, and
+    # only the run whose commit is still the tip of main deploys; an older
+    # run cannot finish after a newer one because a newer run needs minutes
+    # of CI before it can deploy at all.
     defaults:
       run:
         working-directory: web
