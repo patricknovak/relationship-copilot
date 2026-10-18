@@ -37,8 +37,20 @@ alter policy connection_goals_insert on public.connection_goals
 alter policy connections_insert on public.connections
   with check ((created_by = (select auth.uid())));
 
+-- connections_select used to call the SECURITY DEFINER is_connection_member()
+-- per row, which the planner cannot inline, so the connections list scanned
+-- every connection. The membership test is now written out, so it uses the
+-- connection_members user index. Same rule: a joined member, or the creator.
+-- (members_select keeps the function: a policy on connection_members cannot
+-- query connection_members without recursing.)
 alter policy connections_select on public.connections
-  using ((is_connection_member(id) OR (created_by = (select auth.uid()))));
+  using (
+    (created_by = (select auth.uid()))
+    or id in (
+      select m.connection_id from public.connection_members m
+       where m.user_id = (select auth.uid()) and m.joined_at is not null
+    )
+  );
 
 alter policy connections_update on public.connections
   using ((is_connection_member(id) OR (created_by = (select auth.uid()))))
