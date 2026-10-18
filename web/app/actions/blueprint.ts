@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
 import { assessSafety } from "@/lib/safetyClassifier";
 import { logAudit } from "@/lib/audit";
-import { grokChat } from "@/lib/grok";
+import { grokChat, grokModel } from "@/lib/grok";
 import {
   blueprintSystemPrompt,
   blueprintUserPrompt,
@@ -248,7 +248,7 @@ export async function generateBlueprint(connectionId: string) {
   await finalizeInsightClaim(admin, claimId, {
     summary: bp.reflection.slice(0, 200),
     payload: bp as unknown as Json,
-    model: process.env.XAI_MODEL ?? "grok-4",
+    model: grokModel(),
     safety_flags: {
       severity: signal.severity,
       categories: signal.categories,

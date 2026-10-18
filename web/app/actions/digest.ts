@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
 import { assessSafety } from "@/lib/safetyClassifier";
 import { logAudit } from "@/lib/audit";
-import { grokChat } from "@/lib/grok";
+import { grokChat, grokModel } from "@/lib/grok";
 import {
   digestSystemPrompt,
   digestUserPrompt,
@@ -185,7 +185,7 @@ export async function generateWeeklyDigest(connectionId: string) {
   await finalizeInsightClaim(admin, claimId, {
     summary: digest.reflection.slice(0, 200),
     payload: digest as unknown as Json,
-    model: process.env.XAI_MODEL ?? "grok-4",
+    model: grokModel(),
     safety_flags: {
       severity: signal.severity,
       categories: signal.categories,
