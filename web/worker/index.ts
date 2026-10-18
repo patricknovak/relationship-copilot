@@ -10,6 +10,7 @@
 import vinextHandler from "vinext/server/fetch-handler";
 import { cronLog, cronRequest, type CronEnv } from "../lib/workerCron";
 import { edgeCacheKey, isCacheableResponse, OG_CACHE_CONTROL } from "../lib/edgeCache";
+import { canonicalRedirect } from "../lib/canonicalHost";
 
 export * from "vinext/server/fetch-handler";
 
@@ -40,6 +41,9 @@ async function cachedFetch(request: Request, env: unknown, ctx: Ctx): Promise<Re
 
 const worker = {
   fetch(request: Request, env: unknown, ctx: Ctx) {
+    // www → bare domain with the query string intact (lib/canonicalHost.ts).
+    const canonical = canonicalRedirect(request.url);
+    if (canonical) return Response.redirect(canonical, 308);
     return cachedFetch(request, env, ctx);
   },
 

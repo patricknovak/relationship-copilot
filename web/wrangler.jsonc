@@ -30,10 +30,11 @@
   // Run the Worker next to Supabase (us-east-1), where Vercel's iad1
   // functions ran. Signed-in pages make several sequential Supabase calls;
   // from a far edge each one would cross a continent. Static assets and
-  // prerendered pages are served from the edge regardless.
+  // prerendered pages are served from the edge regardless. Region, not
+  // hostname: Supabase sits behind Cloudflare's anycast, which host probes
+  // can't locate (they picked Prague, cf-placement: remote-PRG, 2026-10-18).
   "placement": {
-    "mode": "targeted",
-    "hostname": "digbnrhwsifmycrxyquo.supabase.co"
+    "region": "aws:us-east-1"
   },
   "observability": {
     "enabled": true
