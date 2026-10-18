@@ -85,7 +85,7 @@ Read from public DNS on 2026-10-14. All records are DNS-only. Vercel's IPs chang
 
 | Host | Record |
 |---|---|
-| `relationshipcopilot.com` | `A 216.150.16.193`, `A 216.150.1.193` (Vercel; possibly a flattened CNAME, so check the dashboard) |
+| `relationshipcopilot.com` | `CNAME dbcc9a4ca41351c1.vercel-dns-016.com`, DNS only (confirmed in the dashboard 2026-10-18; Cloudflare flattens it, so public DNS shows Vercel's `A 216.150.16.193` and `216.150.1.193`) |
 | `www.relationshipcopilot.com` | `CNAME dbcc9a4ca41351c1.vercel-dns-016.com` |
 
 ## 5. Steps (gates marked **Patrick**)
@@ -103,7 +103,7 @@ Done: test deploy to `relationship-copilot.patricknovak1.workers.dev`, parity ch
    Optional: `RESEND_API_KEY` (notification emails) and `XAI_NO_TRAINING_DPA` (AI stays off until it is set, as on Vercel). **Don't cut over before the first four are set:** invites and audit logs need the service-role key, and billing needs both Stripe values.
 2. **Patrick, GitHub.** Merge this PR. Add repo secrets `CLOUDFLARE_API_TOKEN` ("Edit Cloudflare Workers" template plus Zone → DNS → Edit for this zone) and `CLOUDFLARE_ACCOUNT_ID`, then set the repo variable `CLOUDFLARE_DEPLOY=true`. From then on every push to `main` deploys the Worker. Vercel keeps deploying in parallel until step 6.
 3. **Patrick, cutover.** In the Cloudflare dashboard for the zone. The bare domain is the main host, so it moves first:
-   - DNS → delete the bare-domain records that point at Vercel (today `A 216.150.16.193` and `A 216.150.1.193`). Leave the MX and TXT records alone. Then Workers → `relationship-copilot` → Settings → Domains & Routes → Add → Custom domain → `relationshipcopilot.com`. (Adding the domain while the old record exists fails with error 100117.)
+   - DNS → delete the bare-domain `CNAME dbcc9a4ca41351c1.vercel-dns-016.com` record (there are no A records; the CNAME is flattened). Leave the MX and TXT records, the `send.` records and `_acme-challenge` alone. Then Workers → `relationship-copilot` → Settings → Domains & Routes → Add → Custom domain → `relationshipcopilot.com`. (Adding the domain while the old record exists fails with error 100117.)
    - DNS → delete the `www` CNAME (`dbcc9a4ca41351c1.vercel-dns-016.com`), then add the custom domain `www.relationshipcopilot.com`. The app 308s it to the bare domain.
    - SSL/TLS → Edge Certificates → turn on **Always Use HTTPS**.
    - Or give the agent's token Zone → DNS → Edit and say go; the agent does this step.
