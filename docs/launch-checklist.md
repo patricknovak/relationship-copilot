@@ -37,10 +37,9 @@ land.
       code against a schema without it. 0015 adds `regenerate_invite` so an
       expired link can be replaced from the connection page ("Get a new
       link"). Do not re-run 0013 (it inserts content).
-- [ ] **Product decision — 14-day invite expiry** (introduced by 0014 with a
-      "confirm with product owner" note). The stranding case is covered
-      (members can mint a new link), so this is now just a question of
-      whether 14 days is the right window.
+- [x] **Product decision — 14-day invite expiry.** Decided 2026-10-18:
+      keep 14 days. Members can mint a new link from the hub when one
+      expires.
       Security advisors show only intentional items (SECURITY DEFINER RPCs
       whose grants migration 0009 already tightened; `stripe_events` is
       deny-all by design).
@@ -135,8 +134,16 @@ generation errors, and the safety classifier runs regex-only (its model
 escalation uses the same client; the regex fast path still gates).
 
 - [x] `XAI_API_KEY` present in Vercel (since Jun 11).
-- [ ] Confirm `XAI_NO_TRAINING_DPA` in Vercel matches the real DPA status
-      with xAI — only `true` once a no-training agreement is in place.
+- [x] **Decision (2026-10-18): stay on xAI.** xAI's Enterprise Terms of
+      Service §3.1 commit to no training on our content, and the DPA is
+      incorporated into those terms. Patrick confirmed no data-sharing
+      program is enabled in console.x.ai and has asked xAI for written
+      confirmation and zero data retention (ZDR).
+- [ ] Set `XAI_NO_TRAINING_DPA=true` on the Worker (Patrick):
+      `npx wrangler secret put XAI_NO_TRAINING_DPA --name relationship-copilot`.
+- [ ] File xAI's written confirmation and the ZDR answer when they arrive.
+- [x] Default model is `grok-latest` (`DEFAULT_GROK_MODEL` in
+      `web/lib/grok.ts`); `XAI_MODEL` still overrides it.
 
 ### 4. Notification emails (optional, code shipped 2026-10-13)
 
@@ -181,27 +188,13 @@ product behaves exactly as before without them.
       (it falls back to a server-only key if missing). One-click unsubscribe is at
       `/api/notifications/unsubscribe` and also set as the
       `List-Unsubscribe` header.
-- [ ] Apply migrations **0020** (daily pool, idempotent), **0021**
-      (`notification_log` + love-languages wording), **0022**
-      (`connection_has_premium`: one plan covers both people), **0023**
-      (`answer_reactions`, adds the table to the Realtime publication) and
-      **0024** (electives, idempotent), **0025** (connection time zones;
-      also moves the `assign-daily-prompts` pg_cron job from daily to hourly)
-      **0026** (`partner_joined`) and **0027** (`discussion_reply`
-      notification kinds), and **0028** (four free library articles for
-      siblings, coworkers, mentors and parent–teen; idempotent) and
-      **0029** (family, coworker and parent–teen onboarding packs extended
-      to 20 questions; idempotent, existing instances unchanged) and
-      **0030** (`connection_goals`, the shared "things we're trying" list)
-      to production.
-      0022 changes behaviour the moment it is applied: a free partner of a
-      subscriber can read and generate the Blueprint/digest for that
-      connection, as the pricing page now says.
-- [ ] **Annual plan (optional, roadmap item 8).** Create a yearly price in
-      Stripe (recommendation in the roadmap: $59.99/yr with a $9.99/mo
-      monthly), then set `NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL` and
-      `NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY` (e.g. `$59.99/yr`). The yearly
-      button renders only when both are set; the webhook needs no change.
+- [ ] **Price (decided 2026-10-18): $9.99/month and $59.99/year, one plan
+      covers both people.** Patrick creates both prices on the Premium
+      product in Stripe and sends the two price IDs; one PR then updates
+      `PREMIUM_MONTHLY_USD` (`web/lib/pricing.ts`) and the public price IDs
+      and annual display string in `web/.env.production`. Existing
+      subscribers keep the price they signed up at. The webhook needs no
+      change.
 
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 

@@ -222,7 +222,8 @@ or an account action.
     "things we're trying" list on the hub (members only, visible
     immediately, survives a member's deletion), fed to the weekly digest as
     context.
-14b. **Scheduled weekly digest.** The digest is still a manual button. A
+14b. **Scheduled weekly digest. Decided 2026-10-18: option A, generate on
+    visit.** The digest is still a manual button. A
     cron needs a service-role read of revealed-only responses, which the
     "never read responses through the admin client" rule currently forbids;
     decide whether a narrowly scoped `revealed_responses_for_digest`
@@ -265,17 +266,20 @@ tested; the reveal gate is untouched.
 2. Stripe activation + customer portal configuration, then a live
    checkout test (checklist §1). Optionally create the annual price.
 3. The Turnstile secret in Supabase so email sign-in works (checklist §2).
-4. `RESEND_API_KEY` + `CRON_SECRET` and the two pg_cron schedules, so the
-   notification loop actually runs (checklist §4).
-5. The AI provider decision (`XAI_NO_TRAINING_DPA`, or a provider whose
-   terms already exclude training), which unlocks everything premium.
-6. Decide the price (recommendation: $9.99/mo or $59.99/yr, one plan covers
-   both people). The list price is one constant now: change
-   `PREMIUM_MONTHLY_USD` in `web/lib/pricing.ts` together with the Stripe
-   price; a test fails if a price is hard-coded anywhere else.
+4. `RESEND_API_KEY` on the Worker, so the notification emails send
+   (checklist §4). `CRON_SECRET` is already set, and the Worker Cron
+   Triggers replace pg_cron for both reminder jobs.
+5. `XAI_NO_TRAINING_DPA=true` on the Worker. Decided 2026-10-18: stay on
+   xAI (Enterprise ToS §3.1, DPA incorporated); this unlocks everything
+   premium.
+6. Create the two Stripe prices and send the IDs. Decided 2026-10-18:
+   $9.99/mo and $59.99/yr, one plan covers both people.
 
-**Next engineering items**, once the above lands: scheduled weekly digest
-(needs the design call in 14b), web push (11), Cloudflare cutover (12).
+**Next engineering items** (decided 2026-10-18): error alerting with
+Sentry on the Worker (server routes and the cron, user content stripped
+before anything is sent), the weekly digest generated on visit (14b,
+option A), then the Cloudflare cutover (12) and the new price once the
+Stripe IDs exist.
 
 ## 6. What to measure
 

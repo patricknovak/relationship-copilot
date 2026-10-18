@@ -116,7 +116,7 @@ Done: test deploy to `relationship-copilot.patricknovak1.workers.dev`, parity ch
 5. **Agent PR:**
    - Add `routes` with `custom_domain: true` for both hosts to `wrangler.jsonc`, so a deploy can't drift from the dashboard.
    - Drop the deploy gate and the Vercel-specific comments.
-6. **Patrick:** pause Vercel and disconnect Git. Delete the project after 30 days.
+6. **Patrick, retire Vercel.** Project → Settings → Git → Disconnect, so it stops building. Settings → Domains → remove both domains. Integrations → remove the **Supabase** integration from the project (it only injects the `POSTGRES_*` and `SUPABASE_*` variables the app no longer reads; the Supabase project itself is unaffected). Delete the project after 30 days.
 
 ## 6. Rollback
 

@@ -6,6 +6,14 @@ export interface GrokMessage {
   content: string;
 }
 
+/** Default model when XAI_MODEL is unset. Patrick's call (2026-10-18). */
+export const DEFAULT_GROK_MODEL = "grok-latest";
+
+/** The model every AI call uses, and the name recorded on insights. */
+export function grokModel(): string {
+  return process.env.XAI_MODEL?.trim() || DEFAULT_GROK_MODEL;
+}
+
 let warnedAboutDpa = false;
 
 export async function grokChat(
@@ -34,7 +42,7 @@ export async function grokChat(
     }
   }
   const baseUrl = process.env.XAI_BASE_URL ?? "https://api.x.ai/v1";
-  const model = process.env.XAI_MODEL ?? "grok-4";
+  const model = grokModel();
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
