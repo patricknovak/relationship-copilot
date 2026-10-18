@@ -30,7 +30,7 @@
     "vinext": "1.1.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.63.1",
+    "@cloudflare/vite-plugin": "^1.64.0",
     "@playwright/test": "^1.56.0",
     "@types/node": "^25.9.9",
     "@types/react": "^19.3.0",
