@@ -199,14 +199,18 @@ product behaves exactly as before without them.
 
 ### 5. Cloudflare and database hardening (from the 2026-10-18 reviews)
 
-- [ ] **Merge the review PRs and apply their migrations**, in this order:
-      #121 (CI deploys only the current tip of `main`), #122 then apply
-      `0038_rls_initplan_and_indexes.sql` (25 policies rewritten to
-      `(select auth.uid())`, 12 FK indexes, 3 hot-path indexes), #123 then
-      apply `0039` (one article title), #124 then apply `0040` (daily
-      reminder selection in SQL, 12-char invite codes). All three migrations
-      are additive; apply via the Supabase MCP or SQL editor and record each
-      in `supabase_migrations.schema_migrations` as before.
+- [x] **Migrations 0038–0040 applied to production** (2026-10-18, via the
+      Supabase MCP, recorded in `schema_migrations`): 0038 (25 policies
+      rewritten to `(select auth.uid())`, 12 FK indexes, 3 hot-path
+      indexes), 0039 (one article title), 0040 (daily reminder selection in
+      SQL, 12-char invite codes). #121–#123 are merged and deployed; #124
+      can merge any time since 0040 is already in.
+- [ ] **Merge #124, #126 and #127.** #127 matters first: three merges in a
+      row on 2026-10-18 cancelled the deploy of the newest commit (GitHub
+      cancels the older *pending* job in a concurrency group), so nothing
+      shipped until the job was re-run by hand. Until it is merged, after
+      merging several PRs quickly, check `/api/health` shows the tip of
+      `main` and re-run the cancelled deploy job if not.
 - [ ] **Rate limiting on the public invite and login routes.** Cloudflare
       dashboard → the zone → Security → WAF → Rate limiting rules → Create:
       expression `(http.request.uri.path matches "^/invite/") or

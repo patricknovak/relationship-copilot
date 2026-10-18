@@ -120,13 +120,14 @@ codebase and stack) produced the items marked **(review)**.
    account (one curl, see PR #103) or set `XAI_MODEL`; file xAI's written
    no-training confirmation and ZDR answer when they arrive. Then the
    Supabase Turnstile secret so email sign-in works.
-2. **Merge the four open review PRs and apply migrations 0038–0040
-   (Patrick) (review).** #121 (deploy only the current tip of `main`),
-   #122 (RLS `initplan` rewrite, 12 missing FK indexes, hot-path indexes),
-   #123 (site quality: truthful AI copy, one reveal claim, icons, OG, tap
-   targets), #124 (reminder crons select in SQL with bounded batches;
-   12-character invite codes). Apply 0038, 0039 and 0040 to production
-   before or with each deploy; all three are additive.
+2. **Merge the remaining review PRs (Patrick) (review).** Merged
+   2026-10-18: #121 (deploy only the current tip of `main`), #122 (RLS
+   `initplan` rewrite, 12 missing FK indexes, hot-path indexes), #123
+   (site quality). Migrations 0038, 0039 and 0040 are applied to
+   production. Still open: #124 (reminder crons select in SQL with bounded
+   batches; 12-character invite codes), #126 (hub reads in parallel), #127
+   (deploy job without a concurrency group, after the three merges in a
+   row cancelled the tip's deploy and nothing shipped until a re-run).
 3. **Price change PR (code, waits on 1).** `PREMIUM_MONTHLY_USD`, the two
    public price IDs and the annual display string; the pricing page already
    shows the yearly button once the env is set.
@@ -232,9 +233,10 @@ through 0037 are applied to production; the Worker holds its ten secrets
 (Supabase, Stripe, xAI with `XAI_NO_TRAINING_DPA=true`, cron, notify,
 VAPID).
 
-**Open draft PRs from the reviews** (Patrick merges): #121 CI deploy guard,
-#122 RLS performance and indexes, #123 site quality, #124 cron batching and
-invite codes. Migrations 0038–0040 ship with them.
+**Review PRs:** #121, #122 and #123 merged 2026-10-18 and deployed
+(`524624c`); migrations 0038–0040 applied to production the same day. Open
+drafts: #124 cron batching and invite codes (0040 is already applied, so it
+can merge any time), #126 hub reads in parallel, #127 CI deploy fix.
 
 **Review findings that need no action:** the signed-in loop passes end to
 end under Playwright (two users, invite, answer-first, join, both share,
@@ -252,7 +254,7 @@ incidents happened.
 **What only Patrick can do next**, in order of unlock:
 
 1. Send the two Stripe price IDs; the Sentry DSN; `RESEND_API_KEY`.
-2. Merge #121–#124 and apply 0038–0040 (each PR body has the deploy note).
+2. Merge #124, #126 and #127 (their migrations are already applied).
 3. Confirm `grok-latest` (or set `XAI_MODEL`); file the xAI letter.
 4. The Turnstile secret in Supabase so email sign-in works.
 5. Cloudflare rate-limiting rule on `/invite/*` and `/login`; retire
