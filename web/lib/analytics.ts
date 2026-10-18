@@ -68,6 +68,27 @@ export function storeConsent(choice: ConsentChoice): void {
   }
 }
 
+/** Browser event so Analytics can inject GTM in the same page view as Accept. */
+export const CONSENT_CHANGE_EVENT = "rc-analytics-consent";
+
+/** Notify listeners (Analytics) that stored consent changed. */
+export function notifyConsentChange(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(CONSENT_CHANGE_EVENT));
+}
+
+/**
+ * GTM must not load until analytics consent is granted. Consent Mode
+ * "advanced" (load tags while denied) sends cookieless pings that contradict
+ * the privacy policy — we use basic: no gtm.js until Accept.
+ */
+export function shouldLoadGtm(
+  pathname: string,
+  consent: ConsentChoice | null,
+): boolean {
+  return isMeasurablePath(pathname) && consent === "granted";
+}
+
 declare global {
   interface Window {
     dataLayer?: Record<string, unknown>[];

@@ -3,8 +3,10 @@ import { CONSENT_STORAGE_KEY } from "@/lib/analytics";
 // Google Consent Mode v2 defaults. This must run BEFORE the GTM snippet, so
 // it is inlined as a blocking script in <head> — same approach as ThemeScript.
 //
-// Everything starts denied. Google's tags still load but buffer instead of
-// writing cookies or sending identifiers until the visitor accepts.
+// Everything starts denied. GTM itself is not injected until Accept
+// (see Analytics.tsx) — Consent Mode "advanced" cookieless pings would
+// contradict the privacy policy. This script only defines gtag + defaults
+// so an Accept click can update analytics_storage before gtm.js loads.
 //
 // The advertising signals are denied here and never granted anywhere in the
 // app: we run no ad products, and the privacy policy promises we don't share

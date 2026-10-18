@@ -1,25 +1,45 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { GTM_ID, isMeasurablePath } from "@/lib/analytics";
+import {
+  CONSENT_CHANGE_EVENT,
+  GTM_ID,
+  readStoredConsent,
+  shouldLoadGtm,
+  type ConsentChoice,
+} from "@/lib/analytics";
 
-// Loads Google Tag Manager, but only while the visitor is on the public
-// marketing surface. Deep-linking straight into the app (say, an invite link)
-// never loads it at all.
+// Loads Google Tag Manager only after the visitor has granted analytics
+// consent, and only on the public marketing surface.
 //
-// Once loaded the snippet stays in the document for the rest of the session,
-// so the container carries the same boundary as a second line of defence: its
-// GA4 tags fire on "Marketing Pages" triggers whose Page Path must not match
-// ^/(connections|account|onboarding|auth|invite).
+// We intentionally do NOT use Consent Mode "advanced" (load tags while
+// denied). That mode still sends cookieless page_view hits to Google, which
+// contradicts the privacy policy ("if you decline, nothing is stored or
+// sent"). Defaults stay denied in ConsentDefaults; this component simply
+// never injects gtm.js until Accept.
 //
-// There is deliberately no <noscript> iframe fallback — it would fire a
-// pageview that cannot honour Consent Mode.
+// On Accept in the same page view, CookieConsent stores consent, updates
+// gtag consent, and dispatches CONSENT_CHANGE_EVENT so we mount the loader
+// without a reload. Returning visitors with stored "granted" load GTM on
+// first paint of public pages.
 export default function Analytics({ nonce }: { nonce?: string }) {
   const pathname = usePathname();
+  const [consent, setConsent] = useState<ConsentChoice | null | "loading">(
+    "loading",
+  );
+
+  useEffect(() => {
+    setConsent(readStoredConsent());
+    const onChange = () => setConsent(readStoredConsent());
+    window.addEventListener(CONSENT_CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(CONSENT_CHANGE_EVENT, onChange);
+  }, []);
 
   if (!GTM_ID) return null;
-  if (!isMeasurablePath(pathname)) return null;
+  if (consent === "loading") return null;
+  if (!shouldLoadGtm(pathname, consent)) return null;
 
   return (
     <Script id="gtm-loader" strategy="afterInteractive" nonce={nonce}>
