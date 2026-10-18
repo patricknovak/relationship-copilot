@@ -1,11 +1,10 @@
 # Go-live checklist
 
 Status audited 2026-07-31 against the real infrastructure (Supabase project
-`digbnrhwsifmycrxyquo`, Vercel project `relationship-copilot`, production at
-https://relationshipcopilot.com); code status refreshed 2026-10-13 with
-PR #81 (migrations 0020–0030, notification email, see `docs/ROADMAP.md`
-§5 for the ordered list of what remains). Update the checkboxes as items
-land.
+`digbnrhwsifmycrxyquo`, production at https://relationshipcopilot.com);
+code status refreshed 2026-10-18 after the Cloudflare cutover and the
+market / site / stack reviews (see `docs/ROADMAP.md` §5 for the ordered
+list of what remains). Update the checkboxes as items land.
 
 ## Already done (verified)
 
@@ -43,12 +42,14 @@ land.
       Security advisors show only intentional items (SECURITY DEFINER RPCs
       whose grants migration 0009 already tightened; `stripe_events` is
       deny-all by design).
-- [x] **Hosting** — Vercel production is READY at the latest `main` commit,
-      auto-deploying from GitHub. Domains `relationshipcopilot.com` + `www`
-      attached; `NEXT_PUBLIC_SITE_URL` is set correctly (sitemap emits the
-      real domain). `/`, `/pricing`, `/login`, `/safety`, `robots.txt`,
-      `sitemap.xml` all return 200. No production runtime errors in the last
-      7 days.
+- [x] **Hosting** — production is the Cloudflare Worker
+      `relationship-copilot` since 2026-10-18 (`docs/CLOUDFLARE_MIGRATION.md`):
+      custom domains `relationshipcopilot.com` + `www` (Worker-level 308 to
+      apex, query string kept), region placement `aws:us-east-1`, Cron
+      Triggers at :20 and :40, ten secrets set, deploys from `main` by CI
+      after unit, SQL and e2e tests. `/`, `/pricing`, `/login`, `/safety`,
+      `robots.txt`, `sitemap.xml` return 200 on the live host. Vercel is
+      still provisioned as the rollback until it is retired (§5).
 
 ## Blocking launch
 
@@ -196,6 +197,50 @@ product behaves exactly as before without them.
       subscribers keep the price they signed up at. The webhook needs no
       change.
 
+### 5. Cloudflare and database hardening (from the 2026-10-18 reviews)
+
+- [x] **Migrations 0038–0040 applied to production** (2026-10-18, via the
+      Supabase MCP, recorded in `schema_migrations`): 0038 (25 policies
+      rewritten to `(select auth.uid())`, 12 FK indexes, 3 hot-path
+      indexes), 0039 (one article title), 0040 (daily reminder selection in
+      SQL, 12-char invite codes). #121–#123 are merged and deployed; #124
+      can merge any time since 0040 is already in.
+- [ ] **Merge #124, #126 and #127.** #127 matters first: three merges in a
+      row on 2026-10-18 cancelled the deploy of the newest commit (GitHub
+      cancels the older *pending* job in a concurrency group), so nothing
+      shipped until the job was re-run by hand. Until it is merged, after
+      merging several PRs quickly, check `/api/health` shows the tip of
+      `main` and re-run the cancelled deploy job if not.
+- [ ] **Rate limiting on the public invite and login routes.** Cloudflare
+      dashboard → the zone → Security → WAF → Rate limiting rules → Create:
+      expression `(http.request.uri.path matches "^/invite/") or
+      (http.request.uri.path eq "/login")`, characteristics IP, 30 requests
+      per 10 seconds, action Block for 10 seconds. Invite codes are now 12
+      characters (60 bits), so this is belt and braces against enumeration,
+      and it also throttles magic-link spam.
+- [ ] **Schema drift: `public.mission_control_counts`.** Production has
+      this function (anon-executable, `SECURITY DEFINER`, passcode-gated
+      aggregate counts) and the repository does not. Either commit it as
+      migration 0041 (with the passcode moved to a Worker secret and the
+      function restricted to `service_role`) or drop it. Decide before the
+      next migration so `supabase/tests/run.sh` keeps matching production.
+- [ ] **Retire the pg_cron `assign-daily-prompts` job** one week after
+      #124 deploys, once Workers Logs show `cron_tick` for
+      `/api/cron/daily-reminder` with `created` > 0 on a day a pair was
+      active. Supabase → Integrations → Cron → unschedule. Harmless while
+      both run; `ensure_daily_prompt` is idempotent.
+- [ ] **Retire Vercel.** Project settings → Integrations → remove the
+      Supabase integration first (so it stops syncing env vars), then delete
+      the project. Keep the DNS as it is (Cloudflare proxied to the Worker).
+- [ ] **Delete the stale remote branches** the merge pass left (their PRs
+      are merged): `claude/cloudflare-cutover`, `claude/decisions-oct18`,
+      `claude/digest-on-visit`, `claude/post-cutover`,
+      `claude/post-cutover-fixes`, `claude/relationship-copilot-review-y373ct`,
+      `claude/relationship-program-review-3ixZU`, `claude/sentry-worker`,
+      `cursor/stripe-api-version-fbe0`, plus any `cursor/*` or `dependabot/*`
+      branch whose PR is closed. `git push origin --delete <branch>` for
+      each; branch deletion is blocked from the cloud session.
+
 ## Error alerting (Sentry, decided 2026-10-18)
 
 Code shipped: `@sentry/cloudflare` wraps the Worker (`web/worker/index.ts`).
@@ -239,7 +284,8 @@ a sanitised first line of the message, stack frames, the route pattern
       new 0013 onboarding pack loads (this was the broken path).
 - [ ] 20-question onboarding both sides → mutual reveal fires live
       (Realtime) → discussion thread.
-- [ ] Daily prompt appears; cron fires 08:05 UTC next day.
+- [ ] Daily prompt appears; the Worker cron creates and reminds inside the
+      connection's 9am–8pm local window (`cron_tick` at :20 in Workers Logs).
 - [ ] Premium checkout → Blueprint generates → weekly digest.
 - [ ] Data export downloads; account deletion redacts while the partner
       keeps their content.
