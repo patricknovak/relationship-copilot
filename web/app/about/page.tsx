@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   description:
     "Closer, on purpose. Relationship Copilot helps people stay close with prompts you answer privately and only share together.",
   alternates: { canonical: canonicalUrl("/about") },
+  openGraph: {
+    title: "About — Relationship Copilot",
+    description:
+      "Closer, on purpose. Relationship Copilot helps people stay close with prompts you answer privately and only share together.",
+    url: canonicalUrl("/about"),
+  },
 };
 
 // Static (prerendered); CTAs follow the auth hint, see components/AuthHint.tsx.
@@ -73,8 +79,7 @@ export default function AboutPage() {
           <li>
             Optional AI features (like Blueprint) strip names, emails, and phone
             numbers before anything leaves our systems, and run safety
-            screening. Production AI stays off until a no-training agreement
-            with the provider is in place.
+            screening. Our agreement with the AI provider (xAI) does not permit training its models on your content.
           </li>
           <li>
             Crisis and safety resources are always free — never locked behind

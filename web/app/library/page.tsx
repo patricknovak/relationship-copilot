@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description:
     "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
   alternates: { canonical: canonicalUrl("/library") },
+  openGraph: {
+    title: "Library — Relationship Copilot",
+    description:
+      "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
+    url: canonicalUrl("/library"),
+  },
 };
 
 // Evidence-based education. RLS returns free articles to everyone and premium
@@ -51,9 +57,14 @@ export default async function LibraryPage() {
               )}
               {a.evidence_rating != null && (
                 <p className="mt-2 text-xs text-brand-600/90 dark:text-brand-300">
-                  Evidence: {"★".repeat(a.evidence_rating)}
-                  <span className="text-brand-300">
-                    {"★".repeat(Math.max(0, 5 - a.evidence_rating))}
+                  <span className="sr-only">
+                    Evidence rating {a.evidence_rating} out of 5
+                  </span>
+                  <span aria-hidden>
+                    Evidence: {"★".repeat(a.evidence_rating)}
+                    <span className="text-brand-300">
+                      {"☆".repeat(Math.max(0, 5 - a.evidence_rating))}
+                    </span>
                   </span>
                 </p>
               )}

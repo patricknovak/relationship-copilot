@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   description:
     "Immediate, free support resources. If you are in danger, call your local emergency number.",
   alternates: { canonical: canonicalUrl("/safety") },
+  openGraph: {
+    title: "Safety & Support — Relationship Copilot",
+    description:
+      "Immediate, free support resources. If you are in danger, call your local emergency number.",
+    url: canonicalUrl("/safety"),
+  },
 };
 
 type Resource = {

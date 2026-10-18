@@ -5,7 +5,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Relationship Copilot",
-    short_name: "Copilot",
+    short_name: "Rel Copilot",
     description:
       "Answer thoughtful questions together — and see each other's answers only when you've both shared.",
     start_url: "/",
@@ -18,6 +18,14 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",
+      },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      {
+        src: "/icons/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };

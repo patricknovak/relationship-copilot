@@ -65,7 +65,7 @@ export default function HeaderNav() {
       {/* Safety must be reachable from every screen, at every width. */}
       <Link
         href="/safety"
-        className="rounded-full px-2 py-1.5 font-medium text-rose-700 hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
+        className="rounded-full px-2 py-2.5 font-medium text-rose-700 hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
       >
         Safety
       </Link>
@@ -102,7 +102,7 @@ export default function HeaderNav() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
-        className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft hover:bg-surface-line/60 sm:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-full text-ink-soft hover:bg-surface-line/60 sm:hidden"
       >
         <svg
           viewBox="0 0 24 24"

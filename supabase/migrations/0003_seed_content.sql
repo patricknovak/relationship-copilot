@@ -197,7 +197,7 @@ insert into education_articles (slug,title,summary,body,category,relationship_ty
  E'Adult attachment varies along two dimensions: anxiety (fear of rejection) and avoidance (discomfort with closeness). Neither is a flaw. Knowing your patterns — and your person''s — helps you respond with compassion instead of reactivity.',
  'attachment', null, 'attachment', 5, false),
 ('36-questions',
- 'The science behind "20 questions"',
+ 'The science behind the "36 questions"',
  'Escalating mutual self-disclosure reliably builds closeness — even between strangers.',
  E'Aron''s closeness-generating procedure showed that taking turns answering increasingly personal questions builds real intimacy. That''s exactly why answering together — and only seeing each other''s answers once you''ve both shared — works.',
  'connection', null, 'aron', 4, false),

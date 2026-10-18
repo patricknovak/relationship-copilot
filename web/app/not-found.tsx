@@ -24,8 +24,11 @@ export default function NotFound() {
           <Link href="/" className="btn-primary">
             Go home
           </Link>
-          <Link href="/connections" className="btn-secondary">
+          <Link href="/connections" className="btn-secondary auth-in">
             Your connections
+          </Link>
+          <Link href="/library" className="btn-secondary auth-out">
+            Browse the library
           </Link>
         </div>
       </div>

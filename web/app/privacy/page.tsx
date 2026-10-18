@@ -5,7 +5,13 @@ import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
+  description:
+    "What Relationship Copilot stores, who can see it, how AI features handle your words, and how to export or delete everything.",
   alternates: { canonical: canonicalUrl("/privacy") },
+  openGraph: {
+    title: "Privacy Policy — Relationship Copilot",
+    url: canonicalUrl("/privacy"),
+  },
 };
 
 // Keep this page in sync with what the code really does; it is a description,
@@ -49,8 +55,8 @@ export default function PrivacyPage() {
           that reflection. On a Premium connection the weekly digest is
           written automatically, at most once a week, when either of you opens
           the connection and you have revealed answers from that week.
-          Production AI stays off until a no-training
-          agreement with the provider is in place. Safety screening runs before
+          Our agreement with xAI does not permit using your content to train
+          its models. Safety screening runs before
           any AI output, and high-severity signals on answers also surface
           support resources: content suggesting danger leads us to withhold AI
           output and show help instead. Safety features are free for everyone.

@@ -34,7 +34,14 @@ export const metadata: Metadata = {
     template: "%s — Relationship Copilot",
   },
   description:
-    "Answer thoughtful questions together and see each other's answers only when you've both shared — for partners, friends, family, and coworkers, across the whole arc of a relationship.",
+    "Answer thoughtful questions together and see each other's answers only when you've both shared — for partners, friends, siblings, parents and teens, coworkers, and mentors.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "Relationship Copilot",
@@ -91,8 +98,9 @@ export default async function RootLayout({
                   Relationship&nbsp;Copilot
                 </p>
                 <p className="mt-2 text-sm leading-relaxed">
-                  Closer, on purpose — for partners, friends, family, and
-                  coworkers, across the whole arc of a relationship.
+                  Closer, on purpose — for partners, friends, siblings,
+                  parents and teens, coworkers, and mentors, across the whole
+                  arc of a relationship.
                 </p>
               </div>
               <div className="text-sm">

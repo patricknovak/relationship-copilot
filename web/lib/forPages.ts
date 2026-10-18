@@ -23,7 +23,7 @@ export interface ForPage {
 const SHARED_FAQS: { q: string; a: string }[] = [
   {
     q: "Can they see my answer before I see theirs?",
-    a: "No. Each of you answers in private, and neither answer is shown until both are in. That rule is enforced in the database, not just the app, so there is no way to peek.",
+    a: "No. Each of you answers in private, and neither answer is shown until both are in. That rule is enforced in the database itself, not only in the app, so no screen can show one answer early.",
   },
   {
     q: "Is it free?",

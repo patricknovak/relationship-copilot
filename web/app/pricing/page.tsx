@@ -7,6 +7,7 @@ import NoticeBanner from "@/components/NoticeBanner";
 import { canonicalUrl } from "@/lib/site";
 import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
+import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -14,6 +15,11 @@ export const metadata: Metadata = {
   // (no shared display-price constant in the codebase).
   description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the core library and Safety. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and more.`,
   alternates: { canonical: canonicalUrl("/pricing") },
+  openGraph: {
+    title: "Pricing — Relationship Copilot",
+    description: `Free for the core experience. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests, and covers both people.`,
+    url: canonicalUrl("/pricing"),
+  },
 };
 
 const FREE = [
@@ -37,7 +43,7 @@ const PREMIUM = [
 const ANNUAL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_ANNUAL;
 const ANNUAL_DISPLAY = process.env.NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY;
 
-// Verifiable claims only. The "train AI" item is held until P11 confirms an xAI no-training agreement.
+// Verifiable claims only — every line here mirrors Privacy and About.
 const FAQS: { q: string; a: string }[] = [
   {
     q: "What's free?",
@@ -49,7 +55,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can the other person see my answers early?",
-    a: "No. The rule that hides an answer until you've both shared is built into how the product works, not just the app.",
+    a: "No. The rule that hides an answer until you've both shared is enforced in the database itself, not only in the app.",
+  },
+  {
+    q: "Is my data used to train AI?",
+    a: "No. Our agreement with the AI provider (xAI) does not permit training its models on your content. Names, emails, and phone numbers are stripped before anything is sent, and AI features are optional.",
   },
   {
     q: "Is Safety ever paywalled?",
@@ -73,6 +83,16 @@ export default async function PricingPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14">
+      {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: faqPageJsonLdScriptContent({
+            url: canonicalUrl("/pricing"),
+            faqs: FAQS,
+          }),
+        }}
+      />
       <p className="eyebrow text-center">Pricing</p>
       <h1 className="mt-3 text-center text-4xl">Simple, honest pricing</h1>
       <p className="mt-3 text-center text-ink-soft">
