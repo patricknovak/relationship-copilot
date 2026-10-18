@@ -222,15 +222,14 @@ or an account action.
     "things we're trying" list on the hub (members only, visible
     immediately, survives a member's deletion), fed to the weekly digest as
     context.
-14b. **Scheduled weekly digest. Decided 2026-10-18: option A, generate on
-    visit.** The digest is still a manual button. A
-    cron needs a service-role read of revealed-only responses, which the
-    "never read responses through the admin client" rule currently forbids;
-    decide whether a narrowly scoped `revealed_responses_for_digest`
-    SECURITY DEFINER function is acceptable before building it. Options and
-    a recommendation (generate on visit now; the definer function only once
-    digests are delivered by email or push):
-    `docs/decisions/0001-scheduled-weekly-digest.md`.
+14b. **Weekly digest on visit. Shipped 2026-10-18 (decision 0001, option
+    A).** When a member of a Premium connection opens the hub and the last
+    digest is a week old, it is written after the page is sent, in that
+    member's session (the RLS gate still decides what the AI sees), and is
+    there on the next visit; the button stays. The privacy policy and the
+    card say it happens automatically. A cron-driven digest (option B: a
+    narrow revealed-only definer function) waits until digests are
+    delivered by email or push: `docs/decisions/0001-scheduled-weekly-digest.md`.
 15. **Parent–teen consent flow (COPPA / GDPR-K)** before under-13 use.
 16. **Native wrapper** (Capacitor) if push + PWA prove insufficient for
     retention on mobile.

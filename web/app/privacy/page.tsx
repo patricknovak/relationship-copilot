@@ -46,7 +46,10 @@ export default function PrivacyPage() {
           our AI provider
           (xAI&apos;s Grok) with names, email addresses, and phone numbers
           removed first (best-effort redaction). They are used only to produce
-          that reflection. Production AI stays off until a no-training
+          that reflection. On a Premium connection the weekly digest is
+          written automatically, at most once a week, when either of you opens
+          the connection and you have revealed answers from that week.
+          Production AI stays off until a no-training
           agreement with the provider is in place. Safety screening runs before
           any AI output, and high-severity signals on answers also surface
           support resources: content suggesting danger leads us to withhold AI
