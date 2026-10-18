@@ -121,23 +121,62 @@ export default async function ConnectionPage({
     .maybeSingle();
   if (!conn) notFound();
 
-  const { data: members } = await supabase
-    .from("connection_members")
-    .select("user_id, role, joined_at")
-    .eq("connection_id", id);
+  // Reads that need only the connection row run together; the ones below
+  // that depend on these (the other person's name, my response, today's
+  // flags) follow. Same queries as before, same RLS, fewer round trips.
+  const localToday = todayIn(conn.timezone);
+  const streakFrom = new Date(`${localToday}T00:00:00Z`);
+  streakFrom.setUTCDate(streakFrom.getUTCDate() - 400);
+  const [
+    { data: members },
+    { data: me },
+    { data: onboardingRow },
+    { data: dailies },
+    { data: dailyRow },
+    { data: noteRow },
+  ] = await Promise.all([
+    supabase
+      .from("connection_members")
+      .select("user_id, role, joined_at")
+      .eq("connection_id", id),
+    // Used to personalize the outgoing invite message ("Sam invited you…")
+    // and to nudge name-less users (email invitees who skipped onboarding).
+    user
+      ? supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("prompt_instances")
+      .select("id, status, questions")
+      .eq("connection_id", id)
+      .eq("kind", "onboarding")
+      .maybeSingle(),
+    // Daily streak (gamification) from revealed daily instances. Only the
+    // recent window matters — streaks longer than ~14 months aren't shown
+    // as a bigger number in a way that needs the full history.
+    supabase
+      .from("prompt_instances")
+      .select("scheduled_for")
+      .eq("connection_id", id)
+      .eq("kind", "daily")
+      .eq("status", "revealed")
+      .gte("scheduled_for", streakFrom.toISOString().slice(0, 10)),
+    // Today's daily, if cron already created it (members only under RLS).
+    conn.status === "active" && user
+      ? supabase
+          .from("prompt_instances")
+          .select("id, status, questions")
+          .eq("connection_id", id)
+          .eq("kind", "daily")
+          .eq("scheduled_for", localToday)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // The creator's personal note on a pending invite (RLS: creator only).
+    user && conn.created_by === user.id && conn.status === "pending"
+      ? supabase.from("invite_notes").select("note").eq("connection_id", id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
   const joinedCount = (members ?? []).filter((m) => m.joined_at).length;
-
-  // Used to personalize the outgoing invite message ("Sam invited you…") and
-  // to nudge name-less users (e.g. email invitees who skipped onboarding).
-  let myName: string | null = null;
-  if (user) {
-    const { data: me } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle();
-    myName = me?.display_name?.trim() || null;
-  }
+  const myName = me?.display_name?.trim() || null;
 
   // The other person's name for the heading and the daily card. Read through
   // the partner_profiles view, which exposes only display fields of people
@@ -155,12 +194,7 @@ export default async function ConnectionPage({
     themName = them?.display_name?.trim() || null;
   }
 
-  let { data: instance } = await supabase
-    .from("prompt_instances")
-    .select("id, status, questions")
-    .eq("connection_id", id)
-    .eq("kind", "onboarding")
-    .maybeSingle();
+  let instance = onboardingRow;
 
   // Lazy backfill for pairs who joined before acceptInvite started creating
   // the instance. Idempotent; failure keeps the EMPTY_STATE Start answering
@@ -181,16 +215,7 @@ export default async function ConnectionPage({
     }
   }
 
-  // The creator's personal note on a pending invite (RLS: creator only).
-  let inviteNote: string | null = null;
-  if (user && conn.created_by === user.id && joinedCount < 2) {
-    const { data: noteRow } = await supabase
-      .from("invite_notes")
-      .select("note")
-      .eq("connection_id", id)
-      .maybeSingle();
-    inviteNote = noteRow?.note ?? null;
-  }
+  const inviteNote = joinedCount < 2 ? (noteRow?.note ?? null) : null;
 
   const questionCount = Array.isArray(instance?.questions)
     ? (instance.questions as PromptQuestion[]).length
@@ -214,26 +239,10 @@ export default async function ConnectionPage({
     }
   }
 
-  // Daily streak (gamification) from revealed daily instances. Only the
-  // recent window matters — streaks longer than ~14 months aren't shown as a
-  // bigger number in a way that needs the full history.
-  let streak = 0;
-  {
-    const today = todayIn(conn.timezone);
-    const from = new Date(`${today}T00:00:00Z`);
-    from.setUTCDate(from.getUTCDate() - 400);
-    const { data: dailies } = await supabase
-      .from("prompt_instances")
-      .select("scheduled_for")
-      .eq("connection_id", id)
-      .eq("kind", "daily")
-      .eq("status", "revealed")
-      .gte("scheduled_for", from.toISOString().slice(0, 10));
-    const dates = (dailies ?? [])
-      .map((d) => d.scheduled_for)
-      .filter((x): x is string => !!x);
-    streak = computeStreak(dates, today);
-  }
+  const streak = computeStreak(
+    (dailies ?? []).map((d) => d.scheduled_for).filter((x): x is string => !!x),
+    localToday,
+  );
 
   // Today's question, inline. The instance is pre-created by cron for active
   // connections; ensure_daily_prompt is the idempotent fallback (members
@@ -245,14 +254,8 @@ export default async function ConnectionPage({
     state: ReturnType<typeof dailyState>;
   } | null = null;
   if (conn.status === "active" && user) {
-    const date = todayIn(conn.timezone);
-    let { data: daily } = await supabase
-      .from("prompt_instances")
-      .select("id, status, questions")
-      .eq("connection_id", id)
-      .eq("kind", "daily")
-      .eq("scheduled_for", date)
-      .maybeSingle();
+    const date = localToday;
+    let daily = dailyRow;
     if (!daily) {
       const { data: ensuredId } = await supabase.rpc("ensure_daily_prompt", {
         p_conn: id,
@@ -319,7 +322,7 @@ export default async function ConnectionPage({
     suggestion = pickWeeklySuggestion(
       (electives ?? []).map((t) => ({ ...t, title: t.title ?? "", kind: t.kind })),
       done,
-      todayIn(conn.timezone),
+      localToday,
     );
   }
 
