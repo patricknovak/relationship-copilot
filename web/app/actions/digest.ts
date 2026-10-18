@@ -3,197 +3,33 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { buildRedactor } from "@/lib/redact";
-import { assessSafety } from "@/lib/safetyClassifier";
-import { logAudit } from "@/lib/audit";
-import { grokChat } from "@/lib/grok";
-import {
-  digestSystemPrompt,
-  digestUserPrompt,
-  parseDigest,
-  type DigestItem,
-} from "@/lib/digest";
-import {
-  claimInsightSlot,
-  finalizeInsightClaim,
-  releaseInsightClaim,
-} from "@/lib/insightRateLimit";
-import type { PromptQuestion, Json } from "@/lib/database.types";
+import { runWeeklyDigest } from "@/lib/weeklyDigest";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const MIN_GAP_MS = 6 * 24 * 60 * 60 * 1000; // one digest per ~week
-const MAX_ITEMS = 24; // cap prompt size
-
-// Weekly AI digest of the last 7 days of revealed answers. Same contract as
-// the Blueprint: premium-gated generation, safety assessment first (high
-// severity withholds output and surfaces support), redaction before anything
-// reaches the model. Reads go through the user's session client, so the
-// reveal gate in RLS bounds exactly what the digest can see.
+// "Generate weekly digest" button. The work lives in lib/weeklyDigest.ts,
+// shared with generate-on-visit; this maps its outcome to where the person
+// lands. Predictable failures come back to the connection page as a banner
+// (?notice=…) instead of the generic crash boundary.
 export async function generateWeeklyDigest(connectionId: string) {
-  // Predictable failures land back on the connection page as a banner
-  // (?notice=…) instead of the generic crash boundary.
-  const back = (code: string): never =>
-    redirect(`/connections/${connectionId}?notice=${code}`);
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/connections/${connectionId}`);
 
-  const { data: conn } = await supabase
-    .from("connections")
-    .select("id, type, status")
-    .eq("id", connectionId)
-    .maybeSingle();
-  if (!conn || conn.status !== "active") redirect("/connections");
-
-  // Premium covers the connection: either member's plan unlocks the digest.
-  const { data: isPremium } = await supabase.rpc("connection_has_premium", {
-    p_conn: connectionId,
-  });
-  if (!isPremium) back("digest-premium");
-
-  // Last week's revealed activity (daily questions, quizzes, challenges).
-  const since = new Date(Date.now() - WEEK_MS).toISOString();
-  const { data: instances } = await supabase
-    .from("prompt_instances")
-    .select("id, kind, questions, revealed_at, template_id")
-    .eq("connection_id", connectionId)
-    .eq("status", "revealed")
-    .gte("revealed_at", since)
-    .order("revealed_at", { ascending: true });
-  if (!instances || instances.length === 0) back("digest-empty");
-
-  const instanceIds = (instances ?? []).map((i) => i.id);
-  const { data: responses } = await supabase
-    .from("prompt_responses")
-    .select("instance_id, user_id, answers")
-    .in("instance_id", instanceIds);
-
-  const { data: members } = await supabase
-    .from("connection_members")
-    .select("user_id")
-    .eq("connection_id", connectionId)
-    .not("joined_at", "is", null);
-  // Sorted so which participant is P1 is stable across regenerations.
-  const ids = (members ?? []).map((m) => m.user_id).sort();
-  if (ids.length < 2) back("digest-solo");
-  const [m1, m2] = ids;
-
-  const { data: profiles } = await supabase
-    .from("partner_profiles")
-    .select("id, display_name")
-    .in("id", ids);
-  const nameFor = (uid: string) =>
-    profiles?.find((p) => p.id === uid)?.display_name ?? "";
-  const redactor = buildRedactor([nameFor(m1), nameFor(m2)]);
-
-  // Build Q/A items; include only instances where both answers are visible.
-  const items: DigestItem[] = [];
-  const rawParts: string[] = [];
-  for (const inst of instances ?? []) {
-    const r1 = responses?.find(
-      (r) => r.instance_id === inst.id && r.user_id === m1,
-    );
-    const r2 = responses?.find(
-      (r) => r.instance_id === inst.id && r.user_id === m2,
-    );
-    if (!r1 || !r2) continue;
-    const a1 = (r1.answers ?? {}) as Record<string, string>;
-    const a2 = (r2.answers ?? {}) as Record<string, string>;
-    const title =
-      inst.kind === "daily"
-        ? `Daily question${inst.revealed_at ? ` (${inst.revealed_at.slice(0, 10)})` : ""}`
-        : inst.kind;
-    for (const q of inst.questions as PromptQuestion[]) {
-      rawParts.push(`${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`);
-      items.push({
-        title,
-        question: q.text,
-        p1: redactor.redact(a1[q.id] ?? ""),
-        p2: redactor.redact(a2[q.id] ?? ""),
-      });
-    }
+  const outcome = await runWeeklyDigest(supabase, user!.id, connectionId, "manual");
+  switch (outcome) {
+    case "inactive":
+      redirect("/connections");
+    case "premium":
+    case "empty":
+    case "solo":
+    case "gap":
+    case "ai":
+      redirect(`/connections/${connectionId}?notice=digest-${outcome}`);
+    case "ok":
+    case "withheld":
+      revalidatePath(`/connections/${connectionId}`);
+      // Land on a clean URL (drops any stale ?notice= from a previous attempt).
+      redirect(`/connections/${connectionId}`);
   }
-  if (items.length === 0) back("digest-empty");
-  const trimmed = items.slice(0, MAX_ITEMS);
-
-  // Open shared goals, as context only (RLS: members). Redacted like answers.
-  const { data: goalRows } = await supabase
-    .from("connection_goals")
-    .select("body")
-    .eq("connection_id", connectionId)
-    .is("done_at", null)
-    .order("created_at", { ascending: true })
-    .limit(10);
-  const goals = (goalRows ?? []).map((g) => redactor.redact(g.body));
-  rawParts.push(...(goalRows ?? []).map((g) => g.body));
-
-  // Atomic rate limit after readiness: claim a slot before the model call.
-  const admin = createAdminClient();
-  const slot = await claimInsightSlot(
-    admin,
-    connectionId,
-    "weekly_digest",
-    MIN_GAP_MS,
-  );
-  if (!slot.ok) {
-    back("digest-gap");
-  }
-  // slot.ok is true here; redirect()/back is typed loosely under tsc.
-  const claimId = slot.ok ? slot.claim.id : "";
-  if (!claimId) back("digest-gap");
-
-  // Safety: regex on raw text, model pass on redacted; high severity withholds.
-  const signal = await assessSafety(rawParts.join("\n"), redactor.redact);
-
-  if (signal.severity === "high") {
-    await admin.from("safety_events").insert({
-      user_id: user.id,
-      category: signal.categories[0] ?? "abuse",
-      surfaced_resources: { categories: signal.categories } as Json,
-    });
-    await finalizeInsightClaim(admin, claimId, {
-      summary: "Support resources",
-      payload: { safety: true, categories: signal.categories } as Json,
-      safety_flags: {
-        severity: "high",
-        categories: signal.categories,
-        reviewed: false,
-      } as Json,
-    });
-    await logAudit(user.id, "digest.withheld_safety", connectionId);
-    revalidatePath(`/connections/${connectionId}`);
-    redirect(`/connections/${connectionId}`);
-  }
-
-  let digest;
-  try {
-    const content = await grokChat(
-      [digestSystemPrompt(), digestUserPrompt(conn!.type, trimmed, goals)],
-      { json: true },
-    );
-    digest = parseDigest(content);
-  } catch {
-    await releaseInsightClaim(admin, claimId);
-    back("digest-ai");
-    return; // unreachable — for control-flow analysis
-  }
-
-  await finalizeInsightClaim(admin, claimId, {
-    summary: digest.reflection.slice(0, 200),
-    payload: digest as unknown as Json,
-    model: process.env.XAI_MODEL ?? "grok-4",
-    safety_flags: {
-      severity: signal.severity,
-      categories: signal.categories,
-    } as Json,
-  });
-  await logAudit(user.id, "digest.generate", connectionId);
-
-  revalidatePath(`/connections/${connectionId}`);
-  // Land on a clean URL (drops any stale ?notice= from a previous attempt).
-  redirect(`/connections/${connectionId}`);
 }

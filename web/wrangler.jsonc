@@ -30,16 +30,23 @@
   // Run the Worker next to Supabase (us-east-1), where Vercel's iad1
   // functions ran. Signed-in pages make several sequential Supabase calls;
   // from a far edge each one would cross a continent. Static assets and
-  // prerendered pages are served from the edge regardless.
+  // prerendered pages are served from the edge regardless. Region, not
+  // hostname: Supabase sits behind Cloudflare's anycast, which host probes
+  // can't locate (they picked Prague, cf-placement: remote-PRG, 2026-10-18).
   "placement": {
-    "mode": "targeted",
-    "hostname": "digbnrhwsifmycrxyquo.supabase.co"
+    "region": "aws:us-east-1"
   },
   "observability": {
     "enabled": true
   },
-  // Custom domains (relationshipcopilot.com, www) are added at cutover, not
-  // before; see docs/CLOUDFLARE_MIGRATION.md.
+  // Production hosts, pinned so a deploy can't drift from the dashboard
+  // (docs/CLOUDFLARE_MIGRATION.md §5). The Worker 308s www to the bare
+  // domain (lib/canonicalHost.ts). workers.dev stays on as a direct, cache-bypassing
+  // address for debugging.
+  "routes": [
+    { "pattern": "relationshipcopilot.com", "custom_domain": true },
+    { "pattern": "www.relationshipcopilot.com", "custom_domain": true }
+  ],
   "workers_dev": true,
   "preview_urls": true
 }

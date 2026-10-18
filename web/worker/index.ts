@@ -27,6 +27,7 @@ import {
 import { edgeCacheKey, isCacheableResponse, OG_CACHE_CONTROL } from "../lib/edgeCache";
 import { scrubEvent } from "../lib/sentryScrub";
 import { setRequestErrorReporter } from "../lib/errorReporting";
+import { canonicalRedirect } from "../lib/canonicalHost";
 
 export * from "vinext/server/fetch-handler";
 
@@ -70,6 +71,9 @@ setRequestErrorReporter((error, info) => {
 
 const worker = {
   fetch(request: Request, env: unknown, ctx: Ctx) {
+    // www → bare domain with the query string intact (lib/canonicalHost.ts).
+    const canonical = canonicalRedirect(request.url);
+    if (canonical) return Response.redirect(canonical, 308);
     return cachedFetch(request, env, ctx);
   },
 

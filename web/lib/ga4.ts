@@ -9,7 +9,8 @@
 // If GA4_MEASUREMENT_ID or GA4_API_SECRET is unset, tracking is a no-op
 // (local/preview default).
 //
-// Sends that must outlive the HTTP response (Vercel serverless) go through
+// Sends that must outlive the HTTP response (Workers end the request when it
+// returns; after() maps to ctx.waitUntil) go through
 // `scheduleGa4Event` → Next.js `after()`. Failures never affect reveal UX.
 
 import { after } from "next/server";
@@ -104,8 +105,8 @@ export async function sendGa4Event(
 }
 
 /**
- * Schedule a GA4 MP send to run after the response is sent so Vercel
- * serverless does not drop the fetch when the action returns.
+ * Schedule a GA4 MP send to run after the response is sent, so the runtime
+ * does not drop the fetch when the action returns.
  * Errors are swallowed and logged; never rethrown into the request.
  */
 export function scheduleGa4Event(

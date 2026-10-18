@@ -37,8 +37,10 @@ const ENFORCED_HEADERS = [
 
 const nextConfig = {
   reactStrictMode: true,
-  // www → apex (308). On Cloudflare Workers this is the only place the
-  // redirect lives, so keep `permanent: true` (vinext ignores statusCode).
+  // www → apex (308). On Cloudflare the Worker redirects first
+  // (lib/canonicalHost.ts), because this rule drops the query string under
+  // vinext; it stays for `next start`. Keep `permanent: true` (vinext
+  // ignores statusCode).
   async redirects() {
     return [
       {
