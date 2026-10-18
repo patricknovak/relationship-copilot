@@ -66,7 +66,7 @@ begin
   fresh := regenerate_invite('c8000000-0000-0000-0000-000000000002');
   reset role;
 
-  assert fresh ~ '^[A-Z0-9]{8}$', format('EXPECTED fresh 8-char code, got %s', fresh);
+  assert fresh ~ '^[A-Z0-9]{12}$', format('EXPECTED fresh 12-char code, got %s', fresh);
   assert fresh <> 'OLDINV01', 'EXPECTED a different code after regenerate';
 
   select reason into r from retired_invite_codes ric where ric.code = 'OLDINV01';

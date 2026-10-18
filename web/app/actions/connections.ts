@@ -1,6 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
+import { INVITE_CODE_LENGTH } from "@/lib/invite";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -51,12 +52,11 @@ async function claimAndTrackFunnelStep(
   }
 }
 
+// 12 characters from a 32-symbol alphabet without 0/O/1/I: 60 bits, and no
+// modulo bias since 256 = 8 * 32. Matches regenerate_invite (migration 0040).
+const INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function newInviteCode(): string {
-  return randomBytes(9)
-    .toString("base64url")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, 8)
-    .toUpperCase();
+  return Array.from(randomBytes(INVITE_CODE_LENGTH), (b) => INVITE_ALPHABET[b % 32]).join("");
 }
 
 // Create a connection, add the creator as a member, and hand back an invite
