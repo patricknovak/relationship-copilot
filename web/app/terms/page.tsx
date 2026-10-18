@@ -4,7 +4,13 @@ import { canonicalUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
+  description:
+    "The terms for using Relationship Copilot, including what the service is and is not.",
   alternates: { canonical: canonicalUrl("/terms") },
+  openGraph: {
+    title: "Terms of Service — Relationship Copilot",
+    url: canonicalUrl("/terms"),
+  },
 };
 
 export default function TermsPage() {

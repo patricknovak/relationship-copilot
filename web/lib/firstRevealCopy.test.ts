@@ -92,7 +92,7 @@ describe("firstRevealCopy", () => {
 
   it("preserves mutual-reveal enforcement language", () => {
     expect(EMPTY_STATE.body).toMatch(/lives in the product/i);
-    expect(ACQUISITION.body).toMatch(/built into how the product works/i);
+    expect(ACQUISITION.body).toMatch(/enforced in the database/i);
     expect(WAITING_ON_THEM.body).toMatch(/no peeking/i);
     expect(WAITING_ON_YOU.trustLine).toMatch(/neither of you can see/i);
     expect(MICROCOPY.belowQuestion).toMatch(/private until mutual reveal/i);

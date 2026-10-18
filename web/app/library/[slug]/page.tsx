@@ -79,9 +79,14 @@ export default async function ArticlePage({
       )}
       {article.evidence_rating != null && (
         <p className="mt-3 text-xs text-brand-600/90 dark:text-brand-300">
-          Evidence: {"★".repeat(article.evidence_rating)}
-          <span className="text-brand-300">
-            {"★".repeat(Math.max(0, 5 - article.evidence_rating))}
+          <span className="sr-only">
+            Evidence rating {article.evidence_rating} out of 5
+          </span>
+          <span aria-hidden>
+            Evidence: {"★".repeat(article.evidence_rating)}
+            <span className="text-brand-300">
+              {"☆".repeat(Math.max(0, 5 - article.evidence_rating))}
+            </span>
           </span>
         </p>
       )}
@@ -111,7 +116,9 @@ export default async function ArticlePage({
       </div>
 
       {slug === "36-questions" && (
-        <aside className="mt-10 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 dark:border-surface-line dark:bg-brand-900/20">
+        <section
+          aria-label="Try a curated list"
+          className="mt-10 rounded-2xl border border-brand-100 bg-brand-50/50 p-5 dark:border-surface-line dark:bg-brand-900/20">
           <p className="font-display text-lg text-ink">Try a curated list</p>
           <p className="mt-1 text-sm text-ink-soft">
             Browse the questions you&apos;ll answer in Relationship Copilot,
@@ -148,7 +155,7 @@ export default async function ArticlePage({
               </Link>
             </li>
           </ul>
-        </aside>
+        </section>
       )}
 
       <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/80">

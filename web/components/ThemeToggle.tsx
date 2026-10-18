@@ -29,7 +29,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label={mounted && dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition hover:bg-surface-line/60 hover:text-ink"
+      className="flex h-11 w-11 items-center justify-center rounded-full text-ink-soft transition hover:bg-surface-line/60 hover:text-ink"
     >
       {mounted && dark ? (
         // Sun

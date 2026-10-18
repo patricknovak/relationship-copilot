@@ -24,7 +24,7 @@ const STAGES = [
 const FAQS: { q: string; a: ReactNode }[] = [
   {
     q: "Can the other person see my answer before I share mine?",
-    a: "No — and it's not just a promise in the app. The rule that hides an answer until you've both responded is built into how the product works, designed so answers stay private until you've both shared. You answer first, then you both see everything at once.",
+    a: "No. The rule that hides an answer until you've both responded is enforced in the database itself, not only in the app, so no screen can show one answer early. You answer first, then you both see everything at once.",
   },
   {
     q: "Is this therapy?",
@@ -32,7 +32,7 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "What happens to what I write — and what does the AI see?",
-    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. Optional AI features strip names, emails, and phone numbers from the relevant answers before they leave our systems. Production AI stays off until a no-training agreement with the provider is in place.",
+    a: "Your words are yours: you can export everything as JSON or delete your account anytime. We don't sell your data. Optional AI features strip names, emails, and phone numbers from the relevant answers before they leave our systems. Our agreement with the AI provider (xAI) does not permit training its models on your content.",
   },
   {
     q: "Is it really free?",
@@ -226,7 +226,7 @@ export default function Home() {
             <Feature
               icon={<IconLock />}
               title="Private by architecture"
-              body="The reveal rule is built into how the product works — designed so answers stay private until both share. Your words are yours to export or erase."
+              body="The reveal rule is enforced in the database itself, not only in the app, so answers stay private until you've both shared. Your words are yours to export or erase."
             />
             <Feature
               icon={<IconBook />}

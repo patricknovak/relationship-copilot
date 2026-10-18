@@ -269,8 +269,7 @@ export default async function BlueprintPage({
         the profile reflections of anyone who chose to include them, are sent
         to our AI provider (xAI&apos;s Grok) with names, email addresses, and
         phone numbers removed first. They are used only to produce this
-        reflection. Production AI stays off until a no-training agreement with
-        the provider is in place.
+        reflection. Our agreement with the AI provider (xAI) does not permit training its models on your content.
       </p>
     </div>
   );
