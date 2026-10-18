@@ -39,8 +39,14 @@
   "observability": {
     "enabled": true
   },
-  // Custom domains (relationshipcopilot.com, www) are added at cutover, not
-  // before; see docs/CLOUDFLARE_MIGRATION.md.
+  // Production hosts, pinned so a deploy can't drift from the dashboard
+  // (docs/CLOUDFLARE_MIGRATION.md §5). www 308s to the bare domain in
+  // next.config.mjs. workers.dev stays on as a direct, cache-bypassing
+  // address for debugging.
+  "routes": [
+    { "pattern": "relationshipcopilot.com", "custom_domain": true },
+    { "pattern": "www.relationshipcopilot.com", "custom_domain": true }
+  ],
   "workers_dev": true,
   "preview_urls": true
 }
