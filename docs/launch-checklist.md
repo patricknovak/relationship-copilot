@@ -203,6 +203,35 @@ product behaves exactly as before without them.
       `NEXT_PUBLIC_PREMIUM_ANNUAL_DISPLAY` (e.g. `$59.99/yr`). The yearly
       button renders only when both are set; the webhook needs no change.
 
+## Error alerting (Sentry, decided 2026-10-18)
+
+Code shipped: `@sentry/cloudflare` wraps the Worker (`web/worker/index.ts`).
+Unhandled errors in route handlers, server actions, rendering and the proxy
+arrive through Next's `onRequestError` (`web/instrumentation.ts`), and each
+Cron Trigger is a Sentry cron monitor (`daily-reminder`, `turn-reminder`)
+whose check-in fails on a thrown error or a non-2xx route response. Workers
+Logs stay on.
+
+Privacy: no relationship text and no personal data reach Sentry. Request
+data, cookies, headers, bodies, query strings, user info, breadcrumbs and
+tracing are all off, and every event passes an allowlist scrubber
+(`web/lib/sentryScrub.ts`, unit-tested) that keeps only the exception type,
+a sanitised first line of the message, stack frames, the route pattern
+(`/invite/[code]`, never the real path) and the release.
+
+- [ ] Create a Sentry project (platform: Cloudflare Workers), copy its DSN,
+      then from `web/`: `npx wrangler secret put SENTRY_DSN --name relationship-copilot`.
+      Nothing is sent until it is set.
+- [ ] Alerts → Create alert → Issues → "A new issue is created" → send an
+      email to you. (New projects usually come with this rule; check it is
+      on and pointed at your address.)
+- [ ] Crons: after the first hourly run each monitor appears under
+      Insights → Crons. Open each one → set its alert to email you. A
+      monitor raises an issue on the first failed or missed check-in
+      (`failureIssueThreshold: 1`), which the new-issue rule also emails.
+- [ ] Settings → Security & Privacy: turn on "Prevent storing of IP
+      addresses" and leave "Data scrubber" on, as a second layer.
+
 ## Non-code sign-offs (from NEW_ARCHITECTURE.md)
 
 - [ ] Legal review of `/privacy` and `/terms` (both still drafts).

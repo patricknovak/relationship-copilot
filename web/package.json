@@ -17,6 +17,7 @@
     "deploy:vinext": "wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
+    "@sentry/cloudflare": "^11.8.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
     "@vinext/cloudflare": "1.1.0",

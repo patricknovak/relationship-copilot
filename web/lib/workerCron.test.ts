@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { CRON_ROUTES, cronLog, cronRequest, DEFAULT_ORIGIN } from "./workerCron";
+import {
+  CRON_ROUTES,
+  cronLog,
+  cronMonitorSlug,
+  cronRequest,
+  CronRouteError,
+  DEFAULT_ORIGIN,
+} from "./workerCron";
 
 describe("cronRequest", () => {
   it("maps the hourly schedule to the reminder route with the secret", () => {
@@ -44,5 +51,27 @@ describe("wrangler.jsonc", () => {
     expect([...(json.triggers?.crons ?? [])].sort()).toEqual(
       Object.keys(CRON_ROUTES).sort(),
     );
+  });
+});
+
+describe("cronMonitorSlug", () => {
+  it("names a Sentry monitor after each cron route", () => {
+    expect(cronMonitorSlug("20 * * * *")).toBe("daily-reminder");
+    expect(cronMonitorSlug("40 * * * *")).toBe("turn-reminder");
+    expect(cronMonitorSlug("0 0 * * *")).toBeUndefined();
+  });
+
+  it("gives every schedule a distinct slug", () => {
+    const slugs = Object.keys(CRON_ROUTES).map(cronMonitorSlug);
+    expect(slugs.every(Boolean)).toBe(true);
+    expect(new Set(slugs).size).toBe(slugs.length);
+  });
+});
+
+describe("CronRouteError", () => {
+  it("carries the path and status only", () => {
+    const e = new CronRouteError("/api/cron/daily-reminder", 500);
+    expect(e.message).toBe("cron route /api/cron/daily-reminder returned 500");
+    expect(e.name).toBe("CronRouteError");
   });
 });
