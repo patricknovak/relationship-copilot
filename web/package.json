@@ -27,7 +27,7 @@
     "react-server-dom-webpack": "^19.3.0",
     "server-only": "^0.0.1",
     "stripe": "^23.0.0",
-    "vinext": "1.1.0"
+    "vinext": "1.2.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.63.1",
