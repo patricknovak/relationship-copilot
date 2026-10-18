@@ -93,6 +93,9 @@ jobs:
 
   deploy-cloudflare:
     # Production deploy to the Cloudflare Worker "relationship-copilot".
+    # Only after every test job passes on the same commit: a red main must
+    # never reach the live site.
+    needs: [web, database, e2e-core]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # A newer push cancels an older deploy so it cannot finish last.
