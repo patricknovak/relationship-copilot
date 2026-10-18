@@ -9,16 +9,18 @@ import {
 const URL_ = "https://relationshipcopilot.com/invite/ABC123";
 
 describe("isInviteCodeFormat", () => {
-  it("accepts 8-char alphanumeric codes, either case", () => {
+  it("accepts 8- to 12-char alphanumeric codes, either case", () => {
     expect(isInviteCodeFormat("ABC12345")).toBe(true);
     expect(isInviteCodeFormat("abc12345")).toBe(true);
     expect(isInviteCodeFormat("Ab12Cd34")).toBe(true);
+    expect(isInviteCodeFormat("ABCDEFGH2345")).toBe(true);
+    expect(isInviteCodeFormat("abcdefgh2345")).toBe(true);
   });
 
   it("rejects wrong length, punctuation, or empty", () => {
     expect(isInviteCodeFormat("")).toBe(false);
     expect(isInviteCodeFormat("ABC1234")).toBe(false);
-    expect(isInviteCodeFormat("ABC123456")).toBe(false);
+    expect(isInviteCodeFormat("ABCDEFGH23456")).toBe(false);
     expect(isInviteCodeFormat("ABC-1234")).toBe(false);
     expect(isInviteCodeFormat("ABC_1234")).toBe(false);
     expect(isInviteCodeFormat("invite!!")).toBe(false);

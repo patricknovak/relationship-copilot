@@ -42,17 +42,19 @@ export function scrubMessage(input: unknown): string {
 // A path segment survives only if it reads like a route name: lowercase
 // letters joined by "-" or "." (file routes like robots.txt), an optional
 // leading "_" (/_vinext), or a route-pattern param like "[id]". Invite codes
-// are 8 characters, so 8-letter words are dropped too unless they are a known
-// static route (routeSegments.test in sentryScrub.test.ts walks app/).
+// are 8 or 12 characters, so words of those lengths are dropped too unless
+// they are a known static route (routeSegments.test in sentryScrub.test.ts
+// walks app/).
 const ROUTE_WORD = /^_?[a-z]+(?:[.-][a-z]+)*$/;
 const PATTERN_PARAM = /^\[{1,2}(?:\.\.\.)?[A-Za-z]+\]{1,2}$/;
-const STATIC_EIGHT = new Set(["callback"]);
+const CODE_LENGTHS = new Set([8, 12]);
+const STATIC_CODE_LENGTH = new Set(["callback"]);
 
 function keepSegment(seg: string): boolean {
   if (seg === "") return true;
   if (PATTERN_PARAM.test(seg)) return true;
   if (!ROUTE_WORD.test(seg)) return false;
-  return seg.length !== 8 || STATIC_EIGHT.has(seg);
+  return !CODE_LENGTHS.has(seg.length) || STATIC_CODE_LENGTH.has(seg);
 }
 
 /** Pathname only (no origin, query or fragment), dynamic segments as ":param". */

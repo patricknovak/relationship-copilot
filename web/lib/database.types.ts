@@ -506,6 +506,21 @@ export interface Database {
         Args: { p_conn: string; p_date?: string };
         Returns: string;
       };
+      ensure_daily_prompts_in_window: {
+        Args: { p_from_hour?: number; p_to_hour?: number; p_limit?: number };
+        Returns: number;
+      };
+      daily_reminder_candidates: {
+        Args: { p_from_hour?: number; p_to_hour?: number; p_limit?: number };
+        Returns: {
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          other_name: string | null;
+          question_text: string | null;
+          timezone: string;
+        }[];
+      };
       connection_zodiac_compat: {
         Args: { p_conn: string };
         Returns: Json;

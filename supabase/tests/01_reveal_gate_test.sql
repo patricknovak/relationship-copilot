@@ -189,7 +189,7 @@ begin
   set local "test.user_id" = '11111111-1111-1111-1111-111111111111';
   code := regenerate_invite('aaaa1111-0000-0000-0000-000000000001');
   reset role;
-  assert code ~ '^[A-Z0-9]{8}$', format('EXPECTED 8-char alnum code, got %s', code);
+  assert code ~ '^[A-Z0-9]{12}$', format('EXPECTED 12-char alnum code, got %s', code);
   select invite_expires_at into exp from connections where id = 'aaaa1111-0000-0000-0000-000000000001';
   assert exp > now() + interval '13 days', 'EXPECTED a fresh 14-day expiry';
 
