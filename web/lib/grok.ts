@@ -73,3 +73,13 @@ export async function grokChat(
   if (!content) throw new Error("Grok returned no content.");
   return content;
 }
+
+/**
+ * Whether an AI call can run here at all: a key, and in production the
+ * no-training attestation (the same rule grokChat enforces). Lets callers
+ * skip optional AI work, such as generate-on-visit, instead of failing.
+ */
+export function aiEnabled(): boolean {
+  if (!process.env.XAI_API_KEY) return false;
+  return process.env.NODE_ENV !== "production" || process.env.XAI_NO_TRAINING_DPA === "true";
+}
