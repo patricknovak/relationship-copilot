@@ -46,7 +46,7 @@ jobs:
           # negative API paths. Rel activation drip stays NO SEND.
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
@@ -85,7 +85,7 @@ jobs:
           CI: true
       - name: Upload core-loop report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-core-report
           path: web/test-results
