@@ -6,7 +6,9 @@ import { ACQUISITION } from "@/lib/firstRevealCopy";
 import { homepageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
 import { FOR_PAGES } from "@/lib/forPages";
+import { homepageExploreLinks } from "@/lib/homepageExploreLinks";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
+import { QUESTION_PAGES } from "@/lib/questionPages";
 
 export const metadata: Metadata = {
   alternates: { canonical: canonicalUrl("/") },
@@ -64,6 +66,10 @@ const FAQS: { q: string; a: ReactNode }[] = [
 // Static: no session read, so the page is prerendered at build. CTAs carry
 // both targets; the auth hint (components/AuthHint.tsx) shows the right one.
 export default function Home() {
+  const exploreLinks = homepageExploreLinks();
+  const questionExplore = exploreLinks.filter((l) => l.kind === "questions");
+  const forExplore = exploreLinks.filter((l) => l.kind === "for");
+
   return (
     <div>
       {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
@@ -160,20 +166,17 @@ export default function Home() {
               questions to ask
             </Link>
             {" — "}
-            <Link
-              href="/questions/partners"
-              className="text-brand-700 underline dark:text-brand-300"
-            >
-              your partner
-            </Link>
-            {", "}
-            <Link href="/questions/friends" className="text-brand-700 underline dark:text-brand-300">
-              a friend
-            </Link>
-            {", or "}
-            <Link href="/questions/family" className="text-brand-700 underline dark:text-brand-300">
-              family
-            </Link>
+            {QUESTION_PAGES.slice(0, 3).map((p, i, arr) => (
+              <span key={p.slug}>
+                {i > 0 ? (i === arr.length - 1 ? ", or " : ", ") : null}
+                <Link
+                  href={`/questions/${p.slug}`}
+                  className="text-brand-700 underline dark:text-brand-300"
+                >
+                  {p.forLabel}
+                </Link>
+              </span>
+            ))}
             .
           </p>
         </div>
@@ -294,6 +297,46 @@ export default function Home() {
             Browse the questions
           </Link>
         </p>
+      </section>
+
+      {/* ------------------------------------------------ Explore (SEO internal links) */}
+      <section className="mx-auto max-w-2xl px-4 pb-16" aria-labelledby="explore-heading">
+        <p className="eyebrow text-center">Explore</p>
+        <h2 id="explore-heading" className="mt-3 text-center text-2xl sm:text-3xl">
+          Questions and use cases
+        </h2>
+        <div className="mt-8 grid gap-8 sm:grid-cols-2">
+          <div>
+            <p className="text-sm font-medium text-ink">Question lists</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {questionExplore.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    className="text-brand-700 underline dark:text-brand-300"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-ink">For each relationship</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {forExplore.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    className="text-brand-700 underline dark:text-brand-300"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       {/* ------------------------------------------------ Final CTA */}
