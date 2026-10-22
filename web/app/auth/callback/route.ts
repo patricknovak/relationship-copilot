@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeAuthNextParam } from "@/lib/authConfirm";
+import { resolvePostAuthDestination } from "@/lib/resolvePostAuthDestination";
 
 // Establishes a session from either auth flow, then sends the user on:
 // - `code`       — PKCE exchange (magic link / OAuth started in this browser)
@@ -48,20 +49,15 @@ export async function GET(request: Request) {
 
   if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
 
-  // No explicit destination: send users with an incomplete profile to set it
-  // up first, everyone else to their connections.
+  // No explicit destination: incomplete profile → onboarding; no partner yet
+  // → invite step (/connections/new or existing solo invite). Explicit invite
+  // deep links still win above.
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (!profile?.display_name) {
-      return NextResponse.redirect(`${origin}/onboarding`);
-    }
+    const dest = await resolvePostAuthDestination(supabase, user.id);
+    return NextResponse.redirect(`${origin}${dest}`);
   }
   return NextResponse.redirect(`${origin}/connections`);
 }

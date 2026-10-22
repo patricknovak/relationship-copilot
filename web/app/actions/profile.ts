@@ -17,7 +17,11 @@ export async function saveProfile(formData: FormData) {
 
   // Where to land after saving (e.g. back to the connection an invitee came
   // from). Validated to a same-origin path.
-  const next = safeNextPath(String(formData.get("next") || ""), "/account");
+  // First-run default is the invite step, not /account.
+  const next = safeNextPath(
+    String(formData.get("next") || ""),
+    "/connections/new",
+  );
   const backWithError = (code: string): never =>
     redirect(`/onboarding?error=${code}&next=${encodeURIComponent(next)}`);
 

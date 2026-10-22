@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { dailyBadge, dailyState, firstSetBadge, todayIn, todayUtc } from "@/lib/dailyState";
 import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
+import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 import type { ConnectionType } from "@/lib/database.types";
 
 type ConnectionRow = {
@@ -61,8 +62,8 @@ function ConnectionList({ items }: { items: ConnectionRow[] }) {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "Waiting to connect",
-  onboarding: "Getting started",
+  pending: "Waiting for your person",
+  onboarding: "First questions",
   active: "Active",
   archived: "Archived",
   blocked: "Blocked",
@@ -223,14 +224,15 @@ export default async function ConnectionsPage() {
       {rows.length === 0 ? (
         <div className="card mt-10 !rounded-3xl border-dashed !border-brand-200 p-10 text-center">
           <p className="font-display text-xl text-ink">
-            Your first connection starts here
+            Invite someone to start
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-ink-soft">
-            Create one and invite someone — partner, friend, family — to start
-            your first questions together.
+            Create a connection, share the link, and answer your first questions
+            together. Sign-in is Google. Safety resources stay free; Premium (
+            {PREMIUM_MONTHLY_DISPLAY}) is optional.
           </p>
           <Link href="/connections/new" className="btn-primary mt-5">
-            Start a connection
+            Create and invite
           </Link>
         </div>
       ) : (

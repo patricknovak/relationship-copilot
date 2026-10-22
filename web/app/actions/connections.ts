@@ -109,7 +109,8 @@ export async function createConnection(formData: FormData) {
 
   await logAudit(user.id, "connection.create", conn.id);
   revalidatePath("/connections");
-  redirect(`/connections/${conn.id}`);
+  // Land on the invite step so sharing is one scroll away.
+  redirect(`/connections/${conn.id}#invite`);
 }
 
 // Leave a connection — archives it (reversible-friendly, and required for the
@@ -208,7 +209,8 @@ export async function acceptInvite(
   after(() => notifyPartnerJoined({ joinerUserId: user.id, connectionId: data }));
 
   revalidatePath("/connections");
-  redirect(`/connections/${data}`);
+  // Fast path: invitee lands on the first-question set, not only the hub card.
+  redirect(`/connections/${data}/onboarding`);
 }
 
 // Mint a fresh single-use invite link (invites expire after 14 days). Runs
