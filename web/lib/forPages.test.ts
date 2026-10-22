@@ -25,28 +25,28 @@ describe("for pages", () => {
     expect(forPageBySlug("nope")).toBeNull();
   });
 
-  it("only offers a /questions link when questionPageBySlug returns a page", () => {
+  it("links every /for page to its /questions page when questionPageBySlug returns a page", () => {
     // Mirrors web/app/for/[slug]/page.tsx: render “See the questions for …”
-    // only when the matching /questions page exists (avoids 404s if this PR
-    // lands before the expanded question-page set).
+    // only when the matching /questions page exists (guard kept).
     const linked: string[] = [];
-    const skipped: string[] = [];
     for (const p of FOR_PAGES) {
       const questionsPage = questionPageBySlug(p.slug);
-      if (questionsPage) {
-        expect(questionsPage.slug).toBe(p.slug);
-        expect(`See the questions for ${questionsPage.forLabel}`).toMatch(
-          /^See the questions for .+/,
-        );
-        linked.push(p.slug);
-      } else {
-        skipped.push(p.slug);
-      }
+      expect(questionsPage).not.toBeNull();
+      expect(questionsPage!.slug).toBe(p.slug);
+      expect(`See the questions for ${questionsPage!.forLabel}`).toMatch(
+        /^See the questions for .+/,
+      );
+      linked.push(p.slug);
     }
-    expect(linked).toEqual(["partners", "friends", "family"]);
-    expect(skipped.sort()).toEqual(
-      ["coworkers", "mentors", "parents-and-teens", "siblings"].sort(),
-    );
-    expect(questionPageBySlug("siblings")).toBeNull();
+    expect(linked).toEqual([
+      "partners",
+      "friends",
+      "siblings",
+      "family",
+      "parents-and-teens",
+      "coworkers",
+      "mentors",
+    ]);
+    expect(questionPageBySlug("nope")).toBeNull();
   });
 });
