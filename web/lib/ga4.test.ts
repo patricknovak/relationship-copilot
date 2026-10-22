@@ -8,13 +8,17 @@ vi.mock("next/server", () => ({
 
 import {
   FIRST_MUTUAL_REVEAL_COMPLETED,
+  FIRST_QUESTION_ANSWERED,
   INVITE_SENT,
   PARTNER_JOINED,
+  SIGN_UP_COMPLETED,
   isConnectionFirstReveal,
   scheduleFirstMutualRevealCompleted,
+  scheduleFirstQuestionAnswered,
   scheduleGa4Event,
   scheduleInviteSent,
   schedulePartnerJoined,
+  scheduleSignUpCompleted,
   sendGa4Event,
   shouldTrackFirstMutualReveal,
   shouldTrackFunnelStep,
@@ -50,9 +54,18 @@ describe("FIRST_MUTUAL_REVEAL_COMPLETED", () => {
 });
 
 describe("funnel event names", () => {
-  it("uses the exact invite_sent and partner_joined names", () => {
+  it("uses the exact activation funnel event names", () => {
+    expect(SIGN_UP_COMPLETED).toBe("sign_up_completed");
     expect(INVITE_SENT).toBe("invite_sent");
     expect(PARTNER_JOINED).toBe("partner_joined");
+    expect(FIRST_QUESTION_ANSWERED).toBe("first_question_answered");
+  });
+
+  it("schedulers wrap scheduleGa4Event without throwing", () => {
+    expect(() => scheduleSignUpCompleted()).not.toThrow();
+    expect(() => scheduleInviteSent()).not.toThrow();
+    expect(() => schedulePartnerJoined()).not.toThrow();
+    expect(() => scheduleFirstQuestionAnswered()).not.toThrow();
   });
 });
 

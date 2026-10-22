@@ -4,6 +4,8 @@ import {
   normalizeAuthNextParam,
   parseConfirmOtpType,
 } from "@/lib/authConfirm";
+import { SIGN_UP_COMPLETED } from "@/lib/ga4";
+import { claimAndTrackUserFunnelStep } from "@/lib/funnelTrack";
 import { resolvePostAuthDestination } from "@/lib/resolvePostAuthDestination";
 
 // Cross-device email OTP confirmation. Unlike /auth/callback (PKCE code
@@ -38,6 +40,9 @@ export async function GET(request: Request) {
     token_hash: tokenHash,
   });
   if (error) return fail();
+
+  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
+  await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED);
 
   if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
 

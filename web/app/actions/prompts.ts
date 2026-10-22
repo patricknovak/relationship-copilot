@@ -12,6 +12,7 @@ import {
   scheduleGa4Event,
   shouldTrackFunnelStep,
 } from "@/lib/ga4";
+import { claimAndTrackFirstQuestionAnswered } from "@/lib/funnelTrack";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { after } from "next/server";
@@ -206,21 +207,34 @@ export async function submitResponse(input: {
       .eq("id", connectionId);
   }
 
-  // Funnel (roadmap §6): answering first, before the other person joins.
-  // Once-only and validated in claim_funnel_step (0033); anonymous GA4 event.
-  if (instance.kind === "onboarding" && !revealed) {
-    const { count: joined } = await supabase
-      .from("connection_members")
-      .select("user_id", { count: "exact", head: true })
-      .eq("connection_id", instance.connection_id)
-      .not("joined_at", "is", null);
-    if ((joined ?? 0) < 2) {
-      const { data: claimedStep, error: stepError } = await supabase.rpc("claim_funnel_step", {
-        p_connection_id: instance.connection_id,
-        p_step: ANSWERED_BEFORE_JOIN,
-      });
-      if (stepError) console.error("[ga4] claim_funnel_step failed", stepError.message);
-      else if (shouldTrackFunnelStep(claimedStep === true)) scheduleGa4Event(ANSWERED_BEFORE_JOIN);
+  // Funnel: first onboarding answer on this connection (0041), then the
+  // solo-before-join sibling (0033). Once-only claims; anonymous GA4 events.
+  // Failures never block the submit path.
+  if (instance.kind === "onboarding") {
+    await claimAndTrackFirstQuestionAnswered(
+      supabase,
+      instance.connection_id,
+    );
+
+    if (!revealed) {
+      const { count: joined } = await supabase
+        .from("connection_members")
+        .select("user_id", { count: "exact", head: true })
+        .eq("connection_id", instance.connection_id)
+        .not("joined_at", "is", null);
+      if ((joined ?? 0) < 2) {
+        const { data: claimedStep, error: stepError } = await supabase.rpc(
+          "claim_funnel_step",
+          {
+            p_connection_id: instance.connection_id,
+            p_step: ANSWERED_BEFORE_JOIN,
+          },
+        );
+        if (stepError)
+          console.error("[ga4] claim_funnel_step failed", stepError.message);
+        else if (shouldTrackFunnelStep(claimedStep === true))
+          scheduleGa4Event(ANSWERED_BEFORE_JOIN);
+      }
     }
   }
 
