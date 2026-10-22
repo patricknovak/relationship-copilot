@@ -162,3 +162,86 @@ export function faqPageJsonLdScriptContent(input: {
 }): string {
   return serializeJsonLd(faqPageJsonLd(input));
 }
+
+export type PricingJsonLdInput = {
+  url: string;
+  faqs: { q: string; a: string }[];
+  /** Free-tier facts already shown on the page (mirrored, not invented). */
+  freeFeatures: string[];
+  premiumFeatures: string[];
+};
+
+/**
+ * Pricing page JSON-LD: Organization + WebSite + SoftwareApplication Offer
+ * (Premium from lib/pricing.ts) + FAQPage. Every claim must match visible copy.
+ */
+export function pricingJsonLd(input: PricingJsonLdInput) {
+  const orgId = `${CANONICAL_ORIGIN}/#organization`;
+  const websiteId = `${CANONICAL_ORIGIN}/#website`;
+  const appId = `${CANONICAL_ORIGIN}/#app`;
+  const faq = faqPageJsonLd({ url: input.url, faqs: input.faqs });
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": orgId,
+        name: "Relationship Copilot",
+        url: CANONICAL_ORIGIN,
+      },
+      {
+        "@type": "WebSite",
+        "@id": websiteId,
+        name: "Relationship Copilot",
+        url: CANONICAL_ORIGIN,
+        publisher: { "@id": orgId },
+      },
+      {
+        "@type": ["SoftwareApplication", "WebApplication"],
+        "@id": appId,
+        name: "Relationship Copilot",
+        url: CANONICAL_ORIGIN,
+        applicationCategory: "LifestyleApplication",
+        operatingSystem: "Web",
+        offers: [
+          {
+            "@type": "Offer",
+            name: "Free",
+            price: "0",
+            priceCurrency: "USD",
+            description: input.freeFeatures.join(". "),
+            url: input.url,
+          },
+          {
+            "@type": "Offer",
+            name: "Premium",
+            price: PREMIUM_MONTHLY_USD,
+            priceCurrency: "USD",
+            description: `Premium (${PREMIUM_MONTHLY_DISPLAY}): ${input.premiumFeatures.join(". ")}`,
+            url: input.url,
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              price: PREMIUM_MONTHLY_USD,
+              priceCurrency: "USD",
+              billingDuration: "P1M",
+            },
+          },
+        ],
+        publisher: { "@id": orgId },
+        isPartOf: { "@id": websiteId },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${input.url}#faq`,
+        url: input.url,
+        inLanguage: "en",
+        mainEntity: faq.mainEntity,
+      },
+    ],
+  };
+}
+
+export function pricingJsonLdScriptContent(input: PricingJsonLdInput): string {
+  return serializeJsonLd(pricingJsonLd(input));
+}
