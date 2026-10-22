@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AuthLink } from "@/components/AuthHint";
 import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
+import { questionPageBySlug } from "@/lib/questionPages";
 import { canonicalUrl } from "@/lib/site";
 
 export function generateStaticParams() {
@@ -44,6 +45,8 @@ export default async function ForPage({
   const loginHref = `/login?next=${encodeURIComponent(newHref)}`;
   const faqs = forPageFaqs(page);
   const url = canonicalUrl(`/for/${page.slug}`);
+  // Only link when /questions/<slug> exists (avoids 404 if this PR lands before the expanded question pages).
+  const questionsPage = questionPageBySlug(page.slug);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -70,6 +73,16 @@ export default async function ForPage({
         Free for the core experience. Answers stay private until you&apos;ve
         both shared.
       </p>
+      {questionsPage ? (
+        <p className="mt-4 text-sm text-ink-soft">
+          <Link
+            href={`/questions/${questionsPage.slug}`}
+            className="text-brand-700 underline dark:text-brand-300"
+          >
+            See the questions for {questionsPage.forLabel}
+          </Link>
+        </p>
+      ) : null}
 
       <section className="mt-12">
         <h2 className="text-2xl">A few of the questions</h2>
@@ -89,25 +102,6 @@ export default async function ForPage({
           ))}
         </ol>
       </section>
-
-      {(page.slug === "partners" ||
-        page.slug === "friends" ||
-        page.slug === "family") && (
-        <p className="mt-8 text-sm text-ink-soft">
-          Longer list:{" "}
-          <Link
-            href={`/questions/${page.slug}`}
-            className="text-brand-700 underline dark:text-brand-300"
-          >
-            {page.slug === "partners"
-              ? "questions to ask your partner"
-              : page.slug === "friends"
-                ? "questions to ask a friend"
-                : "questions to ask family"}
-          </Link>
-          .
-        </p>
-      )}
 
       {page.article && (
         <p className="mt-8 text-sm text-ink-soft">
