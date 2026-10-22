@@ -4,9 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { markInviteShared, sendEmailInvite } from "@/app/actions/connections";
 import { buildInviteMessage, smsHref, whatsappHref } from "@/lib/invite";
 
-// The one place an inviter gets their person in: text/share the link first
-// (proven path), with email invite as a secondary option until deliverability
-// is confirmed. Replaces the old copy-only InviteShare.
+// One-tap invite: Web Share API when available, copy-link as the always-on
+// fallback. Text / WhatsApp / email stay as secondary channels.
 export default function InvitePanel({
   connectionId,
   url,
@@ -53,12 +52,12 @@ export default function InvitePanel({
         setEmail("");
         setNotice({
           tone: "ok",
-          text: "Invitation sent. If it's not in their inbox in a few minutes, ask them to check spam — or text them the link instead.",
+          text: "Invitation sent. If it's not in their inbox in a few minutes, ask them to check spam — or share the link instead.",
         });
       } else {
         setNotice({
           tone: "info",
-          text: "They already have an account — text or share the link instead, and they'll join when they open it.",
+          text: "They already have an account — share the link instead, and they'll join when they open it.",
         });
       }
     });
@@ -69,7 +68,11 @@ export default function InvitePanel({
       await navigator.share({ title: "Relationship Copilot", text: message, url });
       noteShared();
     } catch {
-      /* user dismissed the share sheet */
+      /* user dismissed the share sheet — offer copy */
+      setNotice({
+        tone: "info",
+        text: "Share cancelled — you can copy the link instead.",
+      });
     }
   }
 
@@ -80,7 +83,6 @@ export default function InvitePanel({
       noteShared();
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard unavailable — fall back to selecting the URL via the sms path */
       setNotice({
         tone: "info",
         text: "Couldn't copy automatically — tap Text it or WhatsApp instead.",
@@ -91,18 +93,21 @@ export default function InvitePanel({
   return (
     <div className="mt-4 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
+        {canShare ? (
+          <button type="button" onClick={share} className="btn-primary">
+            Share invite link
+          </button>
+        ) : null}
+        <button type="button" onClick={copy} className={canShare ? "btn-secondary" : "btn-primary"}>
+          {copied ? "Link copied" : "Copy link"}
+        </button>
         <a
           href={smsHref(message)}
-          className="btn-primary"
+          className="btn-secondary"
           onClick={noteShared}
         >
           Text it
         </a>
-        {canShare ? (
-          <button onClick={share} className="btn-primary">
-            Share…
-          </button>
-        ) : null}
         <a
           href={whatsappHref(message)}
           target="_blank"
@@ -112,10 +117,13 @@ export default function InvitePanel({
         >
           WhatsApp
         </a>
-        <button onClick={copy} className="btn-secondary">
-          {copied ? "Copied ✓" : "Copy link"}
-        </button>
       </div>
+
+      <p className="text-sm text-ink-soft" role="status">
+        {canShare
+          ? "One tap to share. Copy link works if share isn’t available."
+          : "Copy the link, then paste it into a text or chat."}
+      </p>
 
       <form
         onSubmit={submitEmail}
@@ -153,7 +161,8 @@ export default function InvitePanel({
       )}
 
       <p className="text-xs text-ink-soft/80">
-        The link works once — whoever taps it first becomes your person here.
+        Waiting for them to join. The link works once — whoever opens it first
+        becomes your person here. Sign-in is Google.
       </p>
     </div>
   );

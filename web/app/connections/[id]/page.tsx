@@ -450,10 +450,12 @@ export default async function ConnectionPage({
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
         <section id="invite" className="card mt-6 scroll-mt-24 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-          <h2 className="text-lg text-brand-800 dark:text-brand-200">Invite your person</h2>
+          <h2 className="text-lg text-brand-800 dark:text-brand-200">
+            Waiting for your person
+          </h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Email it, text it, or share the link. Once they join and answer,
-            you&apos;ll reveal together.
+            Share the invite link in one tap. They sign in with Google, join,
+            and answer — then you reveal together. Nothing is visible early.
           </p>
           <InvitePanel
             connectionId={id}

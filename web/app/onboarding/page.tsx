@@ -20,7 +20,8 @@ export default async function OnboardingPage({
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const { error, next: rawNext } = await searchParams;
-  const next = safeNextPath(rawNext, "/account");
+  // After first profile setup, go straight to creating + inviting a partner.
+  const next = safeNextPath(rawNext, "/connections/new");
   const supabase = await createClient();
   const {
     data: { user },

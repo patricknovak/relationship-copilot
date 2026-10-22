@@ -4,6 +4,7 @@ import {
   normalizeAuthNextParam,
   parseConfirmOtpType,
 } from "@/lib/authConfirm";
+import { resolvePostAuthDestination } from "@/lib/resolvePostAuthDestination";
 
 // Cross-device email OTP confirmation. Unlike /auth/callback (PKCE code
 // exchange), this path uses token_hash + verifyOtp and does not need the
@@ -44,14 +45,8 @@ export async function GET(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (!profile?.display_name) {
-      return NextResponse.redirect(`${origin}/onboarding`);
-    }
+    const dest = await resolvePostAuthDestination(supabase, user.id);
+    return NextResponse.redirect(`${origin}${dest}`);
   }
   return NextResponse.redirect(`${origin}/connections`);
 }
