@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { existsSync } from "node:fs";
+import { e2ePublicSupabaseEnv } from "./lib/e2eSupabaseGuard";
 
 const port = Number(process.env.E2E_PORT || 3000);
 const baseURL = process.env.E2E_BASE_URL || `http://127.0.0.1:${port}`;
@@ -10,6 +11,11 @@ const cloudChromium = "/opt/pw-browsers/chromium";
 const executablePath = existsSync(cloudChromium)
   ? cloudChromium
   : undefined;
+
+// Never inherit production Supabase from .env.production — public e2e only
+// hits unsigned pages / negative API paths, but next start still constructs
+// the browser client and was sending placeholder-key traffic to prod (~144/day).
+const supabaseEnv = e2ePublicSupabaseEnv(process.env);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -37,11 +43,12 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
-        // Public NEXT_PUBLIC_* come from committed .env.production.
+        // Local mock (or supabase start via E2E_SUPABASE_*) — never production.
         // A non-empty service-role placeholder lets createAdminClient construct
         // (invite preview); real invites/cron are not exercised without secrets.
         env: {
           ...process.env,
+          ...supabaseEnv,
           SUPABASE_SERVICE_ROLE_KEY:
             process.env.SUPABASE_SERVICE_ROLE_KEY ||
             "e2e-placeholder-not-a-real-service-role-key",
