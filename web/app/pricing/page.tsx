@@ -7,7 +7,7 @@ import NoticeBanner from "@/components/NoticeBanner";
 import { canonicalUrl } from "@/lib/site";
 import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
-import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
+import { pricingJsonLdScriptContent } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -87,9 +87,11 @@ export default async function PricingPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: faqPageJsonLdScriptContent({
+          __html: pricingJsonLdScriptContent({
             url: canonicalUrl("/pricing"),
             faqs: FAQS,
+            freeFeatures: FREE,
+            premiumFeatures: PREMIUM,
           }),
         }}
       />

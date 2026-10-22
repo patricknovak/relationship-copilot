@@ -5,6 +5,7 @@ import {
   articleJsonLdScriptContent,
   homepageJsonLd,
   homepageJsonLdScriptContent,
+  pricingJsonLd,
   serializeJsonLd,
 } from "./jsonLd";
 
@@ -131,5 +132,35 @@ describe("faqPageJsonLd", () => {
     expect(node.mainEntity).toHaveLength(1);
     expect(node.mainEntity[0].name).toBe("Q1?");
     expect(node.mainEntity[0].acceptedAnswer.text).toBe("A1.");
+  });
+});
+
+describe("pricingJsonLd", () => {
+  it("includes Organization, WebSite, Free+Premium offers, and FAQPage", () => {
+    const data = pricingJsonLd({
+      url: "https://relationshipcopilot.com/pricing",
+      faqs: [{ q: "Is Safety paywalled?", a: "No. Safety resources are free." }],
+      freeFeatures: ["Safety resources — always free"],
+      premiumFeatures: ["AI Relationship Blueprint"],
+    });
+    const graph = data["@graph"];
+    expect(graph.some((n) => n["@type"] === "Organization")).toBe(true);
+    expect(graph.some((n) => n["@type"] === "WebSite")).toBe(true);
+    const app = graph.find(
+      (n) =>
+        Array.isArray(n["@type"]) &&
+        (n["@type"] as string[]).includes("SoftwareApplication"),
+    );
+    const offers = app!.offers as { name: string; price: string }[];
+    expect(offers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Free", price: "0" }),
+        expect.objectContaining({ name: "Premium", price: "18.00" }),
+      ]),
+    );
+    const faq = graph.find((n) => n["@type"] === "FAQPage") as {
+      mainEntity: { name: string }[];
+    };
+    expect(faq.mainEntity[0].name).toBe("Is Safety paywalled?");
   });
 });
