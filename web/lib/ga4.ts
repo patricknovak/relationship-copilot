@@ -6,10 +6,10 @@
 // conversions that happen behind the mutual-reveal gate must be sent from
 // the server with no connection, invite, or user IDs in the payload.
 //
-// client_id is a stable pseudonym: SHA-256 of the Supabase user id, shaped as
-// a UUID. Optional browser GA client_id may be preferred only when analytics
-// consent was already granted and the value is passed through by the caller —
-// this module never reads cookies or collects new identifiers.
+// client_id is a stable pseudonym: HMAC-SHA256(user id, GA4_CLIENT_ID_SALT),
+// shaped as a UUID. Missing salt → fail closed (no send). Sends also require
+// the acting user's analytics consent to be "granted"; denied or unknown
+// (including cron / no cookie) → no send.
 //
 // If GA4_MEASUREMENT_ID or GA4_API_SECRET is unset, tracking is a no-op
 // (local/preview default).
@@ -18,8 +18,9 @@
 // returns; after() maps to ctx.waitUntil) go through
 // `scheduleGa4Event` → Next.js `after()`. Failures never affect reveal UX.
 
-import { createHash } from "crypto";
+import { createHmac } from "crypto";
 import { after } from "next/server";
+import type { ConsentChoice } from "@/lib/analytics";
 
 /** Exact north-star event name — must match GA4 Admin key-event toggle. */
 export const FIRST_MUTUAL_REVEAL_COMPLETED = "first_mutual_reveal_completed";
@@ -41,18 +42,21 @@ export type UserFunnelStep = typeof SIGN_UP_COMPLETED;
 
 /**
  * Identity for MP client_id. Never put email, name, or the raw user id in
- * the GA4 payload — only a hash-derived (or consented browser) client_id.
+ * the GA4 payload — only an HMAC-derived (or consented browser) client_id.
  */
 export type Ga4ClientIdentity = {
-  /** Supabase auth user id (hashed; never sent as-is). */
+  /** Supabase auth user id (HMAC'd; never sent as-is). */
   userId: string;
   /**
+   * Acting user's analytics consent. Only `"granted"` may send.
+   * `denied` / `null` (unknown — no cookie, cron, other partner) → no send.
+   */
+  analyticsConsent: ConsentChoice | null;
+  /**
    * Optional GA client_id already known to the caller (e.g. from `_ga`).
-   * Used only when `analyticsConsentGranted` is true. Do not read cookies here.
+   * Used only when analyticsConsent is granted. Do not read cookies here.
    */
   browserClientId?: string | null;
-  /** Must be true for browserClientId to be preferred. */
-  analyticsConsentGranted?: boolean;
 };
 
 /** True when this completed reveal is the connection's first. */
@@ -77,17 +81,46 @@ export function shouldTrackFirstMutualReveal(claimGranted: boolean): boolean {
   return claimGranted === true;
 }
 
-/**
- * Stable pseudonymous GA4 client_id from a Supabase user id.
- * SHA-256 hex → UUID-shaped string (8-4-4-4-12). Deterministic per user.
- */
-export function ga4ClientIdFromUserId(userId: string): string {
-  const hex = createHash("sha256").update(userId, "utf8").digest("hex");
+let warnedMissingSalt = false;
+
+/** Log once per isolate when the HMAC salt is unset (fail closed). */
+export function warnMissingGa4ClientIdSaltOnce(): void {
+  if (warnedMissingSalt) return;
+  warnedMissingSalt = true;
+  console.warn(
+    "[ga4] GA4_CLIENT_ID_SALT unset; Measurement Protocol sends disabled",
+  );
+}
+
+/** Test-only: reset the once-flag between cases. */
+export function resetGa4ClientIdSaltWarningForTests(): void {
+  warnedMissingSalt = false;
+}
+
+function uuidShapeFromHex(hex: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
+/**
+ * Stable pseudonymous GA4 client_id from a Supabase user id.
+ * HMAC-SHA256 with GA4_CLIENT_ID_SALT → UUID-shaped string.
+ * Returns null (and warns once) when the salt is missing — never falls back
+ * to a plain hash or the raw id.
+ */
+export function ga4ClientIdFromUserId(userId: string): string | null {
+  const salt = process.env.GA4_CLIENT_ID_SALT?.trim();
+  if (!salt) {
+    warnMissingGa4ClientIdSaltOnce();
+    return null;
+  }
+  const hex = createHmac("sha256", salt).update(userId, "utf8").digest("hex");
+  return uuidShapeFromHex(hex);
+}
+
 /** GA4 accepts UUID or the classic `digits.digits` client_id form. */
-export function isValidGa4ClientId(value: string | null | undefined): value is string {
+export function isValidGa4ClientId(
+  value: string | null | undefined,
+): value is string {
   if (!value || typeof value !== "string") return false;
   const v = value.trim();
   if (
@@ -95,17 +128,16 @@ export function isValidGa4ClientId(value: string | null | undefined): value is s
   ) {
     return true;
   }
-  // Classic analytics.js / gtag client_id: two numeric segments.
   return /^\d+\.\d+$/.test(v);
 }
 
 /**
  * Prefer a consented browser client_id when the caller already passed one;
- * otherwise the hash-derived id for this user.
+ * otherwise the HMAC-derived id. Returns null when salt is missing.
  */
-export function resolveGa4ClientId(identity: Ga4ClientIdentity): string {
+export function resolveGa4ClientId(identity: Ga4ClientIdentity): string | null {
   if (
-    identity.analyticsConsentGranted === true &&
+    identity.analyticsConsent === "granted" &&
     isValidGa4ClientId(identity.browserClientId)
   ) {
     return identity.browserClientId.trim();
@@ -118,17 +150,21 @@ type Ga4EventParams = Record<string, string | number | boolean>;
 /**
  * GA4 event via Measurement Protocol.
  * Never throws; never includes user/connection identifiers or PII.
+ * Requires analyticsConsent === "granted" and GA4_CLIENT_ID_SALT.
  */
 export async function sendGa4Event(
   name: string,
   params: Ga4EventParams = {},
   identity: Ga4ClientIdentity,
 ): Promise<boolean> {
+  if (identity.analyticsConsent !== "granted") return false;
+
   const measurementId = process.env.GA4_MEASUREMENT_ID?.trim();
   const apiSecret = process.env.GA4_API_SECRET?.trim();
   if (!measurementId || !apiSecret) return false;
 
   const clientId = resolveGa4ClientId(identity);
+  if (!clientId) return false;
 
   const url = new URL("https://www.google-analytics.com/mp/collect");
   url.searchParams.set("measurement_id", measurementId);
@@ -145,14 +181,12 @@ export async function sendGa4Event(
           {
             name,
             params: {
-              // Helps MP events register as engaged in GA4 reports.
               engagement_time_msec: 1,
               ...params,
             },
           },
         ],
       }),
-      // Don't let a hung GA endpoint stall the reveal response / after() task.
       signal: AbortSignal.timeout(4_000),
     });
     if (!res.ok) {

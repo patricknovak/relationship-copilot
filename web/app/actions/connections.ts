@@ -16,6 +16,7 @@ import {
 import type { ConnectionType } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { normalizeInviteNote } from "@/lib/inviteNote";
+import { readRequestAnalyticsConsent } from "@/lib/analyticsConsent.server";
 import {
   parseQuestionsListParam,
   questionsStartPath,
@@ -33,6 +34,7 @@ type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
 // Once-only funnel claim + GA4 schedule. Failures never break invite/join —
 // same swallow-and-log pattern as the first-reveal claim in prompts.ts.
+// MP send uses this request's analytics consent cookie (unknown → no send).
 async function claimAndTrackFunnelStep(
   supabase: SupabaseServer,
   connectionId: string,
@@ -49,7 +51,8 @@ async function claimAndTrackFunnelStep(
       return;
     }
     if (shouldTrackFunnelStep(claimed === true)) {
-      const identity = { userId };
+      const analyticsConsent = await readRequestAnalyticsConsent();
+      const identity = { userId, analyticsConsent };
       if (step === INVITE_SENT) scheduleInviteSent(identity);
       else if (step === PARTNER_JOINED) schedulePartnerJoined(identity);
     }
