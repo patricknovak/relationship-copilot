@@ -162,7 +162,7 @@ export default function InvitePanel({
 
       <p className="text-xs text-ink-soft/80">
         Waiting for them to join. The link works once — whoever opens it first
-        becomes your person here. Sign-in is Google (or email).
+        becomes your person here. Sign-in is Google.
       </p>
     </div>
   );

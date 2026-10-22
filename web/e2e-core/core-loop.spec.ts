@@ -14,9 +14,10 @@ test("invite, join, answer in private, reveal together", async ({ browser }) => 
   const s = await signedInPage(browser, sam.email, "/connections/new");
   await s.getByText(/sibling/i).first().click();
   await s.getByRole("button", { name: /create|start|continue|next/i }).first().click();
-  await s.waitForURL(/\/connections\/[0-9a-f-]{36}$/);
-  const connectionId = s.url().split("/").pop()!;
-  await expect(s.getByRole("heading", { name: "Invite your person" })).toBeVisible();
+  // createConnection lands on #invite so sharing is one scroll away.
+  await s.waitForURL(/\/connections\/[0-9a-f-]{36}(?:#invite)?$/);
+  const connectionId = s.url().split("/").pop()!.split("#")[0]!;
+  await expect(s.getByRole("heading", { name: "Waiting for your person" })).toBeVisible();
 
   const { data: conn } = await admin
     .from("connections")
@@ -56,13 +57,13 @@ test("an outsider can't open someone else's connection", async ({ browser }) => 
   const o = await signedInPage(browser, owner.email, "/connections/new");
   await o.getByText(/friend/i).first().click();
   await o.getByRole("button", { name: /create|start|continue|next/i }).first().click();
-  await o.waitForURL(/\/connections\/[0-9a-f-]{36}$/);
-  const connectionId = o.url().split("/").pop()!;
+  await o.waitForURL(/\/connections\/[0-9a-f-]{36}(?:#invite)?$/);
+  const connectionId = o.url().split("/").pop()!.split("#")[0]!;
 
   // The route streams (loading.tsx), so the status can be 200; what matters
   // is that RLS finds nothing and the not-found page renders instead.
   const x = await signedInPage(browser, outsider.email, `/connections/${connectionId}`);
   await x.goto(`/connections/${connectionId}`);
   await expect(x.getByRole("heading", { name: "This page drifted apart" })).toBeVisible();
-  await expect(x.getByRole("heading", { name: "Invite your person" })).toHaveCount(0);
+  await expect(x.getByRole("heading", { name: "Waiting for your person" })).toHaveCount(0);
 });
