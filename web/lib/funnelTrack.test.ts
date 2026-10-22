@@ -44,22 +44,35 @@ describe("claimAndTrackUserFunnelStep", () => {
     else process.env.GA4_API_SECRET = originalSecret;
   });
 
-  it("schedules sign_up_completed when the claim wins (MP send no-op until PR #137)", async () => {
+  const userId = "11111111-1111-4111-8111-111111111111";
+
+  it("schedules sign_up_completed when the claim wins", async () => {
     const supabase = mockRpc({ data: true, error: null });
-    await claimAndTrackUserFunnelStep(supabase as never, SIGN_UP_COMPLETED);
+    await claimAndTrackUserFunnelStep(
+      supabase as never,
+      SIGN_UP_COMPLETED,
+      userId,
+    );
     expect(supabase.rpc).toHaveBeenCalledWith("claim_user_funnel_step", {
       p_step: SIGN_UP_COMPLETED,
     });
-    expect(afterMock).toHaveBeenCalledOnce();
-    await Promise.resolve();
-    await Promise.resolve();
-    // Privacy hotfix: sendGa4Event is a no-op until consent gating ships.
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    const body = JSON.parse(
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock
+        .calls[0][1].body as string,
+    );
+    expect(body.events[0].name).toBe("sign_up_completed");
+    expect(body.non_personalized_ads).toBe(true);
+    expect(JSON.stringify(body)).not.toContain(userId);
   });
 
   it("does not send when the claim loses", async () => {
     const supabase = mockRpc({ data: false, error: null });
-    await claimAndTrackUserFunnelStep(supabase as never, SIGN_UP_COMPLETED);
+    await claimAndTrackUserFunnelStep(
+      supabase as never,
+      SIGN_UP_COMPLETED,
+      userId,
+    );
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -69,7 +82,7 @@ describe("claimAndTrackUserFunnelStep", () => {
       error: { message: "relation missing" },
     });
     await expect(
-      claimAndTrackUserFunnelStep(supabase as never, SIGN_UP_COMPLETED),
+      claimAndTrackUserFunnelStep(supabase as never, SIGN_UP_COMPLETED, userId),
     ).resolves.toBeUndefined();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
@@ -98,20 +111,24 @@ describe("claimAndTrackFirstQuestionAnswered", () => {
     else process.env.GA4_API_SECRET = originalSecret;
   });
 
-  it("schedules first_question_answered when the claim wins (MP send no-op until PR #137)", async () => {
+  it("schedules first_question_answered when the claim wins", async () => {
     const supabase = mockRpc({ data: true, error: null });
+    const userId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     await claimAndTrackFirstQuestionAnswered(
       supabase as never,
       "11111111-1111-1111-1111-111111111111",
+      userId,
     );
     expect(supabase.rpc).toHaveBeenCalledWith("claim_funnel_step", {
       p_connection_id: "11111111-1111-1111-1111-111111111111",
       p_step: FIRST_QUESTION_ANSWERED,
     });
-    expect(afterMock).toHaveBeenCalledOnce();
-    await Promise.resolve();
-    await Promise.resolve();
-    // Privacy hotfix: sendGa4Event is a no-op until consent gating ships.
-    expect(globalThis.fetch).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    const body = JSON.parse(
+      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock
+        .calls[0][1].body as string,
+    );
+    expect(body.events[0].name).toBe("first_question_answered");
+    expect(JSON.stringify(body)).not.toContain(userId);
   });
 });

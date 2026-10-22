@@ -41,14 +41,17 @@ export async function GET(request: Request) {
   });
   if (error) return fail();
 
-  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
-  await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED);
-
-  if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
+  if (user) {
+    await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED, user.id);
+  }
+
+  if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
+
   if (user) {
     const dest = await resolvePostAuthDestination(supabase, user.id);
     return NextResponse.redirect(`${origin}${dest}`);

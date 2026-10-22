@@ -49,17 +49,20 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=auth${carry}`);
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
-  await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED);
+  if (user) {
+    await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED, user.id);
+  }
 
   if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
 
   // No explicit destination: incomplete profile → onboarding; no partner yet
   // → invite step (/connections/new or existing solo invite). Explicit invite
   // deep links still win above.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   if (user) {
     const dest = await resolvePostAuthDestination(supabase, user.id);
     return NextResponse.redirect(`${origin}${dest}`);

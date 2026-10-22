@@ -214,6 +214,7 @@ export async function submitResponse(input: {
     await claimAndTrackFirstQuestionAnswered(
       supabase,
       instance.connection_id,
+      user.id,
     );
 
     if (!revealed) {
@@ -233,7 +234,7 @@ export async function submitResponse(input: {
         if (stepError)
           console.error("[ga4] claim_funnel_step failed", stepError.message);
         else if (shouldTrackFunnelStep(claimedStep === true))
-          scheduleGa4Event(ANSWERED_BEFORE_JOIN);
+          scheduleGa4Event(ANSWERED_BEFORE_JOIN, {}, { userId: user.id });
       }
     }
   }
@@ -267,7 +268,7 @@ export async function submitResponse(input: {
         claimError.message,
       );
     } else if (shouldTrackFirstMutualReveal(claimed === true)) {
-      scheduleFirstMutualRevealCompleted();
+      scheduleFirstMutualRevealCompleted({ userId: user.id });
     }
   }
 

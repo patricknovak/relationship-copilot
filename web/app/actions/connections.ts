@@ -37,6 +37,7 @@ async function claimAndTrackFunnelStep(
   supabase: SupabaseServer,
   connectionId: string,
   step: FunnelStep,
+  userId: string,
 ): Promise<void> {
   try {
     const { data: claimed, error } = await supabase.rpc("claim_funnel_step", {
@@ -48,8 +49,9 @@ async function claimAndTrackFunnelStep(
       return;
     }
     if (shouldTrackFunnelStep(claimed === true)) {
-      if (step === INVITE_SENT) scheduleInviteSent();
-      else if (step === PARTNER_JOINED) schedulePartnerJoined();
+      const identity = { userId };
+      if (step === INVITE_SENT) scheduleInviteSent(identity);
+      else if (step === PARTNER_JOINED) schedulePartnerJoined(identity);
     }
   } catch (err) {
     console.error("[ga4] claim_funnel_step failed", err);
@@ -213,7 +215,7 @@ export async function acceptInvite(
 
   // Funnel: partner_joined once both people are in. Claim failure must not
   // break the join (covers AutoAcceptInvite). See docs/ga4-first-mutual-reveal.md.
-  await claimAndTrackFunnelStep(supabase, data, PARTNER_JOINED);
+  await claimAndTrackFunnelStep(supabase, data, PARTNER_JOINED, user.id);
 
   // Create the onboarding set as soon as the second person joins so the
   // both-joined state can show the real question count. Failure must not
@@ -373,7 +375,7 @@ export async function sendEmailInvite(
 
   // Funnel: invite_sent on successful email invite (not on "existing account").
   // Claim failure must not break the invite response.
-  await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT);
+  await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT, user.id);
 
   return { status: "sent" };
 }
@@ -397,7 +399,7 @@ export async function markInviteShared(connectionId: string): Promise<void> {
       .maybeSingle();
     if (!conn) return;
 
-    await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT);
+    await claimAndTrackFunnelStep(supabase, connectionId, INVITE_SENT, user.id);
   } catch (err) {
     console.error("[ga4] markInviteShared failed", err);
   }
