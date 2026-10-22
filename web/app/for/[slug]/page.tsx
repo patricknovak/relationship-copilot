@@ -4,18 +4,8 @@ import { notFound } from "next/navigation";
 import { AuthLink } from "@/components/AuthHint";
 import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
+import { questionPageBySlug } from "@/lib/questionPages";
 import { canonicalUrl } from "@/lib/site";
-
-/** Labels for “See the questions for …” — match /questions forLabel strings. */
-const QUESTIONS_FOR_LABEL: Record<string, string> = {
-  partners: "your partner",
-  friends: "a friend",
-  family: "family",
-  siblings: "your brother or sister",
-  coworkers: "coworkers",
-  mentors: "mentors and mentees",
-  "parents-and-teens": "parents and teens",
-};
 
 export function generateStaticParams() {
   return FOR_PAGES.map((p) => ({ slug: p.slug }));
@@ -55,6 +45,8 @@ export default async function ForPage({
   const loginHref = `/login?next=${encodeURIComponent(newHref)}`;
   const faqs = forPageFaqs(page);
   const url = canonicalUrl(`/for/${page.slug}`);
+  // Only link when /questions/<slug> exists (avoids 404 if this PR lands before the expanded question pages).
+  const questionsPage = questionPageBySlug(page.slug);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -81,14 +73,16 @@ export default async function ForPage({
         Free for the core experience. Answers stay private until you&apos;ve
         both shared.
       </p>
-      <p className="mt-4 text-sm text-ink-soft">
-        <Link
-          href={`/questions/${page.slug}`}
-          className="text-brand-700 underline dark:text-brand-300"
-        >
-          See the questions for {QUESTIONS_FOR_LABEL[page.slug] ?? page.label.toLowerCase()}
-        </Link>
-      </p>
+      {questionsPage ? (
+        <p className="mt-4 text-sm text-ink-soft">
+          <Link
+            href={`/questions/${questionsPage.slug}`}
+            className="text-brand-700 underline dark:text-brand-300"
+          >
+            See the questions for {questionsPage.forLabel}
+          </Link>
+        </p>
+      ) : null}
 
       <section className="mt-12">
         <h2 className="text-2xl">A few of the questions</h2>

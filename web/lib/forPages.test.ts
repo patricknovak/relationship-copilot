@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FOR_PAGES, forPageBySlug, forPageFaqs } from "./forPages";
+import { questionPageBySlug } from "./questionPages";
 import { CONNECTION_TYPES } from "./relationships";
 
 describe("for pages", () => {
@@ -22,5 +23,30 @@ describe("for pages", () => {
   it("looks up by slug", () => {
     expect(forPageBySlug("siblings")?.type).toBe("sibling");
     expect(forPageBySlug("nope")).toBeNull();
+  });
+
+  it("only offers a /questions link when questionPageBySlug returns a page", () => {
+    // Mirrors web/app/for/[slug]/page.tsx: render “See the questions for …”
+    // only when the matching /questions page exists (avoids 404s if this PR
+    // lands before the expanded question-page set).
+    const linked: string[] = [];
+    const skipped: string[] = [];
+    for (const p of FOR_PAGES) {
+      const questionsPage = questionPageBySlug(p.slug);
+      if (questionsPage) {
+        expect(questionsPage.slug).toBe(p.slug);
+        expect(`See the questions for ${questionsPage.forLabel}`).toMatch(
+          /^See the questions for .+/,
+        );
+        linked.push(p.slug);
+      } else {
+        skipped.push(p.slug);
+      }
+    }
+    expect(linked).toEqual(["partners", "friends", "family"]);
+    expect(skipped.sort()).toEqual(
+      ["coworkers", "mentors", "parents-and-teens", "siblings"].sort(),
+    );
+    expect(questionPageBySlug("siblings")).toBeNull();
   });
 });
