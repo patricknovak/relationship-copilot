@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeAuthNextParam } from "@/lib/authConfirm";
+import { SIGN_UP_COMPLETED } from "@/lib/ga4";
+import { claimAndTrackUserFunnelStep } from "@/lib/funnelTrack";
 import { resolvePostAuthDestination } from "@/lib/resolvePostAuthDestination";
 
 // Establishes a session from either auth flow, then sends the user on:
@@ -46,6 +48,9 @@ export async function GET(request: Request) {
     const carry = explicitNext ? `&next=${encodeURIComponent(explicitNext)}` : "";
     return NextResponse.redirect(`${origin}/login?error=auth${carry}`);
   }
+
+  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
+  await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED);
 
   if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
 

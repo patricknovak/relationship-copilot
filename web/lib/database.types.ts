@@ -266,16 +266,40 @@ export interface Database {
       connection_funnel_steps: {
         Row: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined" | "answered_before_join";
+          step:
+            | "invite_sent"
+            | "partner_joined"
+            | "answered_before_join"
+            | "first_question_answered";
           claimed_at: string;
         };
         Insert: {
           connection_id: string;
-          step: "invite_sent" | "partner_joined" | "answered_before_join";
+          step:
+            | "invite_sent"
+            | "partner_joined"
+            | "answered_before_join"
+            | "first_question_answered";
           claimed_at?: string;
         };
         Update: Partial<
           Database["public"]["Tables"]["connection_funnel_steps"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      user_funnel_steps: {
+        Row: {
+          user_id: string;
+          step: "sign_up_completed";
+          claimed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          step: "sign_up_completed";
+          claimed_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["user_funnel_steps"]["Insert"]
         >;
         Relationships: [];
       };
@@ -533,8 +557,16 @@ export interface Database {
       claim_funnel_step: {
         Args: {
           p_connection_id: string;
-          p_step: "invite_sent" | "partner_joined" | "answered_before_join";
+          p_step:
+            | "invite_sent"
+            | "partner_joined"
+            | "answered_before_join"
+            | "first_question_answered";
         };
+        Returns: boolean;
+      };
+      claim_user_funnel_step: {
+        Args: { p_step: "sign_up_completed" };
         Returns: boolean;
       };
       partner_profile_rows: {

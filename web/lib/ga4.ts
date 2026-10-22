@@ -18,16 +18,20 @@ import { after } from "next/server";
 /** Exact north-star event name — must match GA4 Admin key-event toggle. */
 export const FIRST_MUTUAL_REVEAL_COMPLETED = "first_mutual_reveal_completed";
 
-/** Funnel siblings (not key events) — invite → join → first reveal. */
+/** Funnel siblings (not key events) — sign-up → invite → join → first answer → reveal. */
+export const SIGN_UP_COMPLETED = "sign_up_completed";
 export const INVITE_SENT = "invite_sent";
 export const PARTNER_JOINED = "partner_joined";
+export const FIRST_QUESTION_ANSWERED = "first_question_answered";
 
 /** Inviter submitted their first answers before their person joined (0033). */
 export const ANSWERED_BEFORE_JOIN = "answered_before_join";
 export type FunnelStep =
   | typeof INVITE_SENT
   | typeof PARTNER_JOINED
-  | typeof ANSWERED_BEFORE_JOIN;
+  | typeof ANSWERED_BEFORE_JOIN
+  | typeof FIRST_QUESTION_ANSWERED;
+export type UserFunnelStep = typeof SIGN_UP_COMPLETED;
 
 /** True when this completed reveal is the connection's first. */
 export function isConnectionFirstReveal(revealedInstanceCount: number): boolean {
@@ -132,6 +136,11 @@ export function scheduleFirstMutualRevealCompleted(): void {
   scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED);
 }
 
+/** Schedule sign_up_completed after first successful auth (once per user). */
+export function scheduleSignUpCompleted(): void {
+  scheduleGa4Event(SIGN_UP_COMPLETED);
+}
+
 /** Schedule invite_sent after a successful share/email (once per connection). */
 export function scheduleInviteSent(): void {
   scheduleGa4Event(INVITE_SENT);
@@ -140,4 +149,9 @@ export function scheduleInviteSent(): void {
 /** Schedule partner_joined after accept_invite succeeds (once per connection). */
 export function schedulePartnerJoined(): void {
   scheduleGa4Event(PARTNER_JOINED);
+}
+
+/** Schedule first_question_answered after first onboarding submit (once per connection). */
+export function scheduleFirstQuestionAnswered(): void {
+  scheduleGa4Event(FIRST_QUESTION_ANSWERED);
 }
