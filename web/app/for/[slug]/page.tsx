@@ -6,6 +6,17 @@ import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
 
+/** Labels for “See the questions for …” — match /questions forLabel strings. */
+const QUESTIONS_FOR_LABEL: Record<string, string> = {
+  partners: "your partner",
+  friends: "a friend",
+  family: "family",
+  siblings: "your brother or sister",
+  coworkers: "coworkers",
+  mentors: "mentors and mentees",
+  "parents-and-teens": "parents and teens",
+};
+
 export function generateStaticParams() {
   return FOR_PAGES.map((p) => ({ slug: p.slug }));
 }
@@ -70,6 +81,14 @@ export default async function ForPage({
         Free for the core experience. Answers stay private until you&apos;ve
         both shared.
       </p>
+      <p className="mt-4 text-sm text-ink-soft">
+        <Link
+          href={`/questions/${page.slug}`}
+          className="text-brand-700 underline dark:text-brand-300"
+        >
+          See the questions for {QUESTIONS_FOR_LABEL[page.slug] ?? page.label.toLowerCase()}
+        </Link>
+      </p>
 
       <section className="mt-12">
         <h2 className="text-2xl">A few of the questions</h2>
@@ -89,25 +108,6 @@ export default async function ForPage({
           ))}
         </ol>
       </section>
-
-      {(page.slug === "partners" ||
-        page.slug === "friends" ||
-        page.slug === "family") && (
-        <p className="mt-8 text-sm text-ink-soft">
-          Longer list:{" "}
-          <Link
-            href={`/questions/${page.slug}`}
-            className="text-brand-700 underline dark:text-brand-300"
-          >
-            {page.slug === "partners"
-              ? "questions to ask your partner"
-              : page.slug === "friends"
-                ? "questions to ask a friend"
-                : "questions to ask family"}
-          </Link>
-          .
-        </p>
-      )}
 
       {page.article && (
         <p className="mt-8 text-sm text-ink-soft">

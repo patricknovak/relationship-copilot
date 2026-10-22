@@ -289,6 +289,11 @@ export default function Home() {
             </details>
           ))}
         </div>
+        <p className="mt-8 text-center text-sm text-ink-soft">
+          <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+            Browse the questions
+          </Link>
+        </p>
       </section>
 
       {/* ------------------------------------------------ Final CTA */}

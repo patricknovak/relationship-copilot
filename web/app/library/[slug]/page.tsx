@@ -158,7 +158,12 @@ export default async function ArticlePage({
         </section>
       )}
 
-      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-xs text-ink-soft/80">
+      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-sm text-ink-soft">
+        <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+          Browse the questions
+        </Link>
+      </p>
+      <p className="mt-4 text-xs text-ink-soft/80">
         Educational content, not therapy or medical advice. In crisis? Our{" "}
         <Link href="/safety" className="underline">
           Safety resources
