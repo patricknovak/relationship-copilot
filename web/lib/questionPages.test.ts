@@ -4,20 +4,25 @@ import {
   QUESTIONS_BLOCK_COPY,
   QUESTIONS_CTA_HREF,
   QUESTIONS_CTA_LABEL,
+  QUESTIONS_HUB,
   QUESTIONS_SHARED_FAQS,
   QUESTIONS_SIGN_IN_HINT,
   questionPageBySlug,
 } from "./questionPages";
 
 describe("questionPages", () => {
-  it("exposes partners, friends, and family with 12–15 verbatim questions each", () => {
+  it("exposes all 7 relationship types with verbatim seeded questions", () => {
     expect(QUESTION_PAGES.map((p) => p.slug)).toEqual([
       "partners",
       "friends",
       "family",
+      "coworkers",
+      "siblings",
+      "mentors",
+      "parents-and-teens",
     ]);
     for (const page of QUESTION_PAGES) {
-      expect(page.questions.length).toBeGreaterThanOrEqual(12);
+      expect(page.questions.length).toBeGreaterThanOrEqual(8);
       expect(page.questions.length).toBeLessThanOrEqual(15);
       for (const q of page.questions) {
         expect(q.text.length).toBeGreaterThan(8);
@@ -26,7 +31,7 @@ describe("questionPages", () => {
     }
   });
 
-  it("uses the required titles and CTA copy", () => {
+  it("uses the required titles, hub meta, and CTA copy", () => {
     expect(questionPageBySlug("partners")?.title).toBe(
       "Questions to ask your partner",
     );
@@ -35,6 +40,24 @@ describe("questionPages", () => {
     );
     expect(questionPageBySlug("family")?.title).toBe(
       "Questions to ask family",
+    );
+    expect(questionPageBySlug("coworkers")?.title).toBe(
+      "Questions to ask a coworker",
+    );
+    expect(questionPageBySlug("siblings")?.title).toBe(
+      "Questions to ask your brother or sister",
+    );
+    expect(questionPageBySlug("mentors")?.title).toBe(
+      "Questions to ask a mentor or mentee",
+    );
+    expect(questionPageBySlug("parents-and-teens")?.title).toBe(
+      "Questions for parents and teens",
+    );
+    expect(QUESTIONS_HUB.metaTitle).toBe(
+      "Questions to ask — partners, friends, family, and more",
+    );
+    expect(QUESTIONS_HUB.metaDescription).toBe(
+      "Questions to ask a partner, friend, family member, sibling, coworker, mentor, or teen — answered in private and revealed together. Free for up to 3 connections.",
     );
     expect(QUESTIONS_CTA_LABEL).toBe("Start a connection");
     expect(QUESTIONS_CTA_HREF).toBe("/login?next=/connections/new");
@@ -69,5 +92,17 @@ describe("questionPages", () => {
         .toLowerCase();
       expect(blob).not.toContain("20 questions");
     }
+  });
+
+  it("counts 7 question URLs toward a 34-URL sitemap with 11 free articles", () => {
+    // 9 static marketing + 7 /for + 7 /questions type pages + 11 free
+    // published library articles = 34 (sitemap derives type pages from
+    // QUESTION_PAGES).
+    const staticMarketing = 9;
+    const forPages = 7;
+    const freeArticles = 11;
+    expect(
+      staticMarketing + forPages + QUESTION_PAGES.length + freeArticles,
+    ).toBe(34);
   });
 });

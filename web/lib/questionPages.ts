@@ -1,6 +1,7 @@
 // Public /questions hub + per-type landing pages.
 // Listed questions are copied verbatim from onboarding seed packs
-// (supabase/migrations/0003_seed_content.sql; family q13–q15 from 0029).
+// (supabase/migrations/0003_seed_content.sql; family q13–q15 from 0029;
+// siblings + mentors from 0013_content_coverage_and_hardening.sql).
 // Do not invent new question text here.
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 
@@ -15,7 +16,14 @@ export type ListedQuestion = {
 };
 
 export type QuestionPage = {
-  slug: "partners" | "friends" | "family";
+  slug:
+    | "partners"
+    | "friends"
+    | "family"
+    | "coworkers"
+    | "siblings"
+    | "mentors"
+    | "parents-and-teens";
   /** H1 / primary SEO title phrase. */
   title: string;
   /** Full <title> (with brand suffix added by the root layout if configured). */
@@ -62,6 +70,11 @@ export const QUESTIONS_SHARED_FAQS: { q: string; a: string }[] = [
 const SRC_0003: QuestionSource = {
   file: "supabase/migrations/0003_seed_content.sql",
   note: "onboarding pack",
+};
+
+const SRC_0013: QuestionSource = {
+  file: "supabase/migrations/0013_content_coverage_and_hardening.sql",
+  note: "sibling + mentor onboarding packs",
 };
 
 const SRC_0029: QuestionSource = {
@@ -292,6 +305,190 @@ export const QUESTION_PAGES: QuestionPage[] = [
       },
     ],
   },
+  {
+    slug: "coworkers",
+    title: "Questions to ask a coworker",
+    metaTitle: "Questions to ask a coworker",
+    metaDescription:
+      "Questions for coworkers and teammates, answered in private and revealed together. Free for up to 3 connections.",
+    intro:
+      "Questions teammates answer when they start. Use them here as a list, or start a connection and answer each one in private.",
+    forSlug: "coworkers",
+    forLabel: "coworkers",
+    faqs: QUESTIONS_SHARED_FAQS,
+    questions: [
+      {
+        text: "How do you prefer to receive feedback?",
+        source: SRC_0003,
+      },
+      {
+        text: "What does great collaboration look like to you?",
+        source: SRC_0003,
+      },
+      {
+        text: "How do you like to communicate day to day (chat, calls, async)?",
+        source: SRC_0003,
+      },
+      {
+        text: "What are you trying to grow in professionally right now?",
+        source: SRC_0003,
+      },
+      {
+        text: "What helps you do your best work?",
+        source: SRC_0003,
+      },
+      {
+        text: "What's a working style of yours I should know about?",
+        source: SRC_0003,
+      },
+      {
+        text: "How do you prefer we handle disagreements about work?",
+        source: SRC_0003,
+      },
+      {
+        text: "What does recognition that feels meaningful look like for you?",
+        source: SRC_0003,
+      },
+    ],
+  },
+  {
+    slug: "siblings",
+    title: "Questions to ask your brother or sister",
+    metaTitle: "Questions to ask your brother or sister",
+    metaDescription:
+      "Questions for siblings, answered in private and revealed together. Free for up to 3 connections.",
+    intro:
+      "Questions siblings answer when they start. Use them here as a list, or start a connection and answer each one in private.",
+    forSlug: "siblings",
+    forLabel: "your brother or sister",
+    faqs: QUESTIONS_SHARED_FAQS,
+    questions: [
+      {
+        text: "What's your favorite memory of us as kids?",
+        source: SRC_0013,
+      },
+      {
+        text: "What role did you feel you played in our family growing up?",
+        source: SRC_0013,
+      },
+      {
+        text: "What do you think I got from our parents that you didn't — or the other way round?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's something about your life now that I probably don't know much about?",
+        source: SRC_0013,
+      },
+      {
+        text: "When you're going through something hard, do you want me to check in, give space, or just show up?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's an old sibling habit between us you'd be glad to retire?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's something you admire about who I've become?",
+        source: SRC_0013,
+      },
+      {
+        text: "Is there something from our childhood you wish we'd talked about?",
+        source: SRC_0013,
+      },
+    ],
+  },
+  {
+    slug: "mentors",
+    title: "Questions to ask a mentor or mentee",
+    metaTitle: "Questions to ask a mentor or mentee",
+    metaDescription:
+      "Questions for mentors and mentees, answered in private and revealed together. Free for up to 3 connections.",
+    intro:
+      "Questions mentors and mentees answer when they start. Use them here as a list, or start a connection and answer each one in private.",
+    forSlug: "mentors",
+    forLabel: "mentors and mentees",
+    faqs: QUESTIONS_SHARED_FAQS,
+    questions: [
+      {
+        text: "What do you hope this mentoring relationship gives you over the next year?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's a strength you bring that others sometimes overlook?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's a skill or situation you'd most like to grow in right now?",
+        source: SRC_0013,
+      },
+      {
+        text: "How do you like to receive feedback — direct and quick, or with context and time to reflect?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's a piece of advice you've received that genuinely changed how you work?",
+        source: SRC_0013,
+      },
+      {
+        text: "What does a good mentoring conversation look like to you — questions, stories, problem-solving, accountability?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's a professional risk you're weighing at the moment?",
+        source: SRC_0013,
+      },
+      {
+        text: "What's a mistake you've learned the most from?",
+        source: SRC_0013,
+      },
+    ],
+  },
+  {
+    slug: "parents-and-teens",
+    title: "Questions for parents and teens",
+    metaTitle: "Questions for parents and teens",
+    metaDescription:
+      "Questions a parent and teen answer in private and reveal together. Free for up to 3 connections.",
+    intro:
+      "Questions a parent and teen answer when they start. Each of you answers in private, and you see each other's answers together.",
+    forSlug: "parents-and-teens",
+    forLabel: "parents and teens",
+    faqs: QUESTIONS_SHARED_FAQS,
+    questions: [
+      {
+        text: "What's something fun you'd want us to do together?",
+        source: SRC_0003,
+      },
+      {
+        text: "When you're upset, what actually helps from me?",
+        source: SRC_0003,
+      },
+      {
+        text: "What's something you're into right now that you'd like to share?",
+        source: SRC_0003,
+      },
+      {
+        text: "What's one thing you wish I understood about your world?",
+        source: SRC_0003,
+      },
+      {
+        text: "What's a way I could give you more space or trust?",
+        source: SRC_0003,
+      },
+      {
+        text: "What are you proud of lately?",
+        source: SRC_0003,
+      },
+      {
+        text: "When do you feel most listened to by me?",
+        source: SRC_0003,
+      },
+      {
+        text: "What's something you'd like to be able to talk to me about more easily?",
+        source: SRC_0003,
+      },
+    ],
+  },
 ];
 
 export function questionPageBySlug(slug: string): QuestionPage | null {
@@ -299,9 +496,9 @@ export function questionPageBySlug(slug: string): QuestionPage | null {
 }
 
 export const QUESTIONS_HUB = {
-  metaTitle: "Questions to ask — partners, friends, and family",
+  metaTitle: "Questions to ask — partners, friends, family, and more",
   metaDescription:
-    "Curated questions to ask your partner, a friend, or family — answered in private and revealed together. Free for up to 3 connections.",
+    "Questions to ask a partner, friend, family member, sibling, coworker, mentor, or teen — answered in private and revealed together. Free for up to 3 connections.",
   title: "Questions to ask",
   intro:
     "These are the same questions you'll answer in Relationship Copilot. Pick a relationship, browse the questions, then start a connection and answer the honest way.",
