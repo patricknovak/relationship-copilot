@@ -37,11 +37,26 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
+      # Rebuild so NEXT_PUBLIC_* are not the production project from
+      # .env.production (which was sending ~144 placeholder-key requests/day
+      # to digbnrhwsifmycrxyquo). Mock localhost Supabase is enough for the
+      # public suite (unsigned pages + negative API paths). Use
+      # E2E_SUPABASE_* from e2e-core-stack.sh when pointing at a real local
+      # `supabase start` instead.
+      - name: Build (e2e, non-production Supabase)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: e2e-mock-anon-key-not-for-production
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
       - name: End-to-end (Playwright)
         run: npm run test:e2e
         env:
           CI: true
-          # next start reads public values from .env.production (committed).
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: e2e-mock-anon-key-not-for-production
+          E2E_SUPABASE_URL: http://127.0.0.1:54321
+          E2E_SUPABASE_ANON_KEY: e2e-mock-anon-key-not-for-production
           # No Resend / Stripe live calls: tests only hit unsigned pages and
           # negative API paths. Rel activation drip stays NO SEND.
       - name: Upload Playwright report
