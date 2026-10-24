@@ -60,52 +60,19 @@ type Ga4EventParams = Record<string, string | number | boolean>;
 /**
  * GA4 event via Measurement Protocol.
  * Never throws; never includes user/connection identifiers.
+ *
+ * Disabled until consent-gated sending (PR #137) ships. Server-side MP
+ * previously fired for every user with no consent check (declined banner
+ * or never answered). Call sites and exports stay unchanged.
  */
 export async function sendGa4Event(
   name: string,
   params: Ga4EventParams = {},
 ): Promise<boolean> {
-  const measurementId = process.env.GA4_MEASUREMENT_ID?.trim();
-  const apiSecret = process.env.GA4_API_SECRET?.trim();
-  if (!measurementId || !apiSecret) return false;
-
-  // Anonymous client_id: counts the conversion without joining it to a
-  // browser session or authenticated identity.
-  const clientId = crypto.randomUUID();
-
-  const url = new URL("https://www.google-analytics.com/mp/collect");
-  url.searchParams.set("measurement_id", measurementId);
-  url.searchParams.set("api_secret", apiSecret);
-
-  try {
-    const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        client_id: clientId,
-        non_personalized_ads: true,
-        events: [
-          {
-            name,
-            params: {
-              // Helps MP events register as engaged in GA4 reports.
-              engagement_time_msec: 1,
-              ...params,
-            },
-          },
-        ],
-      }),
-      // Don't let a hung GA endpoint stall the reveal response / after() task.
-      signal: AbortSignal.timeout(4_000),
-    });
-    if (!res.ok) {
-      console.error("[ga4] Measurement Protocol non-OK", res.status);
-    }
-    return res.ok;
-  } catch (err) {
-    console.error("[ga4] Measurement Protocol send failed", err);
-    return false;
-  }
+  // No-op: do not fetch until consent-gated sending (PR #137) ships.
+  void name;
+  void params;
+  return false;
 }
 
 /**
