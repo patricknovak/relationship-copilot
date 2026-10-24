@@ -50,13 +50,40 @@ export const CONSENT_STORAGE_KEY = "rc-analytics-consent";
 
 export type ConsentChoice = "granted" | "denied";
 
+/** Parse a stored consent value (localStorage or first-party cookie). */
+export function parseAnalyticsConsent(
+  raw: string | null | undefined,
+): ConsentChoice | null {
+  return raw === "granted" || raw === "denied" ? raw : null;
+}
+
 export function readStoredConsent(): ConsentChoice | null {
   try {
-    const v = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-    return v === "granted" || v === "denied" ? v : null;
+    return parseAnalyticsConsent(
+      window.localStorage.getItem(CONSENT_STORAGE_KEY),
+    );
   } catch {
     // Private browsing / blocked storage — treat as undecided, stay denied.
     return null;
+  }
+}
+
+/**
+ * Mirror the banner choice into a first-party cookie so request-scoped server
+ * code (auth, invite, answer, reveal) can honor the same grant without a DB
+ * consent table. Same key/value as localStorage; no new vendors or wording.
+ */
+export function writeConsentCookie(choice: ConsentChoice): void {
+  if (typeof document === "undefined") return;
+  try {
+    const maxAge = 60 * 60 * 24 * 400;
+    const secure =
+      typeof window !== "undefined" && window.location.protocol === "https:"
+        ? "; Secure"
+        : "";
+    document.cookie = `${CONSENT_STORAGE_KEY}=${choice}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
+  } catch {
+    // Non-fatal: server MP simply treats consent as unknown.
   }
 }
 
@@ -66,6 +93,7 @@ export function storeConsent(choice: ConsentChoice): void {
   } catch {
     // Non-fatal: the visitor simply gets asked again next visit.
   }
+  writeConsentCookie(choice);
 }
 
 /** Browser event so Analytics can inject GTM in the same page view as Accept. */

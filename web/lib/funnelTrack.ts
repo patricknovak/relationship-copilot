@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ConsentChoice } from "@/lib/analytics";
 import {
   FIRST_QUESTION_ANSWERED,
   SIGN_UP_COMPLETED,
@@ -12,10 +13,13 @@ import {
 /**
  * Once-only user funnel claim → anonymous GA4 MP via after().
  * Never throws into the auth redirect path.
+ * MP send requires analyticsConsent === "granted".
  */
 export async function claimAndTrackUserFunnelStep(
   supabase: SupabaseClient,
   step: UserFunnelStep,
+  userId: string,
+  analyticsConsent: ConsentChoice | null,
 ): Promise<void> {
   try {
     const { data: claimed, error } = await supabase.rpc(
@@ -27,7 +31,9 @@ export async function claimAndTrackUserFunnelStep(
       return;
     }
     if (shouldTrackFunnelStep(claimed === true)) {
-      if (step === SIGN_UP_COMPLETED) scheduleSignUpCompleted();
+      if (step === SIGN_UP_COMPLETED) {
+        scheduleSignUpCompleted({ userId, analyticsConsent });
+      }
     }
   } catch (err) {
     console.error("[ga4] claim_user_funnel_step failed", err);
@@ -41,6 +47,8 @@ export async function claimAndTrackUserFunnelStep(
 export async function claimAndTrackFirstQuestionAnswered(
   supabase: SupabaseClient,
   connectionId: string,
+  userId: string,
+  analyticsConsent: ConsentChoice | null,
 ): Promise<void> {
   const step: FunnelStep = FIRST_QUESTION_ANSWERED;
   try {
@@ -53,7 +61,7 @@ export async function claimAndTrackFirstQuestionAnswered(
       return;
     }
     if (shouldTrackFunnelStep(claimed === true)) {
-      scheduleFirstQuestionAnswered();
+      scheduleFirstQuestionAnswered({ userId, analyticsConsent });
     }
   } catch (err) {
     console.error("[ga4] claim_funnel_step failed", err);

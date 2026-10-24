@@ -2,10 +2,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CONSENT_STORAGE_KEY,
   isMeasurablePath,
+  parseAnalyticsConsent,
   pushQuestionsCtaClick,
   shouldLoadGtm,
   shouldPromptForConsent,
 } from "./analytics";
+
+describe("parseAnalyticsConsent", () => {
+  it("accepts only granted or denied", () => {
+    expect(parseAnalyticsConsent("granted")).toBe("granted");
+    expect(parseAnalyticsConsent("denied")).toBe("denied");
+    expect(parseAnalyticsConsent(null)).toBeNull();
+    expect(parseAnalyticsConsent("")).toBeNull();
+    expect(parseAnalyticsConsent("maybe")).toBeNull();
+  });
+});
 
 // The point of these tests is the privacy boundary: no authenticated route
 // may ever be measurable, because its path can carry a connection or invite
