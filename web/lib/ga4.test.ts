@@ -73,7 +73,6 @@ describe("sendGa4Event", () => {
   const originalFetch = globalThis.fetch;
   const originalMeasurement = process.env.GA4_MEASUREMENT_ID;
   const originalSecret = process.env.GA4_API_SECRET;
-  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
@@ -81,8 +80,20 @@ describe("sendGa4Event", () => {
     else process.env.GA4_MEASUREMENT_ID = originalMeasurement;
     if (originalSecret === undefined) delete process.env.GA4_API_SECRET;
     else process.env.GA4_API_SECRET = originalSecret;
-    errorSpy.mockClear();
     vi.clearAllMocks();
+  });
+
+  it("never calls fetch (disabled until consent-gated sending, PR #137)", async () => {
+    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
+    process.env.GA4_API_SECRET = "test-secret";
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await expect(sendGa4Event("first_mutual_reveal_completed")).resolves.toBe(
+      false,
+    );
+    await expect(trackFirstMutualRevealCompleted()).resolves.toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("no-ops when Measurement Protocol credentials are unset", async () => {
@@ -96,52 +107,12 @@ describe("sendGa4Event", () => {
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });
-
-  it("POSTs an anonymous MP payload with the exact event name", async () => {
-    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
-    process.env.GA4_API_SECRET = "test-secret";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    globalThis.fetch = fetchMock as typeof fetch;
-
-    await expect(trackFirstMutualRevealCompleted()).resolves.toBe(true);
-
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain("measurement_id=G-3HE7V5FTSR");
-    expect(url).toContain("api_secret=test-secret");
-    expect(url).toContain("https://www.google-analytics.com/mp/collect");
-
-    const body = JSON.parse(String(init.body)) as {
-      client_id: string;
-      non_personalized_ads: boolean;
-      events: { name: string; params: Record<string, unknown> }[];
-    };
-    expect(body.client_id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    );
-    expect(body.non_personalized_ads).toBe(true);
-    expect(body.events).toHaveLength(1);
-    expect(body.events[0].name).toBe("first_mutual_reveal_completed");
-    // Privacy: no user/connection identifiers in the payload.
-    expect(JSON.stringify(body)).not.toMatch(/user_id|connection|invite/i);
-    expect(body.events[0].params.engagement_time_msec).toBe(1);
-  });
-
-  it("swallows network failures so reveal UX never blocks", async () => {
-    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
-    process.env.GA4_API_SECRET = "test-secret";
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
-
-    await expect(trackFirstMutualRevealCompleted()).resolves.toBe(false);
-    expect(errorSpy).toHaveBeenCalled();
-  });
 });
 
 describe("scheduleGa4Event / after()", () => {
   const originalFetch = globalThis.fetch;
   const originalMeasurement = process.env.GA4_MEASUREMENT_ID;
   const originalSecret = process.env.GA4_API_SECRET;
-  const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
   beforeEach(() => {
     afterMock.mockImplementation((task) => {
@@ -155,91 +126,24 @@ describe("scheduleGa4Event / after()", () => {
     else process.env.GA4_MEASUREMENT_ID = originalMeasurement;
     if (originalSecret === undefined) delete process.env.GA4_API_SECRET;
     else process.env.GA4_API_SECRET = originalSecret;
-    errorSpy.mockClear();
     afterMock.mockReset();
   });
 
-  it("registers the send with next/server after()", async () => {
+  it("registers with after() but never fetches (disabled until PR #137)", async () => {
     process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
     process.env.GA4_API_SECRET = "test-secret";
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     globalThis.fetch = fetchMock as typeof fetch;
 
     scheduleFirstMutualRevealCompleted();
-
-    expect(afterMock).toHaveBeenCalledOnce();
-    // Flush the mocked after() microtask.
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const body = JSON.parse(
-      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
-    ) as { events: { name: string }[] };
-    expect(body.events[0].name).toBe("first_mutual_reveal_completed");
-  });
-
-  it("swallows errors from the after() task", async () => {
-    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
-    process.env.GA4_API_SECRET = "test-secret";
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("offline")) as typeof fetch;
-
-    expect(() => scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED)).not.toThrow();
-    expect(afterMock).toHaveBeenCalledOnce();
-    await Promise.resolve();
-    await Promise.resolve();
-    // sendGa4Event logs; after wrapper must not rethrow into the request.
-    expect(errorSpy).toHaveBeenCalled();
-  });
-
-  it("schedules invite_sent with an anonymous payload (no IDs)", async () => {
-    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
-    process.env.GA4_API_SECRET = "test-secret";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    globalThis.fetch = fetchMock as typeof fetch;
-
     scheduleInviteSent();
-    expect(afterMock).toHaveBeenCalledOnce();
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const body = JSON.parse(
-      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
-    ) as {
-      client_id: string;
-      user_id?: string;
-      events: { name: string; params: Record<string, unknown> }[];
-    };
-    expect(body.events[0].name).toBe("invite_sent");
-    expect(body.user_id).toBeUndefined();
-    // Event name contains "invite"; assert params/keys carry no entity IDs.
-    expect(Object.keys(body.events[0].params)).toEqual(["engagement_time_msec"]);
-    expect(JSON.stringify(body.events[0].params)).not.toMatch(
-      /user_id|connection_id|invite_code/i,
-    );
-    expect(body.events[0].params.engagement_time_msec).toBe(1);
-  });
-
-  it("schedules partner_joined with an anonymous payload (no IDs)", async () => {
-    process.env.GA4_MEASUREMENT_ID = "G-3HE7V5FTSR";
-    process.env.GA4_API_SECRET = "test-secret";
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    globalThis.fetch = fetchMock as typeof fetch;
-
     schedulePartnerJoined();
-    expect(afterMock).toHaveBeenCalledOnce();
-    await Promise.resolve();
-    await Promise.resolve();
+    expect(() => scheduleGa4Event(FIRST_MUTUAL_REVEAL_COMPLETED)).not.toThrow();
 
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const body = JSON.parse(
-      String((fetchMock.mock.calls[0] as [string, RequestInit])[1].body),
-    ) as {
-      user_id?: string;
-      events: { name: string; params: Record<string, unknown> }[];
-    };
-    expect(body.events[0].name).toBe("partner_joined");
-    expect(body.user_id).toBeUndefined();
-    expect(Object.keys(body.events[0].params)).toEqual(["engagement_time_msec"]);
+    expect(afterMock).toHaveBeenCalledTimes(4);
+    // Flush the mocked after() microtasks.
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

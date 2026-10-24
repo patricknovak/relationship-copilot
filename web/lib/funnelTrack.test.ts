@@ -44,19 +44,17 @@ describe("claimAndTrackUserFunnelStep", () => {
     else process.env.GA4_API_SECRET = originalSecret;
   });
 
-  it("schedules sign_up_completed when the claim wins", async () => {
+  it("schedules sign_up_completed when the claim wins (MP send no-op until PR #137)", async () => {
     const supabase = mockRpc({ data: true, error: null });
     await claimAndTrackUserFunnelStep(supabase as never, SIGN_UP_COMPLETED);
     expect(supabase.rpc).toHaveBeenCalledWith("claim_user_funnel_step", {
       p_step: SIGN_UP_COMPLETED,
     });
-    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-    const body = JSON.parse(
-      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock
-        .calls[0][1].body as string,
-    );
-    expect(body.events[0].name).toBe("sign_up_completed");
-    expect(body.non_personalized_ads).toBe(true);
+    expect(afterMock).toHaveBeenCalledOnce();
+    await Promise.resolve();
+    await Promise.resolve();
+    // Privacy hotfix: sendGa4Event is a no-op until consent gating ships.
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it("does not send when the claim loses", async () => {
@@ -100,7 +98,7 @@ describe("claimAndTrackFirstQuestionAnswered", () => {
     else process.env.GA4_API_SECRET = originalSecret;
   });
 
-  it("schedules first_question_answered when the claim wins", async () => {
+  it("schedules first_question_answered when the claim wins (MP send no-op until PR #137)", async () => {
     const supabase = mockRpc({ data: true, error: null });
     await claimAndTrackFirstQuestionAnswered(
       supabase as never,
@@ -110,11 +108,10 @@ describe("claimAndTrackFirstQuestionAnswered", () => {
       p_connection_id: "11111111-1111-1111-1111-111111111111",
       p_step: FIRST_QUESTION_ANSWERED,
     });
-    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
-    const body = JSON.parse(
-      (globalThis.fetch as unknown as ReturnType<typeof vi.fn>).mock
-        .calls[0][1].body as string,
-    );
-    expect(body.events[0].name).toBe("first_question_answered");
+    expect(afterMock).toHaveBeenCalledOnce();
+    await Promise.resolve();
+    await Promise.resolve();
+    // Privacy hotfix: sendGa4Event is a no-op until consent gating ships.
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });
