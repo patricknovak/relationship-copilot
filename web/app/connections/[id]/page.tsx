@@ -32,6 +32,7 @@ import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
 import TimezoneSync from "@/components/TimezoneSync";
 import SharedGoals from "@/components/SharedGoals";
+import { questionsInviteCopy } from "@/lib/questionsCta";
 
 const NOTICES: Record<
   string,
@@ -105,10 +106,11 @@ export default async function ConnectionPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ notice?: string; error?: string }>;
+  searchParams: Promise<{ notice?: string; error?: string; list?: string }>;
 }) {
   const { id } = await params;
-  const { notice, error } = await searchParams;
+  const { notice, error, list: listRaw } = await searchParams;
+  const listInviteCopy = questionsInviteCopy(listRaw);
   const supabase = await createClient();
   const {
     data: { user },
@@ -454,9 +456,16 @@ export default async function ConnectionPage({
             Waiting for your person
           </h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Share the invite link in one tap. They sign in with Google, join,
-            and answer — then you reveal together. Nothing is visible early.
+            {listInviteCopy
+              ? listInviteCopy
+              : "Share the invite link in one tap. They sign in with Google, join, and answer — then you reveal together. Nothing is visible early."}
           </p>
+          {listInviteCopy ? (
+            <p className="mt-1 text-sm text-ink-soft">
+              Share the invite link in one tap. They sign in with Google, join,
+              and answer — then you reveal together. Nothing is visible early.
+            </p>
+          ) : null}
           <InvitePanel
             connectionId={id}
             url={inviteUrl}

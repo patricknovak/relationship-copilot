@@ -19,6 +19,10 @@ describe("safeNextPath", () => {
   it("rejects absolute URLs and scheme-relative URLs", () => {
     expect(safeNextPath("https://evil.example")).toBe("/connections");
     expect(safeNextPath("//evil.example/phish")).toBe("/connections");
+    expect(safeNextPath("//evil.com")).toBe("/connections");
+    expect(safeNextPath("//evil.com/phish")).toBe("/connections");
+    expect(safeNextPath("https://evil.com")).toBe("/connections");
+    expect(safeNextPath("http://evil.com/x")).toBe("/connections");
     expect(safeNextPath("javascript:alert(1)")).toBe("/connections");
   });
 

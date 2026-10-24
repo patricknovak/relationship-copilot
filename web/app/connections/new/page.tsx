@@ -5,15 +5,17 @@ import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import TimezoneField from "@/components/TimezoneField";
 import { createClient } from "@/lib/supabase/server";
+import { parseQuestionsListParam } from "@/lib/questionsCta";
 import type { ConnectionType, PromptQuestion } from "@/lib/database.types";
 
 export default async function NewConnectionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; type?: string }>;
+  searchParams: Promise<{ error?: string; type?: string; list?: string }>;
 }) {
-  const { error, type } = await searchParams;
-  // Deep links from the public /for pages preselect the type.
+  const { error, type, list: listRaw } = await searchParams;
+  const listSlug = parseQuestionsListParam(listRaw);
+  // Deep links from the public /for and /questions pages preselect the type.
   const preselected: ConnectionType =
     CONNECTION_TYPES.find((t) => t.value === type)?.value ?? CONNECTION_TYPES[0].value;
 
@@ -62,6 +64,7 @@ export default async function NewConnectionPage({
 
       <form action={createConnection} className="mt-8 space-y-4">
         <TimezoneField />
+        {listSlug ? <input type="hidden" name="list" value={listSlug} /> : null}
         <fieldset className="space-y-2.5">
           {CONNECTION_TYPES.map((t) => (
             <label
@@ -106,7 +109,14 @@ export default async function NewConnectionPage({
             {CONNECTION_TYPES.filter((t) => t.value !== preselected).map((t, i) => (
               <span key={t.value}>
                 {i > 0 && " · "}
-                <Link href={`/connections/new?type=${t.value}`} className="underline">
+                <Link
+                  href={
+                    listSlug
+                      ? `/connections/new?type=${t.value}&list=${listSlug}`
+                      : `/connections/new?type=${t.value}`
+                  }
+                  className="underline"
+                >
                   {t.label}
                 </Link>
               </span>
