@@ -17,6 +17,10 @@ import type { ConnectionType } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { normalizeInviteNote } from "@/lib/inviteNote";
 import {
+  parseQuestionsListParam,
+  questionsStartPath,
+} from "@/lib/questionsCta";
+import {
   INVITE_SENT,
   PARTNER_JOINED,
   scheduleInviteSent,
@@ -65,6 +69,10 @@ export async function createConnection(formData: FormData) {
   // Predictable failures (plan cap, validation) go back to the form as a
   // banner instead of crashing into the generic error boundary.
   const type = String(formData.get("type") || "") as ConnectionType;
+  const listSlug = parseQuestionsListParam(String(formData.get("list") || ""));
+  const startPath = listSlug
+    ? questionsStartPath(listSlug)
+    : `/connections/new?type=${encodeURIComponent(type)}`;
   if (!CONNECTION_TYPES.some((t) => t.value === type)) {
     redirect("/connections/new?error=type");
   }
@@ -73,7 +81,9 @@ export async function createConnection(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/connections/new");
+  if (!user) {
+    redirect(`/login?next=${encodeURIComponent(startPath)}`);
+  }
 
   const { data: isPremium } = await supabase.rpc("has_premium", {
     uid: user.id,
@@ -87,7 +97,11 @@ export async function createConnection(formData: FormData) {
       .select("id", { count: "exact", head: true })
       .neq("status", "archived");
     if ((count ?? 0) >= FREE_CONNECTION_CAP) {
-      redirect("/connections/new?error=cap");
+      redirect(
+        listSlug
+          ? `${questionsStartPath(listSlug)}&error=cap`
+          : "/connections/new?error=cap",
+      );
     }
   }
 
@@ -104,13 +118,19 @@ export async function createConnection(formData: FormData) {
     .select("id")
     .single();
   if (error || !conn) {
-    redirect("/connections/new?error=save");
+    redirect(
+      listSlug
+        ? `${questionsStartPath(listSlug)}&error=save`
+        : "/connections/new?error=save",
+    );
   }
 
   await logAudit(user.id, "connection.create", conn.id);
   revalidatePath("/connections");
-  // Land on the invite step so sharing is one scroll away.
-  redirect(`/connections/${conn.id}#invite`);
+  // Land on the invite step so sharing is one scroll away. Carry list= so
+  // the invite card can reference the public question list title.
+  const inviteQs = listSlug ? `?list=${encodeURIComponent(listSlug)}` : "";
+  redirect(`/connections/${conn.id}${inviteQs}#invite`);
 }
 
 // Leave a connection — archives it (reversible-friendly, and required for the

@@ -81,7 +81,7 @@ export default async function QuestionsTypePage({
           {QUESTIONS_BLOCK_COPY}
         </p>
         <div className="mt-5">
-          <QuestionsCta page={page.slug} />
+          <QuestionsCta page={page.slug} listSlug={page.slug} />
         </div>
         <p className="mt-3 text-xs text-ink-soft/80">{QUESTIONS_SIGN_IN_HINT}</p>
       </section>

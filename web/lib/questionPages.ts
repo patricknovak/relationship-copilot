@@ -44,6 +44,7 @@ export const QUESTIONS_BLOCK_COPY =
 
 export const QUESTIONS_CTA_LABEL = "Start a connection";
 
+/** Hub CTA (no list) — list-aware hrefs live in `questionsCta.ts`. */
 export const QUESTIONS_CTA_HREF = "/login?next=/connections/new";
 
 export const QUESTIONS_SIGNED_IN_HREF = "/connections/new";
