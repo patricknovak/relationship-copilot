@@ -6,6 +6,9 @@ import DiscussionForm from "@/components/DiscussionForm";
 import SoftPremiumCard from "@/components/SoftPremiumCard";
 import NudgePerson from "@/components/NudgePerson";
 import ReactionBar from "@/components/ReactionBar";
+import ShareMilestone from "@/components/ShareMilestone";
+import { Avatar } from "@/components/ui/Avatar";
+import { Icon } from "@/components/ui/Icon";
 import { groupReactions, isReactionEmoji, reactionKey } from "@/lib/reactions";
 import { dimensionLabel, isDimensionScored, quizReflection } from "@/lib/quizResult";
 import {
@@ -45,10 +48,10 @@ export default async function PromptInstanceView({
 
   if (!instance) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="page has-tabbar">
         <p className="text-ink-soft">This question is no longer available.</p>
-        <Link href={`/connections/${connectionId}`} className="text-brand-700 underline dark:text-brand-300">
-          ← Back
+        <Link href={`/connections/${connectionId}`} className="link mt-2 inline-block">
+          Back to the connection
         </Link>
       </div>
     );
@@ -140,7 +143,11 @@ export default async function PromptInstanceView({
       const p = profiles?.find((x) => x.id === uid);
       return p?.display_name || p?.username || "Them";
     };
-    const initialOf = (uid: string) => nameOf(uid).slice(0, 1).toUpperCase();
+    const avatarName = (uid: string) => {
+      if (uid === user?.id) return myName ?? "You";
+      const p = profiles?.find((x) => x.id === uid);
+      return p?.display_name || p?.username || "?";
+    };
 
     const { data: discussion } = await supabase
       .from("prompt_discussions")
@@ -162,37 +169,53 @@ export default async function PromptInstanceView({
     );
 
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="page has-tabbar">
         <RevealWatcher instanceId={instance.id} />
-        <Link
-          href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/80 hover:text-ink"
-        >
-          ← Back
+        <Link href={`/connections/${connectionId}`} className="back-link">
+          <Icon name="arrow-left" className="h-4 w-4" />
+          Back
         </Link>
 
         {isFirstReveal ? (
-          <header className="mt-4">
-            <p className="eyebrow">{heading}</p>
-            <h1 className="mt-2 text-3xl sm:text-4xl">
-              {FIRST_REVEAL_UNLOCK.headline}
-            </h1>
-            <p className="mt-2 font-display text-xl text-brand-800 dark:text-brand-200">
-              {FIRST_REVEAL_UNLOCK.subhead}
-            </p>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
-              {FIRST_REVEAL_UNLOCK.body}
-            </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <a href="#answers" className="btn-primary">
-                {FIRST_REVEAL_UNLOCK.primaryCta}
-              </a>
-              <a href="#discussion" className="btn-secondary">
-                {FIRST_REVEAL_UNLOCK.secondaryCta}
-              </a>
+          <header className="card-hero mt-4 overflow-hidden">
+            <div aria-hidden className="blob -right-10 -top-10 h-40 w-40 bg-accent-200/60 dark:bg-accent-900/30" />
+            <div aria-hidden className="blob -bottom-12 -left-8 h-40 w-40 bg-brand-300/50 dark:bg-brand-700/30" />
+            <div className="relative">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center">
+                  {ordered.map((r, i) => (
+                    <Avatar
+                      key={r.user_id}
+                      name={avatarName(r.user_id)}
+                      size="md"
+                      variant={r.user_id === user?.id ? "you" : "them"}
+                      className={i > 0 ? "-ml-2.5" : ""}
+                    />
+                  ))}
+                </span>
+                <p className="eyebrow">{heading}</p>
+              </div>
+              <h1 className="mt-4 text-display-md">{FIRST_REVEAL_UNLOCK.headline}</h1>
+              <p className="mt-2 font-display text-xl text-brand-800 dark:text-brand-200">
+                {FIRST_REVEAL_UNLOCK.subhead}
+              </p>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
+                {FIRST_REVEAL_UNLOCK.body}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <a href="#answers" className="btn-primary">
+                  {FIRST_REVEAL_UNLOCK.primaryCta}
+                  <Icon name="arrow-right" className="h-4 w-4" />
+                </a>
+                <a href="#discussion" className="btn-secondary">
+                  <Icon name="chat" className="h-4 w-4" />
+                  {FIRST_REVEAL_UNLOCK.secondaryCta}
+                </a>
+                <ShareMilestone kind="first_reveal" count={questions.length} />
+              </div>
               <Link
                 href={`/connections/${connectionId}#today`}
-                className="text-sm text-ink-soft/80 hover:text-ink"
+                className="link mt-4 inline-block text-sm"
               >
                 {FIRST_REVEAL_UNLOCK.tertiaryCta}
               </Link>
@@ -201,17 +224,19 @@ export default async function PromptInstanceView({
         ) : (
           <header className="mt-4">
             <p className="eyebrow">{heading}</p>
-            <h1 className="mt-2 text-3xl">{REVEALED.headline}</h1>
+            <h1 className="mt-2 text-display-md">{REVEALED.headline}</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
               {REVEALED.body}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <a href="#discussion" className="btn-secondary !px-4 !py-2 text-sm">
+              <a href="#discussion" className="btn-secondary btn-sm">
+                <Icon name="chat" className="h-4 w-4" />
                 {REVEALED.secondaryCta}
               </a>
+              <ShareMilestone kind="reveal" />
               <Link
                 href={`/connections/${connectionId}#today`}
-                className="text-sm text-ink-soft/80 hover:text-ink"
+                className="link text-sm"
               >
                 {REVEALED.tertiaryCta}
               </Link>
@@ -220,7 +245,7 @@ export default async function PromptInstanceView({
         )}
 
         {scored && (
-          <section className="card mt-10 !p-5">
+          <section className="card mt-10">
             <h2 className="text-lg">Your reflections</h2>
             <p className="mt-1 text-sm text-ink-soft">
               Averages of your own scale answers, grouped by theme. A way to
@@ -231,36 +256,40 @@ export default async function PromptInstanceView({
                 const ref = quizReflection(questions, r.answers as AnswerMap);
                 const mine = r.user_id === user?.id;
                 return (
-                  <div
-                    key={r.user_id}
-                    className={`rounded-2xl border p-3.5 ${
-                      mine
-                        ? "border-brand-100 bg-brand-50/70 dark:bg-brand-900/25"
-                        : "border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25"
-                    }`}
-                  >
-                    <p className="text-xs font-semibold text-ink-soft">{nameOf(r.user_id)}</p>
+                  <div key={r.user_id} className={mine ? "answer-you" : "answer-them"}>
+                    <p className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
+                      <Avatar name={avatarName(r.user_id)} size="xs" variant={mine ? "you" : "them"} ring={false} />
+                      {nameOf(r.user_id)}
+                    </p>
                     {ref ? (
                       <>
                         {ref.label && (
-                          <p className="mt-1 font-display text-lg text-ink">{ref.label}</p>
+                          <p className="mt-2 font-display text-xl text-ink">{ref.label}</p>
                         )}
                         {ref.blurb && (
                           <p className="mt-1 text-sm text-ink-soft">{ref.blurb}</p>
                         )}
-                        <ul className="mt-2 space-y-1 text-sm text-ink-soft">
+                        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
                           {ref.scores.map((s) => (
-                            <li key={s.dimension} className="flex justify-between gap-3">
-                              <span>{dimensionLabel(s.dimension)}</span>
-                              <span className="font-medium text-ink">
-                                {s.average} / {s.max}
-                              </span>
+                            <li key={s.dimension}>
+                              <div className="flex justify-between gap-3">
+                                <span>{dimensionLabel(s.dimension)}</span>
+                                <span className="font-medium text-ink">
+                                  {s.average} / {s.max}
+                                </span>
+                              </div>
+                              <div className="progress-track mt-1 !h-1">
+                                <div
+                                  className={`h-full rounded-full ${mine ? "bg-brand-500" : "bg-accent-400"}`}
+                                  style={{ width: `${Math.min(100, (s.average / s.max) * 100)}%` }}
+                                />
+                              </div>
                             </li>
                           ))}
                         </ul>
                       </>
                     ) : (
-                      <p className="mt-1 text-sm text-ink-soft/80">No scale answers.</p>
+                      <p className="mt-1 text-sm text-ink-faint">No scale answers.</p>
                     )}
                   </div>
                 );
@@ -269,38 +298,25 @@ export default async function PromptInstanceView({
           </section>
         )}
 
-        <ol id="answers" className="mt-10 scroll-mt-24 space-y-6">
+        <ol id="answers" className="stagger mt-10 scroll-mt-24 space-y-5">
           {questions.map((q, i) => (
-            <li key={q.id} className="card animate-fade-up !p-5">
-              <p className="eyebrow">Question {i + 1}</p>
-              <p className="mt-1.5 font-display text-lg leading-snug text-ink">
+            <li key={q.id} className="card">
+              <p className="eyebrow">Question {i + 1}{questions.length > 1 ? ` of ${questions.length}` : ""}</p>
+              <p className="mt-1.5 font-display text-xl leading-snug text-ink">
                 {q.text}
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {ordered.map((r) => {
                   const mine = r.user_id === user?.id;
                   return (
-                    <div
-                      key={r.user_id}
-                      className={`rounded-2xl border p-3.5 ${
-                        mine
-                          ? "border-brand-100 bg-brand-50/70 dark:bg-brand-900/25"
-                          : "border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/25"
-                      }`}
-                    >
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft">
-                        <span
-                          className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] text-white ${
-                            mine ? "bg-brand-600" : "bg-amber-600"
-                          }`}
-                        >
-                          {initialOf(r.user_id)}
-                        </span>
+                    <div key={r.user_id} className={mine ? "answer-you" : "answer-them"}>
+                      <p className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
+                        <Avatar name={avatarName(r.user_id)} size="xs" variant={mine ? "you" : "them"} ring={false} />
                         {nameOf(r.user_id)}
                       </p>
-                      <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink">
+                      <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
                         {(r.answers as AnswerMap)[q.id] || (
-                          <span className="text-ink-soft/80">No answer</span>
+                          <span className="text-ink-faint">No answer</span>
                         )}
                       </p>
                       {(() => {
@@ -312,7 +328,7 @@ export default async function PromptInstanceView({
                               {got.map((x) => (
                                 <span
                                   key={x.user_id}
-                                  className="mr-1 inline-block rounded-full border border-amber-200 bg-white/70 px-2 py-0.5 dark:border-amber-900/40 dark:bg-surface"
+                                  className="mr-1 inline-block rounded-full border border-accent-200 bg-white/80 px-2 py-0.5 shadow-soft dark:border-accent-900/40 dark:bg-surface"
                                   title={`${nameOf(x.user_id)} reacted`}
                                 >
                                   {x.emoji}
@@ -340,20 +356,24 @@ export default async function PromptInstanceView({
           ))}
         </ol>
 
-        <section id="discussion" className="card mt-10 scroll-mt-24 !p-5">
-          <h2 className="text-lg">Talk about it</h2>
+        <section id="discussion" className="card mt-10 scroll-mt-24">
+          <h2 className="flex items-center gap-2 text-lg">
+            <Icon name="chat" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
+            Talk about it
+          </h2>
           <ul className="mt-4 space-y-2.5">
             {(discussion ?? []).map((d) => {
               const mine = d.user_id === user?.id;
               return (
                 <li
                   key={d.id}
-                  className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                  className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}
                 >
+                  {!mine && <Avatar name={avatarName(d.user_id)} size="xs" variant="them" ring={false} />}
                   <div
                     className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
                       mine
-                        ? "rounded-br-md bg-brand-700 text-white"
+                        ? "rounded-br-md bg-brand-700 text-white dark:bg-brand-500"
                         : "rounded-bl-md bg-paper-warm text-ink"
                     }`}
                   >
@@ -368,7 +388,7 @@ export default async function PromptInstanceView({
               );
             })}
             {(!discussion || discussion.length === 0) && (
-              <li className="text-sm text-ink-soft/80">
+              <li className="rounded-2xl border border-dashed border-surface-line px-4 py-6 text-center text-sm text-ink-faint">
                 No messages yet — start the conversation.
               </li>
             )}
@@ -384,33 +404,42 @@ export default async function PromptInstanceView({
   // ---- Waiting on them (you've answered; they haven't) ----
   if (answered && !othersAnswered) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="page has-tabbar">
         <RevealWatcher instanceId={instance.id} />
-        <Link
-          href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/80 hover:text-ink"
-        >
-          ← Back
+        <Link href={`/connections/${connectionId}`} className="back-link">
+          <Icon name="arrow-left" className="h-4 w-4" />
+          Back
         </Link>
-        <h1 className="mt-3 text-3xl">
-          {partnerJoined ? WAITING_ON_THEM.headline : ANSWER_FIRST.answeredHeadline}
-        </h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
-          {partnerJoined ? WAITING_ON_THEM.body : ANSWER_FIRST.answeredBody}
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {partnerJoined ? (
-            <NudgePerson connectionUrl={connectionUrl} inviterName={myName} />
-          ) : (
-            <Link href={inviteHref} className="btn-primary">
-              {ANSWER_FIRST.answeredCta}
-            </Link>
-          )}
-          <a href="#review-answers" className="btn-secondary">
-            {WAITING_ON_THEM.secondaryCta}
-          </a>
+        <div className="card-warm mt-4">
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
+              <Icon name="clock" className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="eyebrow">{heading}</p>
+              <h1 className="mt-1 text-display-md">
+                {partnerJoined ? WAITING_ON_THEM.headline : ANSWER_FIRST.answeredHeadline}
+              </h1>
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+                {partnerJoined ? WAITING_ON_THEM.body : ANSWER_FIRST.answeredBody}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {partnerJoined ? (
+              <NudgePerson connectionUrl={connectionUrl} inviterName={myName} />
+            ) : (
+              <Link href={inviteHref} className="btn-primary">
+                <Icon name="send" className="h-4 w-4" />
+                {ANSWER_FIRST.answeredCta}
+              </Link>
+            )}
+            <a href="#review-answers" className="btn-secondary">
+              {WAITING_ON_THEM.secondaryCta}
+            </a>
+          </div>
+          <p className="mt-4 text-sm text-ink-faint">{WAITING_ON_THEM.helper}</p>
         </div>
-        <p className="mt-4 text-sm text-ink-soft/80">{WAITING_ON_THEM.helper}</p>
 
         <div id="review-answers" className="mt-10 scroll-mt-24">
           <h2 className="text-lg">{heading}</h2>
@@ -434,26 +463,31 @@ export default async function PromptInstanceView({
   // ---- Waiting on you (they've answered; you haven't) ----
   if (!answered && othersAnswered) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div className="page has-tabbar">
         <RevealWatcher instanceId={instance.id} />
-        <Link
-          href={`/connections/${connectionId}`}
-          className="text-sm text-ink-soft/80 hover:text-ink"
-        >
-          ← Back
+        <Link href={`/connections/${connectionId}`} className="back-link">
+          <Icon name="arrow-left" className="h-4 w-4" />
+          Back
         </Link>
-        <h1 className="mt-3 text-3xl">{WAITING_ON_YOU.headline}</h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
-          {WAITING_ON_YOU.body}
-        </p>
-        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
-          <LockIcon />
-          {WAITING_ON_YOU.trustLine}
-        </p>
-        <div className="mt-6">
-          <a href="#answer-form" className="btn-primary">
-            {WAITING_ON_YOU.primaryCta}
-          </a>
+        <div className="card-hero mt-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow">{heading}</p>
+            <span className="pill-action">Your turn</span>
+          </div>
+          <h1 className="mt-3 text-display-md">{WAITING_ON_YOU.headline}</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+            {WAITING_ON_YOU.body}
+          </p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm text-ink-soft">
+            <LockIcon />
+            {WAITING_ON_YOU.trustLine}
+          </p>
+          <div className="mt-5">
+            <a href="#answer-form" className="btn-primary">
+              {WAITING_ON_YOU.primaryCta}
+              <Icon name="arrow-right" className="h-4 w-4" />
+            </a>
+          </div>
         </div>
         <div id="answer-form" className="mt-10 scroll-mt-24">
           <h2 className="text-lg">{heading}</h2>
@@ -472,28 +506,34 @@ export default async function PromptInstanceView({
 
   // ---- Empty / start answering (neither finished yet) ----
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="page has-tabbar">
       <RevealWatcher instanceId={instance.id} />
-      <Link
-        href={`/connections/${connectionId}`}
-        className="text-sm text-ink-soft/80 hover:text-ink"
-      >
-        ← Back
+      <Link href={`/connections/${connectionId}`} className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        Back
       </Link>
-      <h1 className="mt-3 text-3xl">{EMPTY_STATE.headline}</h1>
-      <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
-        {EMPTY_STATE.body}
-      </p>
-      <p className="mt-3 text-xs text-ink-soft/80">{EMPTY_STATE.trustLine}</p>
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        <a href="#answer-form" className="btn-primary">
-          {EMPTY_STATE.primaryCta}
-        </a>
-        {!partnerJoined && (
-          <Link href={inviteHref} className="btn-secondary">
-            {EMPTY_STATE.secondaryCta}
-          </Link>
-        )}
+      <div className="mt-4">
+        <p className="eyebrow">{heading}</p>
+        <h1 className="mt-2 text-display-md">{EMPTY_STATE.headline}</h1>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-soft">
+          {EMPTY_STATE.body}
+        </p>
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-xs text-ink-soft">
+          <LockIcon />
+          {EMPTY_STATE.trustLine}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <a href="#answer-form" className="btn-primary">
+            {EMPTY_STATE.primaryCta}
+            <Icon name="arrow-right" className="h-4 w-4" />
+          </a>
+          {!partnerJoined && (
+            <Link href={inviteHref} className="btn-secondary">
+              <Icon name="send" className="h-4 w-4" />
+              {EMPTY_STATE.secondaryCta}
+            </Link>
+          )}
+        </div>
       </div>
 
       <div id="answer-form" className="mt-10 scroll-mt-24">

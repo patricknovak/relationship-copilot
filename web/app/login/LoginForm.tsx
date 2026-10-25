@@ -17,6 +17,8 @@ import {
   type LoginIntent,
 } from "@/lib/inviteStatus";
 import Turnstile from "@/components/Turnstile";
+import { Icon } from "@/components/ui/Icon";
+import { LogoMark } from "@/components/SiteHeader";
 
 const ENABLED_PROVIDERS = parseAuthProviders(
   process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
@@ -145,11 +147,40 @@ export default function LoginForm({
   const otherProviders = ENABLED_PROVIDERS.filter((p) => p !== "google");
 
   return (
-    <div className="hero-glow">
-      <div className="mx-auto max-w-md px-4 py-16">
-        <div className="card !rounded-3xl !p-8 shadow-lift animate-fade-up">
-          <h1 className="text-3xl">{headline}</h1>
-          <p className="mt-2 text-sm text-ink-soft">{subhead}</p>
+    <div className="hero-glow relative overflow-hidden">
+      <div aria-hidden className="blob -left-24 top-10 h-72 w-72 animate-drift bg-brand-300/40 dark:bg-brand-700/30" />
+      <div aria-hidden className="blob -right-24 bottom-0 h-72 w-72 animate-drift bg-accent-200/50 [animation-delay:-7s] dark:bg-accent-900/25" />
+      <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:py-24">
+        {/* Brand panel: desktop only, no interactive elements. */}
+        <aside className="hidden lg:block">
+          <LogoMark className="h-10 w-14" />
+          <h2 className="mt-6 text-display-lg">Answer in private. Reveal together.</h2>
+          <p className="mt-4 max-w-md text-base leading-relaxed text-ink-soft">
+            One account, every relationship that matters. Your answers stay
+            hidden until you&apos;ve both shared — enforced in the database, not
+            only in the app.
+          </p>
+          <ul className="mt-8 space-y-3 text-sm text-ink-soft">
+            <li className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200"><Icon name="lock" className="h-4 w-4" /></span>
+              No peeking, for either of you
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200"><Icon name="lifebuoy" className="h-4 w-4" /></span>
+              Safety resources, always free
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200"><Icon name="download" className="h-4 w-4" /></span>
+              Export or delete your words anytime
+            </li>
+          </ul>
+        </aside>
+
+        <div className="mx-auto w-full max-w-md">
+        <div className="card-hero animate-fade-up !p-7 sm:!p-9">
+          <p className="eyebrow">Sign in</p>
+          <h1 className="mt-2 text-display-md">{headline}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">{subhead}</p>
 
           {/* Google is the primary door until cross-device email is proven. */}
           {googleEnabled && (
@@ -157,7 +188,7 @@ export default function LoginForm({
               <button
                 onClick={() => signInWith("google")}
                 disabled={oauthLoading !== null}
-                className="btn-primary flex w-full items-center justify-center gap-2.5 !py-3 disabled:opacity-60"
+                className="btn-primary btn-lg flex w-full items-center justify-center gap-2.5 disabled:opacity-60"
               >
                 <GoogleIcon />
                 {oauthLoading === "google" ? "Connecting…" : "Continue with Google"}
@@ -199,14 +230,16 @@ export default function LoginForm({
                 <button
                   type="button"
                   onClick={() => setEmailOpen(true)}
-                  className="w-full text-center text-sm text-ink-soft/80 underline-offset-2 transition hover:text-ink hover:underline"
+                  className="w-full text-center text-sm font-medium text-ink-soft underline-offset-[3px] transition hover:text-ink hover:underline"
                 >
                   Or use email instead
                 </button>
               ) : (
-                <p className="mb-3 text-center text-xs text-ink-soft/80">
-                  Or use email
-                </p>
+                <div className="mb-4 flex items-center gap-3 text-xs text-ink-faint">
+                  <span className="hairline flex-1" />
+                  or use email
+                  <span className="hairline flex-1" />
+                </div>
               )}
             </div>
           ) : (
@@ -231,8 +264,9 @@ export default function LoginForm({
           {emailOpen &&
             (sent ? (
               <div className="space-y-3">
-                <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:text-brand-200">
-                  Check your inbox for a sign-in link. ✨
+                <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:border-brand-800/60 dark:bg-brand-900/30 dark:text-brand-200">
+                  <Icon name="mail" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>Check your inbox for a sign-in link. It works on any device.</span>
                 </div>
                 <button
                   type="button"
@@ -264,7 +298,7 @@ export default function LoginForm({
                 <button
                   type="submit"
                   disabled={loading || (!!TURNSTILE_SITE_KEY && !captchaToken)}
-                  className="btn-secondary w-full disabled:opacity-60"
+                  className="btn-secondary w-full !py-3 disabled:opacity-60"
                 >
                   {loading
                     ? "Sending…"
@@ -275,17 +309,18 @@ export default function LoginForm({
               </form>
             ))}
         </div>
-        <p className="mt-6 text-center text-xs text-ink-soft/80">
+        <p className="mt-6 text-center text-xs text-ink-faint">
           By continuing you agree to our{" "}
-          <Link href="/terms" className="underline">
+          <Link href="/terms" className="link">
             Terms
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="underline">
+          <Link href="/privacy" className="link">
             Privacy Policy
           </Link>
           .
         </p>
+        </div>
       </div>
     </div>
   );

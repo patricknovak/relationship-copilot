@@ -10,6 +10,8 @@ import {
   questionPageBySlug,
 } from "@/lib/questionPages";
 import { canonicalUrl } from "@/lib/site";
+import SharePublic from "@/components/SharePublic";
+import { Icon } from "@/components/ui/Icon";
 
 export function generateStaticParams() {
   return QUESTION_PAGES.map((p) => ({ slug: p.slug }));
@@ -48,42 +50,45 @@ export default async function QuestionsTypePage({
   const url = canonicalUrl(`/questions/${page.slug}`);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: faqPageJsonLdScriptContent({ url, faqs: page.faqs }),
         }}
       />
-      <Link
-        href="/questions"
-        className="text-sm text-ink-soft/80 hover:text-ink"
-      >
-        ← All question lists
+      <Link href="/questions" className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        All question lists
       </Link>
       <p className="eyebrow mt-4">From the product packs</p>
-      <h1 className="mt-2 text-4xl sm:text-5xl">{page.title}</h1>
+      <h1 className="mt-2 text-display-lg">{page.title}</h1>
       <p className="mt-4 text-base leading-relaxed text-ink-soft">{page.intro}</p>
+      <div className="mt-5">
+        <SharePublic url={url} text={page.title} label="Share this list" />
+      </div>
 
-      <ol className="mt-10 space-y-3">
+      <ol className="stagger mt-10 space-y-3">
         {page.questions.map((q, i) => (
-          <li key={q.text} className="card !p-4">
-            <p className="eyebrow">Question {i + 1}</p>
-            <p className="mt-1 font-display text-lg leading-snug text-ink">
+          <li key={q.text} className="card flex gap-4 !p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 font-display text-base text-brand-800 dark:bg-brand-900/40 dark:text-brand-100">
+              {i + 1}
+            </span>
+            <p className="pt-1.5 font-display text-lg leading-snug text-ink">
               &ldquo;{q.text}&rdquo;
             </p>
           </li>
         ))}
       </ol>
 
-      <section className="mt-12 card !rounded-3xl !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:!bg-brand-900/20 p-8 text-center">
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-ink">
+      <section className="card-hero mt-12 text-center">
+        <p className="mx-auto max-w-md text-base leading-relaxed text-ink">
           {QUESTIONS_BLOCK_COPY}
         </p>
         <div className="mt-5">
           <QuestionsCta page={page.slug} listSlug={page.slug} />
         </div>
-        <p className="mt-3 text-xs text-ink-soft/80">{QUESTIONS_SIGN_IN_HINT}</p>
+        <p className="mt-3 text-xs text-ink-faint">{QUESTIONS_SIGN_IN_HINT}</p>
       </section>
 
       <section className="mt-12">
@@ -91,14 +96,12 @@ export default async function QuestionsTypePage({
         <div className="mt-5 space-y-3">
           {page.faqs.map((f) => (
             <details key={f.q} className="card group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink [&::-webkit-details-marker]:hidden">
                 {f.q}
-                <span
-                  aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
-                >
-                  +
-                </span>
+                <Icon
+                  name="plus"
+                  className="h-4 w-4 shrink-0 text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
+                />
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
             </details>
@@ -108,11 +111,11 @@ export default async function QuestionsTypePage({
 
       <p className="mt-10 text-sm text-ink-soft">
         Also see{" "}
-        <Link href={`/for/${page.forSlug}`} className="text-brand-700 underline dark:text-brand-300">
+        <Link href={`/for/${page.forSlug}`} className="link">
           questions for {page.forLabel}
         </Link>{" "}
         and the{" "}
-        <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+        <Link href="/questions" className="link">
           full questions hub
         </Link>
         .

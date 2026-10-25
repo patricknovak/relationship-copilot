@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { markInviteShared, sendEmailInvite } from "@/app/actions/connections";
-import { buildInviteMessage, smsHref, whatsappHref } from "@/lib/invite";
+import { buildInviteMessage } from "@/lib/invite";
+import { inviteShareTargets } from "@/lib/share";
+import ShareSheet from "@/components/ShareSheet";
+import { Icon } from "@/components/ui/Icon";
 
-// One-tap invite: Web Share API when available, copy-link as the always-on
-// fallback. Text / WhatsApp / email stay as secondary channels.
+// The one place an inviter gets their person in: the share sheet (native
+// share, copy, Messages, WhatsApp, Telegram, email) plus an emailed invite we
+// send ourselves. Private invite links never get social-network buttons —
+// the link works once, so whoever opens it first becomes the other person.
 export default function InvitePanel({
   connectionId,
   url,
@@ -27,14 +32,11 @@ export default function InvitePanel({
     tone: "ok" | "info" | "error";
     text: string;
   } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [canShare, setCanShare] = useState(false);
-
-  useEffect(() => {
-    setCanShare(typeof navigator !== "undefined" && !!navigator.share);
-  }, []);
 
   const message = buildInviteMessage(inviterName, url, { inviterAnswered, note });
+  const subject = inviterName
+    ? `${inviterName} invited you to Relationship Copilot`
+    : "Join me on Relationship Copilot";
 
   // Fire-and-forget funnel mark — never blocks or changes the share UI.
   function noteShared() {
@@ -63,106 +65,61 @@ export default function InvitePanel({
     });
   }
 
-  async function share() {
-    try {
-      await navigator.share({ title: "Relationship Copilot", text: message, url });
-      noteShared();
-    } catch {
-      /* user dismissed the share sheet — offer copy */
-      setNotice({
-        tone: "info",
-        text: "Share cancelled — you can copy the link instead.",
-      });
-    }
-  }
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      noteShared();
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setNotice({
-        tone: "info",
-        text: "Couldn't copy automatically — tap Text it or WhatsApp instead.",
-      });
-    }
-  }
-
   return (
-    <div className="mt-4 space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {canShare ? (
-          <button type="button" onClick={share} className="btn-primary">
-            Share invite link
+    <div className="mt-4 space-y-5">
+      <ShareSheet
+        url={url}
+        text={message}
+        targets={inviteShareTargets({ url, message, subject })}
+        primaryLabel="Share invite link"
+        onShared={noteShared}
+      />
+
+      <div className="rounded-2xl border border-surface-line bg-surface/70 p-3.5 dark:bg-surface-raised/60">
+        <p className="flex items-center gap-2 text-sm font-medium text-ink">
+          <Icon name="mail" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
+          Or let us email the invite
+        </p>
+        <form
+          onSubmit={submitEmail}
+          className="mt-2.5 flex min-w-0 flex-col gap-2 sm:flex-row"
+        >
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="their@email.com"
+            aria-label="Their email address"
+            className="input min-w-0 flex-1"
+          />
+          <button
+            disabled={sending}
+            className="btn-secondary w-full disabled:opacity-60 sm:w-auto sm:shrink-0"
+          >
+            {sending ? "Sending…" : "Email invite"}
           </button>
-        ) : null}
-        <button type="button" onClick={copy} className={canShare ? "btn-secondary" : "btn-primary"}>
-          {copied ? "Link copied" : "Copy link"}
-        </button>
-        <a
-          href={smsHref(message)}
-          className="btn-secondary"
-          onClick={noteShared}
-        >
-          Text it
-        </a>
-        <a
-          href={whatsappHref(message)}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secondary"
-          onClick={noteShared}
-        >
-          WhatsApp
-        </a>
+        </form>
+        {notice && (
+          <p
+            role="status"
+            className={`mt-2 text-sm ${
+              notice.tone === "error"
+                ? "text-rose-600"
+                : notice.tone === "ok"
+                  ? "text-emerald-700 dark:text-emerald-300"
+                  : "text-ink-soft"
+            }`}
+          >
+            {notice.text}
+          </p>
+        )}
       </div>
 
-      <p className="text-sm text-ink-soft" role="status">
-        {canShare
-          ? "One tap to share. Copy link works if share isn’t available."
-          : "Copy the link, then paste it into a text or chat."}
-      </p>
-
-      <form
-        onSubmit={submitEmail}
-        className="flex min-w-0 flex-col gap-2 sm:flex-row"
-      >
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="their@email.com"
-          aria-label="Their email address"
-          className="input min-w-0 flex-1"
-        />
-        <button
-          disabled={sending}
-          className="btn-secondary w-full disabled:opacity-60 sm:w-auto sm:shrink-0"
-        >
-          {sending ? "Sending…" : "Email invite"}
-        </button>
-      </form>
-
-      {notice && (
-        <p
-          className={`text-sm ${
-            notice.tone === "error"
-              ? "text-rose-600"
-              : notice.tone === "ok"
-                ? "text-brand-700 dark:text-brand-300"
-                : "text-ink-soft"
-          }`}
-        >
-          {notice.text}
-        </p>
-      )}
-
-      <p className="text-xs text-ink-soft/80">
-        Waiting for them to join. The link works once — whoever opens it first
-        becomes your person here. Sign-in is Google.
+      <p className="flex items-start gap-2 text-xs text-ink-faint">
+        <Icon name="lock" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        The link works once — whoever opens it first becomes your person here.
+        That&apos;s why it belongs in a message, not a public post. Sign-in is Google.
       </p>
     </div>
   );

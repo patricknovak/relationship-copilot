@@ -9,6 +9,8 @@ import NoticeBanner from "@/components/NoticeBanner";
 import NotificationPrefs from "@/components/NotificationPrefs";
 import PushToggle from "@/components/PushToggle";
 import { parseNotificationPrefs } from "@/lib/notifications";
+import { Avatar } from "@/components/ui/Avatar";
+import { Icon } from "@/components/ui/Icon";
 
 type Intake = {
   goals?: string;
@@ -55,16 +57,20 @@ export default async function AccountPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl">
-          {profile?.display_name || "Your account"}
-        </h1>
-        <Link href="/onboarding" className="text-sm text-brand-700 underline dark:text-brand-300">
+    <div className="page-narrow has-tabbar">
+      <div className="flex items-center gap-4">
+        <Avatar name={profile?.display_name ?? user?.email ?? "?"} size="xl" variant="you" />
+        <div className="min-w-0 flex-1">
+          <p className="eyebrow">Your account</p>
+          <h1 className="mt-1 truncate text-display-md">
+            {profile?.display_name || "Your account"}
+          </h1>
+          <p className="mt-1 truncate text-sm text-ink-soft">{user?.email}</p>
+        </div>
+        <Link href="/onboarding" className="btn-secondary btn-sm shrink-0">
           Edit profile
         </Link>
       </div>
-      <p className="mt-1 text-sm text-ink-soft/80">{user?.email}</p>
 
       <NoticeBanner
         tone="success"
@@ -86,30 +92,38 @@ export default async function AccountPage({
         }
       />
 
-      <dl className="mt-6 space-y-4">
-        <div className="card !p-4">
-          <dt className="text-sm font-medium">Plan</dt>
-          <dd className="mt-1 text-sm text-ink-soft">
-            {isPremium ? "Premium" : "Free"}
-            {isPremium && sub?.status === "trialing" && " (trial)"}
-            {isPremium && renews && (
-              <span className="ml-2 text-ink-soft/80">· renews {renews}</span>
-            )}
+      <dl className="mt-8 space-y-4">
+        <div className={isPremium ? "card-hero" : "card"}>
+          <div className="flex items-center justify-between gap-3">
+            <dt className="flex items-center gap-2 text-sm font-semibold text-ink">
+              <Icon name="sparkles" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
+              Plan
+            </dt>
+            <span className={isPremium ? "pill-action" : "pill-quiet"}>
+              {isPremium ? "Premium" : "Free"}
+              {isPremium && sub?.status === "trialing" && " · trial"}
+            </span>
+          </div>
+          <dd className="mt-2 text-sm text-ink-soft">
+            {isPremium && renews && <span>Renews {renews}.</span>}
             {!isPremium && (
-              <Link href="/pricing" className="ml-2 text-brand-700 underline dark:text-brand-300">
-                Unlock the AI Blueprint with Premium →
-              </Link>
+              <span>
+                The core experience is free.{" "}
+                <Link href="/pricing" className="link">
+                  Unlock the AI Blueprint with Premium
+                </Link>
+              </span>
             )}
           </dd>
           {hasBilling && (
             <form action={createBillingPortal} className="mt-3">
               <PendingButton
-                className="btn-secondary !px-4 !py-2 text-sm"
+                className="btn-secondary btn-sm"
                 pendingLabel="Opening billing…"
               >
                 Manage billing
               </PendingButton>
-              <p className="mt-1.5 text-xs text-ink-soft/80">
+              <p className="mt-1.5 text-xs text-ink-faint">
                 Update your card, see invoices, or cancel anytime — cancellation
                 takes effect at the end of the billing period.
               </p>
@@ -118,8 +132,8 @@ export default async function AccountPage({
         </div>
 
         {intake.attachment?.style && (
-          <div className="card !p-4">
-            <dt className="text-sm font-medium">Your relating style</dt>
+          <div className="card">
+            <dt className="text-sm font-semibold text-ink">Your relating style</dt>
             <dd className="mt-1 text-sm text-ink-soft">
               <span className="font-medium">{intake.attachment.style}</span> —{" "}
               {ATTACHMENT_BLURB[intake.attachment.style]}
@@ -128,20 +142,20 @@ export default async function AccountPage({
         )}
 
         {sign && (
-          <div className="card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20 !p-4">
-            <dt className="text-sm font-medium text-brand-700 dark:text-brand-300">
+          <div className="card-warm">
+            <dt className="text-sm font-semibold text-accent-800 dark:text-accent-200">
               Your sign <span aria-hidden>{sign.symbol}</span>
             </dt>
             <dd className="mt-1 text-sm text-ink-soft">
               {sign.name} ({sign.element}) — {sign.blurb}
             </dd>
-            <p className="mt-2 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
+            <p className="mt-2 text-xs text-ink-faint">{ZODIAC_DISCLAIMER}</p>
           </div>
         )}
 
         {intake.goals && (
-          <div className="card !p-4">
-            <dt className="text-sm font-medium">What you want right now</dt>
+          <div className="card">
+            <dt className="text-sm font-semibold text-ink">What you want right now</dt>
             <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.goals}
             </dd>
@@ -149,8 +163,8 @@ export default async function AccountPage({
         )}
 
         {intake.values && (
-          <div className="card !p-4">
-            <dt className="text-sm font-medium">What matters to you</dt>
+          <div className="card">
+            <dt className="text-sm font-semibold text-ink">What matters to you</dt>
             <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.values}
             </dd>
@@ -158,14 +172,17 @@ export default async function AccountPage({
         )}
       </dl>
 
-      <div className="mt-8">
-        <Link href="/connections" className="text-sm text-brand-700 underline dark:text-brand-300">
-          Go to your connections →
-        </Link>
-      </div>
+      <Link href="/connections" className="card card-hover mt-6 flex items-center gap-3 !p-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+          <Icon name="rings" className="h-[18px] w-[18px]" />
+        </span>
+        <span className="flex-1 text-sm font-semibold text-ink">Go to your connections</span>
+        <Icon name="chevron-right" className="h-5 w-5 text-ink-faint" />
+      </Link>
 
       <div className="mt-10 space-y-4">
-        <h2 className="text-sm font-semibold text-ink-soft/80 uppercase tracking-wide">
+        <h2 className="flex items-center gap-2 text-lg">
+          <Icon name="bell" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
           Notifications
         </h2>
         <NotificationPrefs
@@ -176,22 +193,24 @@ export default async function AccountPage({
       </div>
 
       <div className="mt-10 space-y-4">
-        <h2 className="text-sm font-semibold text-ink-soft/80 uppercase tracking-wide">
+        <h2 className="flex items-center gap-2 text-lg">
+          <Icon name="shield" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
           Your data
         </h2>
-        <dl className="card !p-4">
-          <dt className="text-sm font-medium">Download your data</dt>
+        <dl className="card">
+          <dt className="text-sm font-semibold text-ink">Download your data</dt>
           <dd className="mt-1 text-sm text-ink-soft">
             Everything your account contains — profile, answers, discussions,
-            insights — as a JSON file.{" "}
-            <a
-              href="/api/account/export"
-              className="text-brand-700 underline dark:text-brand-300"
-              download
-            >
-              Export now
-            </a>
+            insights — as a JSON file.
           </dd>
+          <a
+            href="/api/account/export"
+            className="btn-secondary btn-sm mt-3 inline-flex"
+            download
+          >
+            <Icon name="download" className="h-4 w-4" />
+            Export now
+          </a>
         </dl>
         <DeleteAccount />
       </div>

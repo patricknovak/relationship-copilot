@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { pickRetrospectives } from "@/lib/retrospective";
 import type { PromptQuestion } from "@/lib/database.types";
+import { Icon } from "@/components/ui/Icon";
 
 // "Looking back" (free): resurface a revealed daily question from about a
 // month and a year ago, with both answers. Reads go through the session
@@ -89,30 +90,38 @@ export default async function LookingBack({
   if (cards.length === 0) return null;
 
   return (
-    <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-      <h2 className="text-lg text-brand-800 dark:text-brand-200">Looking back</h2>
-      <div className="mt-2 space-y-4">
+    <section className="card-tint mt-6">
+      <h2 className="flex items-center gap-2.5 text-lg text-brand-800 dark:text-brand-200">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface text-brand-700 shadow-soft dark:text-brand-200">
+          <Icon name="history" className="h-[18px] w-[18px]" />
+        </span>
+        Looking back
+      </h2>
+      <div className="mt-3 space-y-4">
         {cards.map(({ pick, question, myAnswer, theirAnswer }) => (
-          <div key={pick.id} className="text-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/80">
-              {pick.label} — {pick.scheduled_for}
+          <div key={pick.id} className="rounded-2xl bg-surface/80 p-4 text-sm shadow-soft dark:bg-surface-raised/60">
+            <p className="eyebrow">
+              {pick.label} · {pick.scheduled_for}
             </p>
-            <p className="mt-1 font-medium text-ink">{question}</p>
-            {myAnswer && (
-              <p className="mt-1 text-ink-soft">
-                <span className="font-medium">You:</span> {myAnswer}
-              </p>
-            )}
-            {theirAnswer && (
-              <p className="mt-1 text-ink-soft">
-                <span className="font-medium">{otherName}:</span> {theirAnswer}
-              </p>
-            )}
+            <p className="mt-1.5 font-display text-lg leading-snug text-ink">&ldquo;{question}&rdquo;</p>
+            <div className="mt-3 space-y-2">
+              {myAnswer && (
+                <p className="rounded-xl bg-brand-50/80 px-3 py-2 text-ink dark:bg-brand-900/25">
+                  <span className="font-semibold text-brand-700 dark:text-brand-300">You:</span> {myAnswer}
+                </p>
+              )}
+              {theirAnswer && (
+                <p className="rounded-xl bg-accent-50/80 px-3 py-2 text-ink dark:bg-accent-950/25">
+                  <span className="font-semibold text-accent-700 dark:text-accent-300">{otherName}:</span> {theirAnswer}
+                </p>
+              )}
+            </div>
             <Link
               href={`/connections/${connectionId}/prompts/${pick.id}`}
-              className="mt-1 inline-block text-xs text-brand-700 underline dark:text-brand-300"
+              className="link mt-2 inline-flex items-center gap-1 text-xs"
             >
-              Revisit →
+              Revisit
+              <Icon name="arrow-right" className="h-3 w-3" />
             </Link>
           </div>
         ))}

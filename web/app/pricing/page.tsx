@@ -8,6 +8,7 @@ import { canonicalUrl } from "@/lib/site";
 import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 import { pricingJsonLdScriptContent } from "@/lib/jsonLd";
+import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -82,7 +83,7 @@ export default async function PricingPage({
     : false;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-14">
+    <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6">
       {/* JSON-LD is type=application/ld+json (non-executable); safe under CSP. */}
       <script
         type="application/ld+json"
@@ -96,9 +97,9 @@ export default async function PricingPage({
         }}
       />
       <p className="eyebrow text-center">Pricing</p>
-      <h1 className="mt-3 text-center text-4xl">Simple, honest pricing</h1>
-      <p className="mt-3 text-center text-ink-soft">
-        Most of Relationship Copilot is free. Premium adds the AI layer.
+      <h1 className="mt-3 text-center text-display-lg">Simple, honest pricing</h1>
+      <p className="mx-auto mt-4 max-w-xl text-center text-ink-soft">
+        Most of Relationship Copilot is free. Premium adds the AI layer, and one plan covers both people in a connection.
       </p>
 
       <NoticeBanner
@@ -109,14 +110,14 @@ export default async function PricingPage({
         }
       />
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 sm:items-start">
         <Plan title="Free" price="$0" features={FREE} highlight={false}>
           {user ? (
-            <Link href="/connections" className="btn-secondary w-full">
+            <Link href="/connections" className="btn-secondary btn-lg w-full">
               Go to your connections
             </Link>
           ) : (
-            <Link href="/login" className="btn-secondary w-full">
+            <Link href="/login" className="btn-secondary btn-lg w-full">
               Get started
             </Link>
           )}
@@ -124,14 +125,15 @@ export default async function PricingPage({
 
         <Plan title="Premium" price={PREMIUM_MONTHLY_DISPLAY} features={PREMIUM} highlight>
           {isPremium ? (
-            <span className="block rounded-full bg-brand-100 dark:bg-brand-900/40 px-4 py-2.5 text-center text-sm font-medium text-brand-800 dark:text-brand-200">
-              You&apos;re on Premium ✨
+            <span className="flex items-center justify-center gap-2 rounded-full bg-brand-100 px-4 py-2.5 text-center text-sm font-semibold text-brand-800 dark:bg-brand-900/40 dark:text-brand-200">
+              <Icon name="sparkles" className="h-4 w-4" />
+              You&apos;re on Premium
             </span>
           ) : (
             <div className="space-y-2">
               <form action={createCheckout}>
                 <input type="hidden" name="interval" value="month" />
-                <PendingButton className="btn-primary w-full" pendingLabel="Opening checkout…">
+                <PendingButton className="btn-primary btn-lg w-full" pendingLabel="Opening checkout…">
                   Upgrade to Premium
                 </PendingButton>
               </form>
@@ -151,23 +153,27 @@ export default async function PricingPage({
         </Plan>
       </div>
 
-      <section className="mt-14">
-        <h2 className="text-center font-display text-2xl text-ink">
-          Common questions
-        </h2>
-        <div className="mt-6 space-y-3">
+      <p className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-ink-faint">
+        <span className="inline-flex items-center gap-1.5"><Icon name="lifebuoy" className="h-3.5 w-3.5" /> Safety is always free</span>
+        <span className="inline-flex items-center gap-1.5"><Icon name="lock" className="h-3.5 w-3.5" /> No peeking, by design</span>
+        <span className="inline-flex items-center gap-1.5"><Icon name="check" className="h-3.5 w-3.5" /> Cancel anytime</span>
+      </p>
+
+      <section className="mx-auto mt-16 max-w-2xl">
+        <h2 className="text-center text-display-md">Common questions</h2>
+        <div className="mt-8 space-y-3">
           {FAQS.map((f) => (
-            <details key={f.q} className="card group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+            <details key={f.q} className="card group !p-0">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-medium text-ink [&::-webkit-details-marker]:hidden">
                 {f.q}
                 <span
                   aria-hidden
-                  className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 transition-transform group-open:rotate-45 dark:bg-brand-900/40 dark:text-brand-200"
                 >
-                  +
+                  <Icon name="plus" className="h-4 w-4" strokeWidth={2.2} />
                 </span>
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
+              <p className="px-5 pb-5 text-sm leading-relaxed text-ink-soft">{f.a}</p>
             </details>
           ))}
         </div>
@@ -190,35 +196,34 @@ function Plan({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={`card !p-7 ${
-        highlight
-          ? "!rounded-3xl !border-brand-300 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20 shadow-lift"
-          : "!rounded-3xl"
-      }`}
-    >
+    <div className={`relative ${highlight ? "card-hero" : "card !rounded-3xl !p-6 sm:!p-7"}`}>
+      {highlight && (
+        <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-600 to-accent-500 px-3 py-1 text-xs font-semibold text-white shadow-soft">
+          <Icon name="sparkles" className="h-3.5 w-3.5" />
+          Covers both people
+        </span>
+      )}
       <h2 className="font-display text-xl text-ink">{title}</h2>
-      <p className="mt-1 font-display text-4xl text-ink">{price}</p>
-      <ul className="mt-5 space-y-2.5 text-sm text-ink-soft">
+      <p className="mt-2 font-display text-5xl tracking-tight text-ink">{price}</p>
+      <ul className="mt-6 space-y-3 text-sm text-ink-soft">
         {features.map((f) => (
-          <li key={f} className="flex gap-2.5">
-            <span className="mt-0.5 text-brand-600 dark:text-brand-300">✓</span>
+          <li key={f} className="flex items-start gap-2.5">
+            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${highlight ? "bg-brand-700 text-white dark:bg-brand-500" : "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200"}`}>
+              <Icon name="check" className="h-3 w-3" strokeWidth={2.6} />
+            </span>
             {f}
           </li>
         ))}
       </ul>
-      <div className="mt-7">{children}</div>
-      <p className="mt-5 text-xs leading-relaxed text-ink-soft/80">
-        Safety resources are always free.
-      </p>
-      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft/80">
-        <Link href="/safety" className="underline hover:text-ink-soft">
+      <div className="mt-8">{children}</div>
+      <p className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+        <Link href="/safety" className="hover:text-ink">
           Safety
         </Link>
-        <Link href="/privacy" className="underline hover:text-ink-soft">
+        <Link href="/privacy" className="hover:text-ink">
           Privacy
         </Link>
-        <Link href="/terms" className="underline hover:text-ink-soft">
+        <Link href="/terms" className="hover:text-ink">
           Terms
         </Link>
       </p>

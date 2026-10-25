@@ -7,6 +7,7 @@ import TimezoneField from "@/components/TimezoneField";
 import { createClient } from "@/lib/supabase/server";
 import { parseQuestionsListParam } from "@/lib/questionsCta";
 import type { ConnectionType, PromptQuestion } from "@/lib/database.types";
+import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
 
 export default async function NewConnectionPage({
   searchParams,
@@ -36,11 +37,17 @@ export default async function NewConnectionPage({
     : [];
   const packSize = Array.isArray(pack?.questions) ? pack.questions.length : 0;
   return (
-    <div className="mx-auto max-w-xl px-4 py-12">
-      <h1 className="text-3xl">Start a new connection</h1>
-      <p className="mt-2 text-ink-soft">
-        Choose the kind of relationship. You&apos;ll get a link to invite the
-        other person.
+    <div className="page-narrow has-tabbar">
+      <Link href="/connections" className="back-link mb-3">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        All connections
+      </Link>
+      <p className="eyebrow">New connection</p>
+      <h1 className="mt-2 text-display-md">Who is this with?</h1>
+      <p className="mt-3 text-ink-soft">
+        Choose the kind of relationship. You&apos;ll get a private link to
+        invite the other person, and the first questions are written for
+        exactly this kind of pair.
       </p>
 
       {error === "cap" ? (
@@ -65,46 +72,60 @@ export default async function NewConnectionPage({
       <form action={createConnection} className="mt-8 space-y-4">
         <TimezoneField />
         {listSlug ? <input type="hidden" name="list" value={listSlug} /> : null}
-        <fieldset className="space-y-2.5">
+        <fieldset className="grid gap-2.5 sm:grid-cols-2">
+          <legend className="sr-only">Relationship type</legend>
           {CONNECTION_TYPES.map((t) => (
             <label
               key={t.value}
-              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-brand-100 dark:border-surface-line bg-white/80 dark:bg-surface/80 p-4 shadow-soft transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 dark:has-[:checked]:bg-brand-900/25 dark:bg-brand-900/25 has-[:checked]:shadow-lift"
+              className="group relative flex cursor-pointer items-start gap-3 rounded-2xl border border-surface-line bg-surface p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 has-[:checked]:shadow-lift has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 dark:has-[:checked]:bg-brand-900/25"
             >
               <input
                 type="radio"
                 name="type"
                 value={t.value}
                 defaultChecked={t.value === preselected}
-                className="mt-1 accent-brand-700"
+                className="peer sr-only"
               />
-              <span>
-                <span className="block font-medium text-ink">{t.label}</span>
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${TYPE_TINT[t.value]}`}>
+                <Icon name={TYPE_ICON[t.value]} className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-ink">{t.label}</span>
                 <span className="block text-sm text-ink-soft">{t.blurb}</span>
+              </span>
+              <span
+                aria-hidden
+                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-surface-line text-transparent transition peer-checked:border-brand-700 peer-checked:bg-brand-700 peer-checked:text-white dark:peer-checked:bg-brand-500"
+              >
+                <Icon name="check" className="h-3 w-3" strokeWidth={3} />
               </span>
             </label>
           ))}
         </fieldset>
 
-        <PendingButton className="btn-primary w-full !py-3" pendingLabel="Creating…">
+        <PendingButton className="btn-primary btn-lg w-full" pendingLabel="Creating…">
           Create &amp; get invite link
+          <Icon name="arrow-right" className="h-4 w-4" />
         </PendingButton>
       </form>
 
       {preview.length > 0 && (
-        <section className="card mt-8 !p-5">
+        <section className="card-tint mt-8">
           <p className="eyebrow">
-            Your first {packSize} questions ({CONNECTION_TYPES.find((t) => t.value === preselected)?.label})
+            Your first {packSize} questions · {CONNECTION_TYPES.find((t) => t.value === preselected)?.label}
           </p>
-          <ol className="mt-2 space-y-2">
-            {preview.map((q) => (
-              <li key={q} className="font-display text-base leading-snug text-ink">
-                &ldquo;{q}&rdquo;
+          <ol className="mt-3 space-y-3">
+            {preview.map((q, i) => (
+              <li key={q} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface font-display text-xs text-brand-700 shadow-soft dark:text-brand-200">
+                  {i + 1}
+                </span>
+                <span className="font-display text-base leading-snug text-ink">&ldquo;{q}&rdquo;</span>
               </li>
             ))}
-            <li className="text-sm text-ink-soft">…and {Math.max(0, packSize - preview.length)} more, once you both join.</li>
+            <li className="pl-9 text-sm text-ink-soft">…and {Math.max(0, packSize - preview.length)} more, once you both join.</li>
           </ol>
-          <p className="mt-3 text-xs text-ink-soft/80">
+          <p className="mt-4 text-xs text-ink-faint">
             Previewing another type?{" "}
             {CONNECTION_TYPES.filter((t) => t.value !== preselected).map((t, i) => (
               <span key={t.value}>
@@ -115,7 +136,7 @@ export default async function NewConnectionPage({
                       ? `/connections/new?type=${t.value}&list=${listSlug}`
                       : `/connections/new?type=${t.value}`
                   }
-                  className="underline"
+                  className="link"
                 >
                   {t.label}
                 </Link>

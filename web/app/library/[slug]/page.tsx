@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { renderArticleBlocks, type Span } from "@/lib/markdown";
 import { articleJsonLdScriptContent } from "@/lib/jsonLd";
 import { canonicalUrl } from "@/lib/site";
+import { Icon } from "@/components/ui/Icon";
+import SharePublic from "@/components/SharePublic";
 
 // Per-article title + description so sharing a specific library link unfurls
 // with that article's own title and summary (falls back to the OG card).
@@ -57,41 +59,43 @@ export default async function ArticlePage({
   });
 
   return (
-    <article className="mx-auto max-w-2xl px-4 py-12">
+    <article className="page has-tabbar">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd }}
       />
-      <Link
-        href="/library"
-        className="text-sm text-ink-soft/80 hover:text-ink"
-      >
-        ← Library
+      <Link href="/library" className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        Library
       </Link>
       <p className="eyebrow mt-4">
         {article.framework ? `${article.framework} · ` : ""}From the library
       </p>
-      <h1 className="mt-2 text-4xl leading-tight">{article.title}</h1>
+      <h1 className="mt-2 text-display-lg">{article.title}</h1>
       {article.summary && (
-        <p className="mt-3 text-lg leading-relaxed text-ink-soft">
+        <p className="mt-4 font-display text-xl leading-relaxed text-ink-soft">
           {article.summary}
         </p>
       )}
       {article.evidence_rating != null && (
-        <p className="mt-3 text-xs text-brand-600/90 dark:text-brand-300">
+        <p className="mt-4 flex items-center gap-1 text-xs text-ink-soft">
           <span className="sr-only">
             Evidence rating {article.evidence_rating} out of 5
           </span>
-          <span aria-hidden>
-            Evidence: {"★".repeat(article.evidence_rating)}
-            <span className="text-brand-300">
-              {"☆".repeat(Math.max(0, 5 - article.evidence_rating))}
-            </span>
+          <span aria-hidden className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Icon
+                key={i}
+                name="star"
+                className={`h-3.5 w-3.5 ${i < article.evidence_rating! ? "fill-brand-500 text-brand-500 dark:fill-brand-300 dark:text-brand-300" : "text-brand-200 dark:text-brand-800"}`}
+              />
+            ))}
           </span>
+          <span aria-hidden className="ml-1">evidence strength</span>
         </p>
       )}
 
-      <div className="mt-8 space-y-4 leading-relaxed text-ink">
+      <div className="prose-article hairline mt-8 space-y-5 pt-8">
         {blocks.map((block, i) =>
           block.type === "list" ? (
             <ul key={i} className="space-y-2 pl-1">
@@ -158,8 +162,11 @@ export default async function ArticlePage({
         </section>
       )}
 
-      <p className="mt-10 border-t border-brand-100/70 dark:border-surface-line pt-6 text-sm text-ink-soft">
-        <Link href="/questions" className="text-brand-700 underline dark:text-brand-300">
+      <div className="hairline mt-10 pt-6">
+        <SharePublic url={url} text={article.title} label="Share this read" />
+      </div>
+      <p className="mt-6 text-sm text-ink-soft">
+        <Link href="/questions" className="link">
           Browse the questions
         </Link>
       </p>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import QuickExit from "@/components/QuickExit";
 import { canonicalUrl } from "@/lib/site";
+import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Safety & Support",
@@ -84,17 +85,47 @@ const CANADA_RESOURCES: Resource[] = [
   },
 ];
 
+function ResourceCard({ r, heading: H }: { r: Resource; heading: "h2" | "h3" }) {
+  const isText = /text/i.test(r.contact) && !/call/i.test(r.contact);
+  return (
+    <li className="card card-hover flex gap-4 !p-4">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+        <Icon name={isText ? "message" : "phone"} className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <H className="font-sans text-base font-semibold tracking-normal text-ink">{r.name}</H>
+        <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">{r.contact}</p>
+        <p className="mt-1 text-sm leading-relaxed text-ink-soft">{r.detail}</p>
+        {r.href && (
+          <a
+            href={r.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link mt-2 inline-flex items-center gap-1 text-sm"
+          >
+            {r.href.replace("https://", "").replace(/^www\./, "")}
+            <Icon name="external" className="h-3.5 w-3.5" />
+          </a>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export default function SafetyPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="page has-tabbar">
       <QuickExit />
 
-      <div className="rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 p-4">
-        <p className="font-semibold text-rose-800 dark:text-rose-200">
-          If you are in immediate danger, call your local emergency number
-          (911 in the US and Canada).
+      <div className="mt-10 rounded-3xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-950/40 sm:mt-0">
+        <p className="flex items-start gap-3 font-semibold text-rose-800 dark:text-rose-200">
+          <Icon name="lifebuoy" className="mt-0.5 h-5 w-5 shrink-0" />
+          <span>
+            If you are in immediate danger, call your local emergency number
+            (911 in the US and Canada).
+          </span>
         </p>
-        <p className="mt-2 text-sm text-rose-900 dark:text-rose-200">
+        <p className="mt-3 text-sm leading-relaxed text-rose-900 dark:text-rose-200">
           The <span className="font-medium">Quick exit</span> button (or the
           Escape key) instantly replaces this page with an unrelated site. If
           someone may check your device, consider using a private/incognito
@@ -102,63 +133,34 @@ export default function SafetyPage() {
         </p>
       </div>
 
-      <h1 className="mt-8 text-3xl">Safety &amp; Support</h1>
-      <p className="mt-2 text-ink-soft">
+      <p className="eyebrow mt-10">Always free</p>
+      <h1 className="mt-2 text-display-md">Safety &amp; Support</h1>
+      <p className="mt-3 text-ink-soft">
         These resources are free and confidential. Relationship Copilot is not a
         crisis service and does not provide therapy — please reach out to the
         people below for real-time help.
       </p>
-      <p className="mt-2 text-sm text-ink-soft">
+      <p className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+        <Icon name="eye-off" className="h-4 w-4 shrink-0 text-ink-faint" />
         If you need support, Safety is free and private. Viewing resources
         doesn&apos;t notify anyone.
       </p>
 
-      <ul className="mt-6 space-y-4">
+      <h2 className="mt-8 text-xl">United States</h2>
+      <ul className="stagger mt-4 space-y-3">
         {RESOURCES.map((r) => (
-          <li key={r.name} className="card !p-4">
-            <h2 className="text-base font-sans font-semibold tracking-normal">
-              {r.name}
-            </h2>
-            <p className="mt-1 font-medium text-brand-700 dark:text-brand-300">{r.contact}</p>
-            <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
-            {r.href && (
-              <a
-                href={r.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-block text-sm underline text-ink-soft/80"
-              >
-                {r.href.replace("https://", "")}
-              </a>
-            )}
-          </li>
+          <ResourceCard key={r.name} r={r} heading="h3" />
         ))}
       </ul>
 
       <h2 className="mt-10 text-xl">In Canada</h2>
-      <ul className="mt-4 space-y-4">
+      <ul className="stagger mt-4 space-y-3">
         {CANADA_RESOURCES.map((r) => (
-          <li key={r.name} className="card !p-4">
-            <h3 className="text-base font-sans font-semibold tracking-normal">
-              {r.name}
-            </h3>
-            <p className="mt-1 font-medium text-brand-700 dark:text-brand-300">{r.contact}</p>
-            <p className="mt-1 text-sm text-ink-soft">{r.detail}</p>
-            {r.href && (
-              <a
-                href={r.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-block text-sm underline text-ink-soft/80"
-              >
-                {r.href.replace("https://", "")}
-              </a>
-            )}
-          </li>
+          <ResourceCard key={r.name} r={r} heading="h3" />
         ))}
       </ul>
 
-      <p className="mt-8 text-xs text-ink-soft/80">
+      <p className="mt-8 text-xs text-ink-faint">
         Resources listed are for the US and Canada. Availability and numbers
         may change; if a number does not work, search for your local
         equivalent or contact local emergency services.

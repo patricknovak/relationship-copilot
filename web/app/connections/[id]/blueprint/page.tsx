@@ -7,6 +7,7 @@ import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety
 import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 const ERRORS: Record<string, string> = {
   premium: "The Blueprint is a Premium feature — upgrade to generate one.",
@@ -110,11 +111,20 @@ export default async function BlueprintPage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href={`/connections/${id}`} className="text-sm text-ink-soft/80 hover:text-ink-soft">
-        ← Back
+    <div className="page has-tabbar">
+      <Link href={`/connections/${id}`} className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        Back
       </Link>
-      <h1 className="mt-2 text-3xl">Relationship Blueprint</h1>
+      <div className="mt-3 flex items-center gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-brand-glow">
+          <Icon name="wand" className="h-6 w-6" />
+        </span>
+        <div>
+          <p className="eyebrow">AI reflection</p>
+          <h1 className="mt-1 text-display-md">Relationship Blueprint</h1>
+        </div>
+      </div>
 
       <NoticeBanner
         tone={error ? "error" : "success"}
@@ -137,14 +147,17 @@ export default async function BlueprintPage({
           )}
         </>
       ) : payload ? (
-        <div className="mt-6 space-y-6">
-          <Section title="Strengths" items={payload.strengths} />
-          <Section title="Shared goals" items={payload.shared_goals} />
-          <Section title="Areas to nurture" items={payload.focus_areas} />
+        <div className="mt-6 space-y-4">
+          <Section title="Strengths" icon="sparkles" tone="brand" items={payload.strengths} />
+          <Section title="Shared goals" icon="compass" tone="accent" items={payload.shared_goals} />
+          <Section title="Areas to nurture" icon="sprout" tone="emerald" items={payload.focus_areas} />
           {payload.reflection && (
-            <div className="card !p-4">
-              <h2 className="font-semibold">A gentle reflection</h2>
-              <p className="mt-2 text-sm text-ink-soft whitespace-pre-wrap">
+            <div className="card-hero">
+              <h2 className="flex items-center gap-2 text-lg">
+                <Icon name="heart" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
+                A gentle reflection
+              </h2>
+              <p className="mt-3 whitespace-pre-wrap font-display text-lg leading-relaxed text-ink">
                 {payload.reflection}
               </p>
             </div>
@@ -173,7 +186,7 @@ export default async function BlueprintPage({
           )}
         </div>
       ) : isPremium ? (
-        <div className="mt-6 card">
+        <div className="card-hero mt-6">
           {revealed ? (
             <>
               <p className="text-sm text-ink-soft">
@@ -181,8 +194,9 @@ export default async function BlueprintPage({
                 areas to nurture — based on your{" "}
                 {answerCount > 0 ? `${answerCount} ` : ""}first answers.
               </p>
-              <form action={generate} className="mt-3">
+              <form action={generate} className="mt-4">
                 <PendingButton pendingLabel="Generating — this takes a moment…">
+                  <Icon name="sparkles" className="h-4 w-4" />
                   Generate Blueprint
                 </PendingButton>
               </form>
@@ -195,8 +209,11 @@ export default async function BlueprintPage({
           )}
         </div>
       ) : (
-        <div className="mt-6 card !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-          <h2 className="font-semibold text-brand-700 dark:text-brand-300">A Premium feature</h2>
+        <div className="card-tint mt-6">
+          <h2 className="flex items-center gap-2 font-semibold text-brand-700 dark:text-brand-300">
+            <Icon name="sparkles" className="h-4 w-4" />
+            A Premium feature
+          </h2>
           <p className="mt-1 text-sm text-ink-soft">
             The AI Relationship Blueprint and weekly digests are part of Premium.
             One Premium plan covers both people in a connection. Your core
@@ -275,14 +292,38 @@ export default async function BlueprintPage({
   );
 }
 
-function Section({ title, items }: { title: string; items?: string[] }) {
+const TONES = {
+  brand: "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200",
+  accent: "bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200",
+  emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200",
+} as const;
+
+function Section({
+  title,
+  icon,
+  tone,
+  items,
+}: {
+  title: string;
+  icon: IconName;
+  tone: keyof typeof TONES;
+  items?: string[];
+}) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="card !p-4">
-      <h2 className="font-semibold">{title}</h2>
-      <ul className="mt-2 list-disc pl-5 text-sm text-ink-soft space-y-1">
+    <div className="card">
+      <h2 className="flex items-center gap-2.5 text-lg">
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${TONES[tone]}`}>
+          <Icon name={icon} className="h-4 w-4" />
+        </span>
+        {title}
+      </h2>
+      <ul className="mt-3 space-y-2.5 text-sm text-ink-soft">
         {items.map((it, i) => (
-          <li key={i}>{it}</li>
+          <li key={i} className="flex gap-2.5">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
+            <span className="leading-relaxed">{it}</span>
+          </li>
         ))}
       </ul>
     </div>
@@ -291,8 +332,11 @@ function Section({ title, items }: { title: string; items?: string[] }) {
 
 function SafetyCard() {
   return (
-    <div className="mt-6 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-5">
-      <h2 className="font-semibold text-rose-800 dark:text-rose-200">You deserve support</h2>
+    <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-950/40">
+      <h2 className="flex items-center gap-2 font-semibold text-rose-800 dark:text-rose-200">
+        <Icon name="lifebuoy" className="h-5 w-5" />
+        You deserve support
+      </h2>
       <p className="mt-1 text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
       <p className="mt-2 text-sm text-rose-900/90 dark:text-rose-200/90">
         {SAFETY_PRIVACY_LINE}

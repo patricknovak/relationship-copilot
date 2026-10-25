@@ -18,8 +18,8 @@ export default function NotificationPrefs({
   saved?: boolean;
 }) {
   return (
-    <form action={updateNotificationPrefs} className="card !p-4">
-      <h2 className="text-sm font-medium">What to tell you about</h2>
+    <form action={updateNotificationPrefs} className="card">
+      <h2 className="text-sm font-semibold text-ink">What to tell you about</h2>
       <p className="mt-1 text-sm text-ink-soft">
         Short nudges with a link, by email and on any device where you turn
         notifications on. Never the answers themselves. We never notify you
@@ -28,7 +28,7 @@ export default function NotificationPrefs({
       <ul className="mt-3 space-y-2.5">
         {ORDER.map((k) => (
           <li key={k}>
-            <label className="flex cursor-pointer items-start gap-3">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl p-2 transition hover:bg-paper-warm/60">
               <input
                 type="checkbox"
                 name={k}
@@ -48,7 +48,7 @@ export default function NotificationPrefs({
         ))}
       </ul>
       <div className="mt-3 flex items-center gap-3">
-        <PendingButton className="btn-secondary !px-4 !py-2 text-sm" pendingLabel="Saving…">
+        <PendingButton className="btn-secondary btn-sm" pendingLabel="Saving…">
           Save notifications
         </PendingButton>
         {saved && <span className="text-xs text-ink-soft">Saved.</span>}

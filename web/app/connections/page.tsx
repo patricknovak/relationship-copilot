@@ -5,6 +5,9 @@ import { dailyBadge, dailyState, firstSetBadge, todayIn, todayUtc } from "@/lib/
 import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 import type { ConnectionType } from "@/lib/database.types";
+import { Avatar } from "@/components/ui/Avatar";
+import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
 
 type ConnectionRow = {
   id: string;
@@ -15,48 +18,57 @@ type ConnectionRow = {
 };
 
 const BADGE_CLS: Record<NonNullable<ConnectionRow["badge"]>["tone"], string> = {
-  action:
-    "bg-brand-700 text-white dark:bg-brand-500",
-  quiet: "bg-paper-warm text-ink-soft",
-  done: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+  action: "pill-action",
+  quiet: "pill-quiet",
+  done: "pill-done",
 };
 
 function ConnectionList({ items }: { items: ConnectionRow[] }) {
   return (
-    <ul className="mt-4 space-y-3">
-      {items.map((c) => (
-        <li key={c.id}>
-          <Link href={`/connections/${c.id}`} className="card card-hover block">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-display text-lg text-ink">
-                  {c.them ?? connectionLabel(c.type)}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-soft/80">
-                  {c.them ? connectionLabel(c.type) : STATUS_LABEL[c.status] ?? c.status}
-                </p>
-              </div>
-              {c.badge ? (
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${BADGE_CLS[c.badge.tone]}`}
-                >
-                  {c.badge.label}
-                </span>
+    <ul className="stagger mt-5 space-y-3">
+      {items.map((c) => {
+        const pending = c.status === "pending";
+        return (
+          <li key={c.id}>
+            <Link
+              href={`/connections/${c.id}`}
+              className="card card-hover group flex items-center gap-4 !p-4"
+            >
+              {c.them ? (
+                <Avatar name={c.them} size="lg" variant="them" />
               ) : (
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    c.status === "active"
-                      ? "bg-brand-100 dark:bg-brand-900/40 text-brand-800 dark:text-brand-200"
-                      : "bg-paper-warm text-ink-soft"
-                  }`}
-                >
-                  {STATUS_LABEL[c.status] ?? c.status}
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-brand-300 text-brand-400 dark:border-brand-700">
+                  <Icon name={pending ? "send" : TYPE_ICON[c.type]} className="h-6 w-6" />
                 </span>
               )}
-            </div>
-          </Link>
-        </li>
-      ))}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <p className="truncate font-display text-xl text-ink">
+                    {c.them ?? connectionLabel(c.type)}
+                  </p>
+                  {c.badge ? (
+                    <span className={BADGE_CLS[c.badge.tone]}>{c.badge.label}</span>
+                  ) : (
+                    <span className={c.status === "active" ? "pill-brand" : "pill-quiet"}>
+                      {STATUS_LABEL[c.status] ?? c.status}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-soft">
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${TYPE_TINT[c.type]}`}>
+                    <Icon name={TYPE_ICON[c.type]} className="h-2.5 w-2.5" strokeWidth={2.2} />
+                  </span>
+                  {c.them ? connectionLabel(c.type) : (STATUS_LABEL[c.status] ?? c.status)}
+                </p>
+              </div>
+              <Icon
+                name="chevron-right"
+                className="hidden h-5 w-5 shrink-0 text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-brand-600 sm:block"
+              />
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -212,35 +224,54 @@ export default async function ConnectionsPage() {
     badge: badgeByConnection.get(c.id) ?? null,
   }));
 
+  const live = rows.filter((c) => c.status !== "archived");
+  const yourTurn = live.filter((c) => c.badge?.tone === "action").length;
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl">Your connections</h1>
+    <div className="page has-tabbar">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Your people</p>
+          <h1 className="mt-2 text-display-md">Your connections</h1>
+          {live.length > 0 && (
+            <p className="mt-2 text-sm text-ink-soft">
+              {yourTurn > 0
+                ? `${yourTurn} waiting on you.`
+                : "Nothing waiting on you right now."}
+            </p>
+          )}
+        </div>
         <Link href="/connections/new" className="btn-primary">
-          + New connection
+          <Icon name="plus" className="h-4 w-4" strokeWidth={2.2} />
+          New connection
         </Link>
       </div>
 
       {rows.length === 0 ? (
-        <div className="card mt-10 !rounded-3xl border-dashed !border-brand-200 p-10 text-center">
-          <p className="font-display text-xl text-ink">
-            Invite someone to start
-          </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-ink-soft">
-            Create a connection, share the link, and answer your first questions
-            together. Sign-in is Google. Safety resources stay free; Premium (
-            {PREMIUM_MONTHLY_DISPLAY}) is optional.
-          </p>
-          <Link href="/connections/new" className="btn-primary mt-5">
-            Create and invite
-          </Link>
+        <div className="mt-10">
+          <EmptyState
+            icon="rings"
+            title="Invite someone to start"
+            body={
+              <>
+                Create a connection, share the link, and answer your first
+                questions together. Sign-in is Google. Safety resources stay
+                free; Premium ({PREMIUM_MONTHLY_DISPLAY}) is optional.
+              </>
+            }
+          >
+            <Link href="/connections/new" className="btn-primary btn-lg">
+              Create and invite
+              <Icon name="arrow-right" className="h-4 w-4" />
+            </Link>
+          </EmptyState>
         </div>
       ) : (
         <>
-          <ConnectionList items={rows.filter((c) => c.status !== "archived")} />
+          <ConnectionList items={live} />
           {rows.some((c) => c.status === "archived") && (
-            <details className="mt-8">
-              <summary className="cursor-pointer text-sm text-ink-soft/80">
+            <details className="mt-10">
+              <summary className="cursor-pointer list-none text-sm font-medium text-ink-faint hover:text-ink [&::-webkit-details-marker]:hidden">
                 Archived ({rows.filter((c) => c.status === "archived").length})
               </summary>
               <div className="mt-3 opacity-70">

@@ -110,8 +110,8 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
   }
 
   return (
-    <div className="card !p-4">
-      <h2 className="text-sm font-medium">Notifications on this device</h2>
+    <div className="card">
+      <h2 className="text-sm font-semibold text-ink">Notifications on this device</h2>
       <p className="mt-1 text-sm text-ink-soft">
         A short alert when it&apos;s your turn, with the same switches as email.
         Never the answers themselves.
@@ -126,14 +126,14 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
               type="button"
               onClick={turnOff}
               disabled={busy}
-              className="btn-secondary !px-4 !py-2 text-sm"
+              className="btn-secondary btn-sm"
             >
               {busy ? "Turning off…" : "Turn off"}
             </button>
           </>
         )}
         {state === "off" && (
-          <button type="button" onClick={turnOn} disabled={busy} className="btn-primary !px-4 !py-2 text-sm">
+          <button type="button" onClick={turnOn} disabled={busy} className="btn-primary btn-sm">
             {busy ? "Turning on…" : "Turn on notifications"}
           </button>
         )}

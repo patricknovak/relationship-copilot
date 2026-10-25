@@ -24,8 +24,8 @@ export default function DeleteAccount() {
   }
 
   return (
-    <div className="rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
-      <h2 className="text-sm font-medium text-rose-700 dark:text-rose-300">Delete account</h2>
+    <div className="rounded-2xl border border-rose-200 p-5 dark:border-rose-900/50">
+      <h2 className="text-sm font-semibold text-rose-700 dark:text-rose-300">Delete account</h2>
       <p className="mt-1 text-sm text-ink-soft">
         This permanently deletes your profile, your answers, and your activity.
         If you share a connection with someone, they keep their own answers and
@@ -43,12 +43,12 @@ export default function DeleteAccount() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="off"
-          className="w-full rounded-md border border-surface-line bg-surface px-3 py-2 text-sm text-ink focus:border-rose-500 focus:outline-none"
+          className="input !rounded-xl focus:!border-rose-500 focus:!ring-rose-500/25"
         />
         <button
           type="submit"
           disabled={confirm !== "DELETE" || busy}
-          className="rounded-md bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+          className="btn-danger btn-sm disabled:opacity-50"
         >
           {busy ? "Deleting…" : "Permanently delete my account"}
         </button>

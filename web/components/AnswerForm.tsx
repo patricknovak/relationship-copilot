@@ -11,6 +11,7 @@ import {
   SAFETY_PRIVACY_LINE,
 } from "@/lib/safety";
 import type { PromptQuestion } from "@/lib/database.types";
+import { Icon } from "@/components/ui/Icon";
 
 type AnswerMap = Record<string, string>;
 
@@ -104,10 +105,13 @@ export default function AnswerForm({
     });
   }
 
+  const pct = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+
   return (
-    <form onSubmit={submit} className="mt-7 space-y-5">
+    <form onSubmit={submit} className="mt-6 space-y-5">
       {restoredDraft && !answered && (
-        <p className="rounded-2xl border border-brand-200 dark:border-brand-800/60 bg-brand-50/70 dark:bg-brand-900/20 px-4 py-2.5 text-sm text-brand-800 dark:text-brand-200">
+        <p className="flex items-center gap-2 rounded-2xl border border-brand-200 bg-brand-50/70 px-4 py-2.5 text-sm text-brand-800 dark:border-brand-800/60 dark:bg-brand-900/20 dark:text-brand-200">
+          <Icon name="history" className="h-4 w-4 shrink-0" />
           Picked up where you left off — your unsent draft was restored.
         </p>
       )}
@@ -130,45 +134,70 @@ export default function AnswerForm({
               </li>
             ))}
           </ul>
-          <Link href="/safety" className="mt-3 inline-block text-sm underline">
+          <Link href="/safety" className="link mt-3 inline-block text-sm">
             More Safety resources
           </Link>
         </div>
       )}
 
-      <p className="text-sm text-ink-soft">{MICROCOPY.aboveQuestion}</p>
+      <p className="flex items-center gap-2 text-sm text-ink-soft">
+        <Icon name="eye-off" className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" />
+        {MICROCOPY.aboveQuestion}
+      </p>
 
-      {questions.map((q, i) => (
-        <div key={q.id} className="card !p-5">
-          <p className="eyebrow">
-            Question {i + 1} of {questions.length}
-          </p>
-          <label
-            className="mt-1.5 block font-display text-lg leading-snug text-ink"
-            htmlFor={`q_${q.id}`}
-          >
-            {q.text}
-          </label>
-          <Field
-            question={q}
-            value={answers[q.id] ?? ""}
-            onChange={(v) => setAnswer(q.id, v)}
-          />
-          <p className="mt-2 text-xs text-ink-soft/80">{MICROCOPY.belowQuestion}</p>
-        </div>
-      ))}
+      {questions.map((q, i) => {
+        const done = (answers[q.id] ?? "").trim() !== "";
+        return (
+          <div key={q.id} className={`card transition ${done ? "border-brand-200 dark:border-brand-800/60" : ""}`}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="eyebrow">
+                Question {i + 1} of {questions.length}
+              </p>
+              <span
+                aria-hidden
+                className={`flex h-5 w-5 items-center justify-center rounded-full transition ${
+                  done ? "bg-brand-700 text-white dark:bg-brand-500" : "border border-surface-line text-transparent"
+                }`}
+              >
+                <Icon name="check" className="h-3 w-3" strokeWidth={3} />
+              </span>
+            </div>
+            <label
+              className="mt-1.5 block font-display text-xl leading-snug text-ink"
+              htmlFor={`q_${q.id}`}
+            >
+              {q.text}
+            </label>
+            <Field
+              question={q}
+              value={answers[q.id] ?? ""}
+              onChange={(v) => setAnswer(q.id, v)}
+            />
+            <p className="mt-2 flex items-center gap-1 text-xs text-ink-faint">
+              <Icon name="lock" className="h-3 w-3" />
+              {MICROCOPY.belowQuestion}
+            </p>
+          </div>
+        );
+      })}
 
-      <div className="sticky bottom-3 z-10 rounded-2xl border border-surface-line bg-surface/95 p-3 shadow-lift backdrop-blur">
+      <div className="sticky bottom-3 z-10 rounded-2xl border border-surface-line bg-surface/95 p-3 shadow-float backdrop-blur sm:bottom-4">
         {error && <p className="mb-2 text-sm text-rose-600">{error}</p>}
         {saved && !error && (
-          <p className="mb-2 text-sm text-brand-700 dark:text-brand-300">
+          <p className="mb-2 flex items-center gap-1.5 text-sm text-brand-700 dark:text-brand-300">
+            <Icon name="check" className="h-4 w-4" strokeWidth={2.4} />
             {MICROCOPY.confirmOnSubmit}
           </p>
         )}
         <div className="flex items-center gap-3">
-          <p className="flex-1 text-sm text-ink-soft" aria-live="polite">
-            {answeredCount} of {questions.length} answered
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-ink-soft" aria-live="polite">
+              <span className="font-semibold text-ink">{answeredCount}</span> of {questions.length} answered
+            </p>
+            <div className="progress-track mt-1.5" aria-hidden>
+              <div className="progress-fill" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
           <button
             type="submit"
             disabled={pending || !complete}
@@ -180,6 +209,7 @@ export default function AnswerForm({
               : answered
                 ? MICROCOPY.updateSubmit
                 : MICROCOPY.submit}
+            {!pending && <Icon name="arrow-right" className="h-4 w-4" />}
           </button>
         </div>
       </div>
@@ -206,7 +236,7 @@ function Field({
         {values.map((n) => (
           <label
             key={n}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white dark:bg-surface text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
           >
             <input
               type="radio"
@@ -228,7 +258,7 @@ function Field({
         {question.options.map((opt) => (
           <label
             key={opt}
-            className="cursor-pointer rounded-full border border-brand-200 bg-white px-4 py-2 text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+            className="cursor-pointer rounded-full border border-surface-line bg-surface px-4 py-2.5 text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
           >
             <input
               type="radio"
@@ -252,7 +282,7 @@ function Field({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Write what's true for you…"
-      className="input mt-3 min-h-28"
+      className="input mt-3 min-h-28 text-base leading-relaxed"
     />
   );
 }

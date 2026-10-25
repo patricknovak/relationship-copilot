@@ -7,6 +7,7 @@ import { ZODIAC_DISCLAIMER } from "@/lib/zodiac";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import { suggestedFirstName } from "@/lib/profileName";
+import { Icon } from "@/components/ui/Icon";
 
 type Intake = {
   goals?: string;
@@ -35,12 +36,12 @@ export default async function OnboardingPage({
   const isFirstRun = !profile?.display_name;
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-12">
+    <div className="page-narrow has-tabbar">
       <p className="eyebrow">{isFirstRun ? "Welcome" : "Your profile"}</p>
-      <h1 className="mt-2 text-3xl">
+      <h1 className="mt-2 text-display-md">
         {isFirstRun ? "Set up your profile" : "Edit your profile"}
       </h1>
-      <p className="mt-2 text-ink-soft">
+      <p className="mt-3 text-ink-soft">
         A few quick things so your connections feel more personal. You can
         change these anytime.
       </p>
@@ -57,12 +58,14 @@ export default async function OnboardingPage({
         }
       />
 
-      <form action={saveProfile} className="mt-6 space-y-6">
+      <form action={saveProfile} className="mt-8 space-y-5">
         <input type="hidden" name="next" value={next} />
+        <div className="card">
         <div>
-          <label className="block text-sm font-medium" htmlFor="display_name">
+          <label className="block text-sm font-semibold text-ink" htmlFor="display_name">
             Your name
           </label>
+          <p className="mt-0.5 text-xs text-ink-faint">How your person sees you next to your answers.</p>
           <input
             id="display_name"
             name="display_name"
@@ -74,9 +77,9 @@ export default async function OnboardingPage({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium" htmlFor="birthday">
-            Birthday <span className="text-ink-soft/80">(optional)</span>
+        <div className="mt-5">
+          <label className="block text-sm font-semibold text-ink" htmlFor="birthday">
+            Birthday <span className="font-normal text-ink-faint">(optional)</span>
           </label>
           <input
             id="birthday"
@@ -86,11 +89,13 @@ export default async function OnboardingPage({
             defaultValue={profile?.birthday ?? ""}
             className="input mt-1.5 !w-auto"
           />
-          <p className="mt-1 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-1 text-xs text-ink-faint">{ZODIAC_DISCLAIMER}</p>
+        </div>
         </div>
 
+        <div className="card">
         <div>
-          <label className="block text-sm font-medium" htmlFor="goals">
+          <label className="block text-sm font-semibold text-ink" htmlFor="goals">
             What do you most want from your relationships right now?
           </label>
           <textarea
@@ -102,8 +107,8 @@ export default async function OnboardingPage({
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium" htmlFor="values">
+        <div className="mt-5">
+          <label className="block text-sm font-semibold text-ink" htmlFor="values">
             What matters most to you in how people treat each other?
           </label>
           <textarea
@@ -114,12 +119,13 @@ export default async function OnboardingPage({
             className="input mt-1.5"
           />
         </div>
+        </div>
 
-        <fieldset className="card !p-4">
-          <legend className="px-1 text-sm font-medium">
-            A quick reflection <span className="font-normal text-ink-soft/80">(optional)</span>
+        <fieldset className="card">
+          <legend className="px-1 text-sm font-semibold text-ink">
+            A quick reflection <span className="font-normal text-ink-faint">(optional)</span>
           </legend>
-          <p className="text-xs text-ink-soft/80">
+          <p className="text-xs text-ink-faint">
             How much do you agree? (1 = not at all, 5 = very much) — educational,
             not a diagnosis. Answer all four or skip it entirely
             {!isFirstRun && intake.attachment?.style
@@ -134,7 +140,7 @@ export default async function OnboardingPage({
                   {[1, 2, 3, 4, 5].map((n) => (
                     <label
                       key={n}
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-brand-200 bg-white dark:bg-surface text-sm text-ink-soft transition hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2"
+                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
                     >
                       <input
                         type="radio"
@@ -151,13 +157,14 @@ export default async function OnboardingPage({
           </div>
         </fieldset>
 
-        <PendingButton className="w-full btn-primary" pendingLabel="Saving…">
+        <PendingButton className="btn-primary btn-lg w-full" pendingLabel="Saving…">
           Save and continue
+          <Icon name="arrow-right" className="h-4 w-4" />
         </PendingButton>
 
         {!isFirstRun && (
           <p className="text-center">
-            <Link href="/account" className="text-sm text-ink-soft underline">
+            <Link href="/account" className="btn-ghost btn-sm">
               Cancel
             </Link>
           </p>

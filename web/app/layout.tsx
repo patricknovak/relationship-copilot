@@ -9,6 +9,9 @@ import { AuthHintScript } from "@/components/AuthHint";
 import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
+import AppTabBar from "@/components/AppTabBar";
+import { LogoMark } from "@/components/SiteHeader";
+import { Icon } from "@/components/ui/Icon";
 import { CANONICAL_ORIGIN } from "@/lib/site";
 import { CSP_NONCE_HEADER } from "@/lib/cspNonce";
 import "./globals.css";
@@ -89,26 +92,45 @@ export default async function RootLayout({
         <main id="main" className="min-w-0 flex-1">
           {children}
         </main>
+        <AppTabBar />
 
-        <footer className="mt-16 border-t border-brand-900/40 bg-[#1c151c] text-brand-100/80">
-          <div className="mx-auto max-w-5xl px-4 py-12">
-            <div className="grid gap-10 sm:grid-cols-3">
+        <footer className="relative mt-20 overflow-hidden border-t border-brand-900/40 bg-[#1b131c] text-brand-100/80">
+          <div
+            aria-hidden
+            className="blob -left-24 -top-32 h-72 w-72 bg-brand-700/30"
+          />
+          <div
+            aria-hidden
+            className="blob -right-16 bottom-0 h-64 w-64 bg-accent-700/20"
+          />
+          <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-6">
+            <div className="grid gap-10 sm:grid-cols-[1.3fr_1fr_1fr]">
               <div>
-                <p className="font-display text-lg text-white">
+                <p className="flex items-center gap-2.5 font-display text-xl text-white">
+                  <LogoMark className="h-6 w-8" />
                   Relationship&nbsp;Copilot
                 </p>
-                <p className="mt-2 text-sm leading-relaxed">
+                <p className="mt-3 max-w-sm text-sm leading-relaxed">
                   Closer, on purpose — for partners, friends, siblings,
                   parents and teens, coworkers, and mentors, across the whole
                   arc of a relationship.
                 </p>
+                <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-brand-100">
+                  <Icon name="lock" className="h-3.5 w-3.5" />
+                  Answers stay private until you&apos;ve both shared
+                </p>
               </div>
               <div className="text-sm">
-                <p className="font-medium text-white">Explore</p>
-                <ul className="mt-2 space-y-1.5">
+                <p className="font-semibold text-white">Explore</p>
+                <ul className="mt-3 space-y-2">
                   <li>
                     <Link href="/library" className="hover:text-white">
                       Library
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/questions" className="hover:text-white">
+                      Questions to ask
                     </Link>
                   </li>
                   <li>
@@ -117,8 +139,8 @@ export default async function RootLayout({
                     </Link>
                   </li>
                 </ul>
-                <p className="mt-5 font-medium text-white">Questions for</p>
-                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+                <p className="mt-6 font-semibold text-white">Questions for</p>
+                <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
                   {FOR_PAGES.map((p) => (
                     <li key={p.slug}>
                       <Link href={`/for/${p.slug}`} className="hover:text-white">
@@ -127,8 +149,10 @@ export default async function RootLayout({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-5 font-medium text-white">Trust</p>
-                <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5">
+              </div>
+              <div className="text-sm">
+                <p className="font-semibold text-white">Trust</p>
+                <ul className="mt-3 space-y-2">
                   <li>
                     <Link href="/privacy" className="hover:text-white">
                       Privacy
@@ -140,36 +164,28 @@ export default async function RootLayout({
                     </Link>
                   </li>
                   <li>
-                    <Link href="/safety" className="hover:text-white">
-                      Safety
-                    </Link>
-                  </li>
-                  <li>
                     <Link href="/about" className="hover:text-white">
                       About
                     </Link>
                   </li>
                 </ul>
-              </div>
-              <div className="text-sm">
-                <p className="font-medium text-white">Here for you</p>
-                <p className="mt-2 leading-relaxed">
-                  Relationship Copilot offers relationship wellness and
-                  coaching-style guidance. It is not therapy, medical, or
-                  diagnostic advice.
+                <p className="mt-6 font-semibold text-white">Here for you</p>
+                <p className="mt-3 leading-relaxed">
+                  Relationship wellness and coaching-style guidance. It is not
+                  therapy, medical, or diagnostic advice.
                 </p>
-                <p className="mt-3">
-                  In crisis?{" "}
-                  <Link
-                    href="/safety"
-                    className="font-medium text-rose-300 underline decoration-rose-300/50 underline-offset-2 hover:text-rose-200"
-                  >
-                    Find immediate support
-                  </Link>
-                  {" "}— always free.
-                </p>
+                <Link
+                  href="/safety"
+                  className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-500/15 px-3 py-1.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/25"
+                >
+                  <Icon name="lifebuoy" className="h-4 w-4" />
+                  In crisis? Find support — always free
+                </Link>
               </div>
             </div>
+            <p className="mt-12 text-xs text-brand-100/50">
+              © {new Date().getFullYear()} Relationship Copilot · Vancouver, Canada
+            </p>
           </div>
         </footer>
         <Analytics nonce={nonce} />

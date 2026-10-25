@@ -13,6 +13,9 @@ import type { ConnectionType } from "@/lib/database.types";
 import AutoAcceptInvite from "@/components/AutoAcceptInvite";
 import AuthFragmentSession from "@/components/AuthFragmentSession";
 import { inviterAnsweredLine } from "@/lib/firstRevealCopy";
+import { Avatar } from "@/components/ui/Avatar";
+import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
+import { LogoMark } from "@/components/SiteHeader";
 
 // Static for every code — never look up the invite in generateMetadata.
 // Unfurl caches and search indexes must not see inviter names, relationship
@@ -143,24 +146,27 @@ export default async function InvitePage({
     const copy = INVITE_FAILURE_COPY[invite.status];
     return (
       <Shell>
-        <p className="eyebrow">Invitation</p>
-        <h1 className="mt-3 text-3xl leading-snug">{copy.title}</h1>
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-paper-warm text-ink-soft">
+          <Icon name="clock" className="h-7 w-7" />
+        </span>
+        <p className="eyebrow mt-5">Invitation</p>
+        <h1 className="mt-3 text-display-md">{copy.title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-soft">{copy.body}</p>
         <p className="mt-2 text-sm font-medium text-ink">{copy.askPartner}</p>
         <div className="mt-8 flex flex-col items-center gap-3">
           {user ? (
-            <Link href="/connections" className="btn-primary !px-8 !py-3">
+            <Link href="/connections" className="btn-primary btn-lg">
               {copy.connectionsLabel}
             </Link>
           ) : (
             <>
               <Link
                 href="/login?next=/connections/new"
-                className="btn-primary !px-8 !py-3"
+                className="btn-primary btn-lg"
               >
                 {copy.startOwnLabel}
               </Link>
-              <Link href="/login" className="btn-ghost !px-4 !py-2 text-sm">
+              <Link href="/login" className="btn-ghost btn-sm">
                 Sign in
               </Link>
             </>
@@ -174,17 +180,18 @@ export default async function InvitePage({
   if (user && user.id === invite.createdBy) {
     return (
       <Shell>
-        <p className="eyebrow">Your invite</p>
-        <h1 className="mt-3 text-3xl leading-snug">
-          This link is for your person
-        </h1>
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+          <Icon name="send" className="h-7 w-7" />
+        </span>
+        <p className="eyebrow mt-5">Your invite</p>
+        <h1 className="mt-3 text-display-md">This link is for your person</h1>
         <p className="mt-3 text-sm leading-relaxed text-ink-soft">
           Send it to them by email or text — when they tap it, they&apos;ll
           join you here.
         </p>
         <Link
           href={`/connections/${invite.connectionId}`}
-          className="btn-primary mt-8 !px-8 !py-3"
+          className="btn-primary btn-lg mt-8"
         >
           Back to your connection
         </Link>
@@ -208,34 +215,52 @@ export default async function InvitePage({
 
   return (
     <Shell>
-      <p className="eyebrow">An invitation</p>
-      <h1 className="mt-3 text-3xl leading-snug">
+      <div className="flex items-center justify-center">
+        <Avatar name={invite.inviterName ?? "?"} size="xl" variant="them" />
+        <span className="-ml-3 flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-brand-300 bg-surface text-brand-400 ring-2 ring-surface dark:border-brand-700">
+          <Icon name="plus" className="h-7 w-7" />
+        </span>
+      </div>
+      <p className="eyebrow mt-6">An invitation</p>
+      <h1 className="mt-3 text-display-md">
         {invite.inviterName
           ? `${invite.inviterName} invited you to connect`
           : "You've been invited to connect"}
       </h1>
-      <p className="mt-2 text-sm font-medium text-brand-700 dark:text-brand-300">
+      <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper-warm px-3 py-1.5 text-sm font-medium text-ink">
+        <span className={`flex h-5 w-5 items-center justify-center rounded-full ${TYPE_TINT[invite.type]}`}>
+          <Icon name={TYPE_ICON[invite.type]} className="h-3 w-3" strokeWidth={2} />
+        </span>
         {connectionLabel(invite.type)}
-        {typeBlurb ? ` — ${typeBlurb}` : ""}
       </p>
+      {typeBlurb && <p className="mt-2 text-sm text-ink-soft">{typeBlurb}</p>}
       {invite.note && (
-        <figure className="mt-5 rounded-2xl bg-paper-warm px-4 py-3 text-left">
+        <figure className="mt-5 rounded-2xl border border-accent-200/70 bg-accent-50/60 px-4 py-3 text-left dark:border-accent-900/40 dark:bg-accent-950/20">
           <blockquote className="whitespace-pre-wrap font-display text-lg leading-snug text-ink">
             &ldquo;{invite.note}&rdquo;
           </blockquote>
-          <figcaption className="mt-1 text-xs text-ink-soft">
+          <figcaption className="mt-1.5 text-xs text-ink-soft">
             {invite.inviterName ? `${invite.inviterName}, to you` : "From the person who invited you"}
           </figcaption>
         </figure>
       )}
-      <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-        You&apos;ll each answer the same thoughtful questions in a private space.
-        Neither of you sees the other&apos;s answers until you&apos;ve both
-        shared — then you reveal together. It&apos;s free, and you can leave
-        anytime.
-      </p>
+      <ul className="mt-5 space-y-2 text-left text-sm text-ink-soft">
+        <li className="flex items-start gap-2.5">
+          <Icon name="eye-off" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" />
+          You each answer the same thoughtful questions in private.
+        </li>
+        <li className="flex items-start gap-2.5">
+          <Icon name="sparkles" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" />
+          Nobody sees the other&apos;s answers until you&apos;ve both shared — then you reveal together.
+        </li>
+        <li className="flex items-start gap-2.5">
+          <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" />
+          It&apos;s free, and you can leave anytime.
+        </li>
+      </ul>
       {invite.inviterAnswered && (
-        <p className="mt-4 rounded-2xl bg-brand-50/80 px-4 py-3 text-sm font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
+        <p className="mt-4 flex items-center justify-center gap-2 rounded-2xl bg-brand-50/80 px-4 py-3 text-sm font-medium text-brand-800 dark:bg-brand-900/30 dark:text-brand-200">
+          <Icon name="check" className="h-4 w-4 shrink-0" strokeWidth={2.2} />
           {inviterAnsweredLine(invite.inviterName)}
         </p>
       )}
@@ -246,11 +271,12 @@ export default async function InvitePage({
         <>
           <Link
             href={`/login?next=/invite/${code}`}
-            className="btn-primary mt-8 !px-8 !py-3"
+            className="btn-primary btn-lg mt-8 w-full sm:w-auto"
           >
             Accept &amp; join free
+            <Icon name="arrow-right" className="h-4 w-4" />
           </Link>
-          <p className="mt-3 text-xs text-ink-soft/80">
+          <p className="mt-3 text-xs text-ink-faint">
             Continue with Google — no password to invent.
           </p>
         </>
@@ -261,12 +287,18 @@ export default async function InvitePage({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="hero-glow">
+    <div className="hero-glow relative overflow-hidden">
+      <div aria-hidden className="blob -left-20 top-10 h-64 w-64 animate-drift bg-brand-300/40 dark:bg-brand-700/30" />
+      <div aria-hidden className="blob -right-20 bottom-10 h-64 w-64 animate-drift bg-accent-200/50 [animation-delay:-5s] dark:bg-accent-900/25" />
       {/* Consumes invite-email auth tokens from the URL fragment, then
           refreshes so the signed-in view (auto-join) renders. */}
       <AuthFragmentSession />
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <div className="card !rounded-3xl !p-10 shadow-lift animate-fade-up">
+      <div className="relative mx-auto max-w-md px-4 py-14 text-center sm:py-20">
+        <p className="mb-5 flex items-center justify-center gap-2 font-display text-sm text-ink-soft">
+          <LogoMark className="h-5 w-7" />
+          Relationship Copilot
+        </p>
+        <div className="card-hero animate-pop !p-8 sm:!p-10">
           {children}
         </div>
       </div>
