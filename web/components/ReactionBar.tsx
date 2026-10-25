@@ -49,10 +49,10 @@ export default function ReactionBar({
             disabled={pending}
             aria-pressed={active}
             aria-label={`React ${e}`}
-            className={`h-8 min-w-8 rounded-full border px-2 text-base leading-none transition ${
+            className={`h-9 min-w-9 rounded-full border px-2 text-base leading-none transition hover:-translate-y-0.5 active:scale-95 ${
               active
-                ? "border-brand-700 bg-brand-700/10 dark:bg-brand-500/20"
-                : "border-surface-line bg-white/70 hover:border-brand-400 dark:bg-surface"
+                ? "scale-110 border-brand-700 bg-brand-700/10 shadow-soft dark:border-brand-400 dark:bg-brand-500/20"
+                : "border-surface-line bg-white/80 hover:border-brand-400 dark:bg-surface"
             } disabled:opacity-70`}
           >
             {e}

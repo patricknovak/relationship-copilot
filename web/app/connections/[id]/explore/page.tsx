@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { startElective } from "@/app/actions/prompts";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
+import { Icon } from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
 
 const KIND_LABEL: Record<string, string> = {
   quiz: "Quiz",
@@ -53,12 +55,14 @@ export default async function ExplorePage({
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href={`/connections/${id}`} className="text-sm text-ink-soft/80 hover:text-ink-soft">
-        ← Back
+    <div className="page has-tabbar">
+      <Link href={`/connections/${id}`} className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        Back
       </Link>
-      <h1 className="mt-2 text-3xl">Quizzes &amp; challenges</h1>
-      <p className="mt-2 text-ink-soft">
+      <p className="eyebrow mt-3">Do together</p>
+      <h1 className="mt-2 text-display-md">Quizzes &amp; challenges</h1>
+      <p className="mt-3 text-ink-soft">
         Pick one to do together — you&apos;ll each answer, then reveal.
       </p>
 
@@ -74,12 +78,12 @@ export default async function ExplorePage({
       />
 
       {(templates ?? []).length === 0 && (
-        <div className="card mt-8 !rounded-3xl border-dashed p-8 text-center">
-          <p className="font-display text-lg text-ink">Nothing here yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
-            New quizzes and challenges for this relationship type are on the
-            way — in the meantime, today&apos;s question is always waiting.
-          </p>
+        <div className="mt-8">
+          <EmptyState
+            icon="grid"
+            title="Nothing here yet"
+            body="New quizzes and challenges for this relationship type are on the way — in the meantime, today's question is always waiting."
+          />
         </div>
       )}
 
@@ -87,23 +91,28 @@ export default async function ExplorePage({
       <Group title="Quizzes" items={quizzes} connectionId={id} state={stateByTemplate} />
 
       {mine && mine.length > 0 && (
-        <section className="mt-10">
-          <h2 className="font-semibold">Your activities</h2>
+        <section className="mt-12">
+          <h2 className="text-lg">Your activities</h2>
           <ul className="mt-3 space-y-2">
             {mine.map((m) => (
               <li key={m.id}>
                 <Link
                   href={`/connections/${id}/prompts/${m.id}`}
-                  className="flex items-center justify-between rounded-md border border-gray-100 p-3 text-sm hover:border-brand-200"
+                  className="card card-hover flex items-center gap-3 !p-3.5 text-sm"
                 >
-                  <span>
-                    {(templates ?? []).find((t) => t.id === m.template_id)
-                      ?.title ?? (KIND_LABEL[m.kind] ?? m.kind)}
-                    <span className="ml-2 text-xs text-ink-soft/80">
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${m.kind === "quiz" ? "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200" : "bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200"}`}>
+                    <Icon name={m.kind === "quiz" ? "layers" : "flame"} className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-base text-ink">
+                      {(templates ?? []).find((t) => t.id === m.template_id)
+                        ?.title ?? (KIND_LABEL[m.kind] ?? m.kind)}
+                    </span>
+                    <span className="block text-xs text-ink-soft">
                       {KIND_LABEL[m.kind] ?? m.kind}
                     </span>
                   </span>
-                  <span className="text-xs text-ink-soft/80">
+                  <span className={m.status === "revealed" ? "pill-done" : "pill-quiet"}>
                     {m.status === "revealed" ? "Revealed" : "In progress"}
                   </span>
                 </Link>
@@ -129,43 +138,36 @@ function Group({
 }) {
   if (items.length === 0) return null;
   return (
-    <section className="mt-8">
-      <h2 className="font-semibold">{title}</h2>
-      <ul className="mt-3 space-y-3">
+    <section className="mt-10">
+      <h2 className="flex items-center gap-2 text-lg">
+        <Icon name={title === "Quizzes" ? "layers" : "flame"} className="h-5 w-5 text-brand-600 dark:text-brand-300" />
+        {title}
+      </h2>
+      <ul className="stagger mt-3 grid gap-3 sm:grid-cols-2">
         {items.map((t) => {
           const start = startElective.bind(null, connectionId, t.id);
+          const st = state.get(t.id);
           return (
-            <li key={t.id} className="card card-hover !p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-display text-lg text-ink">
-                    {t.title}
-                    {state.get(t.id) === "revealed" && (
-                      <span className="ml-2 align-middle rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-                        Done
-                      </span>
-                    )}
-                    {state.get(t.id) === "open" && (
-                      <span className="ml-2 align-middle rounded-full bg-paper-warm px-2 py-0.5 text-xs font-medium text-ink-soft">
-                        In progress
-                      </span>
-                    )}
-                  </p>
-                  {t.description && (
-                    <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-                      {t.description}
-                    </p>
-                  )}
-                </div>
-                <form action={start}>
-                  <PendingButton
-                    className="shrink-0 btn-primary !px-4 !py-1.5"
-                    pendingLabel="Starting…"
-                  >
-                    Start
-                  </PendingButton>
-                </form>
+            <li key={t.id} className="card card-hover flex flex-col !p-4">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-display text-lg leading-snug text-ink">{t.title}</p>
+                {st === "revealed" && <span className="pill-done">Done</span>}
+                {st === "open" && <span className="pill-quiet">In progress</span>}
               </div>
+              {t.description && (
+                <p className="mt-1.5 flex-1 text-sm leading-relaxed text-ink-soft">
+                  {t.description}
+                </p>
+              )}
+              <form action={start} className="mt-4">
+                <PendingButton
+                  className={st ? "btn-secondary btn-sm" : "btn-primary btn-sm"}
+                  pendingLabel="Starting…"
+                >
+                  {st === "revealed" ? "Do it again" : "Start"}
+                  <Icon name="arrow-right" className="h-3.5 w-3.5" />
+                </PendingButton>
+              </form>
             </li>
           );
         })}

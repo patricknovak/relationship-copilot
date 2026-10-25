@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import ThemeToggle from "@/components/ThemeToggle";
 import { AuthSwitch } from "@/components/AuthHint";
 import { forgetPushOnThisDevice } from "@/components/pushDevice";
+import { Icon } from "@/components/ui/Icon";
 
 const SIGNED_IN_LINKS = [
   { href: "/connections", label: "Connections" },
@@ -21,7 +22,7 @@ const SIGNED_OUT_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-// Client nav: full links on desktop, hamburger panel on mobile. Both the
+// Client nav: full links on desktop, a slide-down panel on mobile. Both the
 // signed-in and signed-out variants are rendered; the auth hint on <html>
 // (components/AuthHint.tsx) shows one before first paint, so the header never
 // reads cookies and every public page can be prerendered. signOut is a server
@@ -29,16 +30,22 @@ const SIGNED_OUT_LINKS = [
 export default function HeaderNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  // Close the panel on navigation.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   // Signing out on a shared browser stops this device's notifications.
   const forgetPush = () => {
     void forgetPushOnThisDevice();
   };
 
   const linkCls = (href: string) =>
-    `rounded-full px-3 py-1.5 transition ${
+    `rounded-full px-3 py-1.5 text-sm transition ${
       pathname.startsWith(href)
-        ? "bg-brand-100 dark:bg-brand-900/40 text-ink font-medium"
-        : "text-ink-soft hover:bg-surface-line/60 hover:text-ink"
+        ? "bg-brand-100 font-semibold text-brand-900 dark:bg-brand-900/50 dark:text-brand-100"
+        : "font-medium text-ink-soft hover:bg-surface-line/60 hover:text-ink"
     }`;
 
   const desktop = (links: typeof SIGNED_IN_LINKS) =>
@@ -54,19 +61,25 @@ export default function HeaderNav() {
         key={l.href}
         href={l.href}
         onClick={() => setOpen(false)}
-        className="block rounded-xl px-3 py-2.5 text-base text-ink hover:bg-surface-line/60"
+        className={`flex items-center justify-between rounded-xl px-3 py-3 text-base ${
+          pathname.startsWith(l.href)
+            ? "bg-brand-100 font-semibold text-brand-900 dark:bg-brand-900/50 dark:text-brand-100"
+            : "text-ink hover:bg-surface-line/60"
+        }`}
       >
         {l.label}
+        <Icon name="chevron-right" className="h-4 w-4 text-ink-faint" />
       </Link>
     ));
 
   return (
-    <div className="flex shrink-0 items-center gap-0.5 text-sm sm:gap-2">
+    <div className="flex shrink-0 items-center gap-0.5 sm:gap-1.5">
       {/* Safety must be reachable from every screen, at every width. */}
       <Link
         href="/safety"
-        className="rounded-full px-2 py-2.5 font-medium text-rose-700 hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
       >
+        <Icon name="lifebuoy" className="h-4 w-4" />
         Safety
       </Link>
 
@@ -79,7 +92,7 @@ export default function HeaderNav() {
             <>
               {desktop(SIGNED_IN_LINKS)}
               <form action={signOut} onSubmit={forgetPush}>
-                <button className="rounded-full px-3 py-1.5 text-ink-soft/80 hover:bg-surface-line/60 hover:text-ink">
+                <button className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-faint transition hover:bg-surface-line/60 hover:text-ink">
                   Sign out
                 </button>
               </form>
@@ -102,28 +115,14 @@ export default function HeaderNav() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
-        className="flex h-11 w-11 items-center justify-center rounded-full text-ink-soft hover:bg-surface-line/60 sm:hidden"
+        className="btn-icon sm:hidden"
       >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-5 w-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden
-        >
-          {open ? (
-            <path d="M6 6l12 12M18 6L6 18" />
-          ) : (
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          )}
-        </svg>
+        <Icon name={open ? "x" : "menu"} className="h-5 w-5" strokeWidth={2} />
       </button>
 
       {/* Mobile panel */}
       {open && (
-        <div className="absolute inset-x-0 top-16 z-50 border-b border-brand-100 dark:border-surface-line bg-paper shadow-lift sm:hidden">
+        <div className="absolute inset-x-0 top-16 z-50 border-b border-surface-line bg-paper/95 shadow-float backdrop-blur-xl sm:hidden">
           <div className="mx-auto max-w-5xl space-y-1 px-4 py-4">
             <AuthSwitch
               signedIn={
@@ -132,9 +131,9 @@ export default function HeaderNav() {
                   <form
                     action={signOut}
                     onSubmit={forgetPush}
-                    className="border-t border-brand-100/70 dark:border-surface-line pt-2"
+                    className="hairline pt-2"
                   >
-                    <button className="block w-full rounded-xl px-3 py-2.5 text-left text-base text-ink-soft hover:bg-surface-line/60">
+                    <button className="block w-full rounded-xl px-3 py-3 text-left text-base text-ink-soft hover:bg-surface-line/60">
                       Sign out
                     </button>
                   </form>
@@ -146,7 +145,7 @@ export default function HeaderNav() {
                   <Link
                     href="/login"
                     onClick={() => setOpen(false)}
-                    className="btn-primary mt-1 w-full !px-3 !py-2.5"
+                    className="btn-primary mt-2 w-full !py-3"
                   >
                     Sign in
                   </Link>

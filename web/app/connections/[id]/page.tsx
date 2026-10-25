@@ -33,6 +33,8 @@ import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
 import TimezoneSync from "@/components/TimezoneSync";
 import SharedGoals from "@/components/SharedGoals";
 import { questionsInviteCopy } from "@/lib/questionsCta";
+import { Avatar, DuoAvatars } from "@/components/ui/Avatar";
+import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
 
 const NOTICES: Record<
   string,
@@ -359,23 +361,49 @@ export default async function ConnectionPage({
   const newLink = regenerateInvite.bind(null, id);
   const saveNote = setInviteNote.bind(null, id);
 
+  const todayCopy = today ? dailyCardCopy(today.state, themName) : null;
+  const todayIsAction = today?.state === "your_turn" || today?.state === "answer";
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href="/connections" className="text-sm text-ink-soft/80 hover:text-ink-soft">
-        ← All connections
+    <div className="page has-tabbar">
+      <Link href="/connections" className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        All connections
       </Link>
       {conn.timezone === "UTC" && conn.status !== "archived" && (
         <TimezoneSync connectionId={id} />
       )}
-      <p className="eyebrow mt-3">{connectionLabel(conn.type)}</p>
-      <h1 className="mt-1 text-3xl">
-        {themName ?? (joinedCount >= 2 ? "Your person" : connectionLabel(conn.type))}
-      </h1>
-      {streak > 0 && (
-        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-100/80 dark:bg-amber-900/30 px-3 py-1 text-sm font-medium text-amber-800 dark:text-amber-200">
-          🔥 {streak}-day streak
-        </p>
-      )}
+
+      {/* Hero header: the two of you, the kind of relationship, the streak. */}
+      <header className="mt-4 flex items-center gap-4">
+        {joinedCount >= 2 ? (
+          <DuoAvatars you={myName ?? "You"} them={themName ?? "?"} size="lg" />
+        ) : (
+          <span className="inline-flex items-center">
+            <Avatar name={myName ?? "You"} size="lg" variant="you" />
+            <span className="-ml-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-brand-300 bg-surface text-brand-400 ring-2 ring-surface dark:border-brand-700">
+              <Icon name="plus" className="h-5 w-5" />
+            </span>
+          </span>
+        )}
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">
+            <span className={`flex h-4 w-4 items-center justify-center rounded-full ${TYPE_TINT[conn.type]}`}>
+              <Icon name={TYPE_ICON[conn.type]} className="h-2.5 w-2.5" strokeWidth={2.2} />
+            </span>
+            {connectionLabel(conn.type)}
+          </p>
+          <h1 className="mt-1 truncate text-display-md">
+            {themName ?? (joinedCount >= 2 ? "Your person" : connectionLabel(conn.type))}
+          </h1>
+          {streak > 0 && (
+            <p className="pill-warm mt-2">
+              <Icon name="flame" className="h-3.5 w-3.5" />
+              {streak}-day streak
+            </p>
+          )}
+        </div>
+      </header>
 
       {(notice || error) && (
         <NoticeBanner
@@ -397,10 +425,10 @@ export default async function ConnectionPage({
             started here.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link href="/connections" className="btn-secondary !px-4 !py-2 text-sm">
+            <Link href="/connections" className="btn-secondary btn-sm">
               All connections
             </Link>
-            <Link href="/connections/new" className="btn-primary !px-4 !py-2 text-sm">
+            <Link href="/connections/new" className="btn-primary btn-sm">
               Invite someone new
             </Link>
           </div>
@@ -410,7 +438,7 @@ export default async function ConnectionPage({
       {/* Invitees who signed in straight from an email have no name yet —
           their partner would see them as "Them". One field fixes it. */}
       {user && !myName && conn.status !== "archived" && (
-        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
+        <section className="card-tint mt-6">
           <h2 className="text-lg text-brand-800 dark:text-brand-200">
             What should we call you?
           </h2>
@@ -438,34 +466,42 @@ export default async function ConnectionPage({
 
       {/* Parent & teen: trust-first, teen-revocable. Not surveillance. */}
       {isParentTeen && (
-        <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-900 dark:text-amber-200">
-          <p className="font-medium">A space for connection, not monitoring.</p>
-          <p className="mt-1">
-            Both people choose to be here and can leave anytime. Answers follow
-            the same private-until-you-both-share rule as everywhere else. For
-            children under 13, verifiable parental consent is required and isn&apos;t
-            yet supported here.
-          </p>
+        <div className="mt-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+          <Icon name="shield" className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-medium">A space for connection, not monitoring.</p>
+            <p className="mt-1">
+              Both people choose to be here and can leave anytime. Answers follow
+              the same private-until-you-both-share rule as everywhere else. For
+              children under 13, verifiable parental consent is required and isn&apos;t
+              yet supported here.
+            </p>
+          </div>
         </div>
       )}
 
       {/* Waiting for the other person to accept */}
       {inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section id="invite" className="card mt-6 scroll-mt-24 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-          <h2 className="text-lg text-brand-800 dark:text-brand-200">
-            Waiting for your person
-          </h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            {listInviteCopy
-              ? listInviteCopy
-              : "Share the invite link in one tap. They sign in with Google, join, and answer — then you reveal together. Nothing is visible early."}
-          </p>
-          {listInviteCopy ? (
-            <p className="mt-1 text-sm text-ink-soft">
-              Share the invite link in one tap. They sign in with Google, join,
-              and answer — then you reveal together. Nothing is visible early.
-            </p>
-          ) : null}
+        <section id="invite" className="card-hero mt-6 scroll-mt-24">
+          <div className="flex items-start gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-brand-glow">
+              <Icon name="send" className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-xl">Waiting for your person</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                {listInviteCopy
+                  ? listInviteCopy
+                  : "Share the invite link in one tap. They sign in with Google, join, and answer — then you reveal together. Nothing is visible early."}
+              </p>
+              {listInviteCopy ? (
+                <p className="mt-1 text-sm text-ink-soft">
+                  Share the invite link in one tap. They sign in with Google, join,
+                  and answer — then you reveal together. Nothing is visible early.
+                </p>
+              ) : null}
+            </div>
+          </div>
           <InvitePanel
             connectionId={id}
             url={inviteUrl}
@@ -474,11 +510,12 @@ export default async function ConnectionPage({
             inviterAnswered={!!myResponse}
           />
           {user && conn.created_by === user.id && (
-            <details className="mt-4 rounded-2xl border border-brand-100 bg-white/70 p-3 dark:border-brand-800/60 dark:bg-surface/60" open={!!inviteNote}>
-              <summary className="cursor-pointer text-sm font-medium text-brand-800 dark:text-brand-200">
+            <details className="mt-4 rounded-2xl border border-surface-line bg-surface/70 p-3.5 dark:bg-surface-raised/60" open={!!inviteNote}>
+              <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-brand-800 dark:text-brand-200 [&::-webkit-details-marker]:hidden">
+                <Icon name="chat" className="h-4 w-4" />
                 {inviteNote ? "Your note" : "Add a personal note (optional)"}
               </summary>
-              <form action={saveNote} className="mt-2 space-y-2">
+              <form action={saveNote} className="mt-3 space-y-2">
                 <textarea
                   name="note"
                   rows={2}
@@ -489,22 +526,27 @@ export default async function ConnectionPage({
                 />
                 <div className="flex items-center gap-3">
                   <PendingButton
-                    className="btn-secondary shrink-0 whitespace-nowrap !px-4 !py-2 text-sm"
+                    className="btn-secondary btn-sm shrink-0 whitespace-nowrap"
                     pendingLabel="Saving…"
                   >
                     Save note
                   </PendingButton>
-                  <span className="text-xs text-ink-soft/80">
+                  <span className="text-xs text-ink-faint">
                     They see it on the invite page. Clear it to remove it.
                   </span>
                 </div>
               </form>
             </details>
           )}
-          <form action={newLink} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-soft/80">
-            {inviteExpiresOn && <span>This link works until {inviteExpiresOn}.</span>}
+          <form action={newLink} className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-faint">
+            {inviteExpiresOn && (
+              <span className="inline-flex items-center gap-1">
+                <Icon name="clock" className="h-3.5 w-3.5" />
+                This link works until {inviteExpiresOn}.
+              </span>
+            )}
             <PendingButton
-              className="underline hover:text-ink-soft"
+              className="font-medium text-brand-700 underline decoration-brand-300 underline-offset-[3px] hover:decoration-brand-600 dark:text-brand-300"
               pendingLabel="Creating…"
             >
               Get a new link
@@ -515,7 +557,7 @@ export default async function ConnectionPage({
 
       {/* Invite expired (or never issued) and still waiting on the other person */}
       {!inviteUrl && joinedCount < 2 && conn.status !== "archived" && (
-        <section id="invite" className="card mt-6 scroll-mt-24 !border-amber-200 dark:!border-amber-900/50 !bg-amber-50/60 dark:!bg-amber-950/30">
+        <section id="invite" className="mt-6 scroll-mt-24 rounded-2xl border border-amber-200 bg-amber-50/70 p-5 shadow-soft dark:border-amber-900/50 dark:bg-amber-950/30">
           <h2 className="text-lg text-amber-900 dark:text-amber-200">
             Your invite link has expired
           </h2>
@@ -535,41 +577,52 @@ export default async function ConnectionPage({
       {joinedCount < 2 && conn.status !== "archived" && user && (
         <section className="card mt-6">
           {myResponse ? (
-            <>
-              <h2 className="text-lg">{ANSWER_FIRST.answeredHeadline}</h2>
-              <p className="mt-1 text-sm text-ink-soft">{ANSWER_FIRST.answeredBody}</p>
-              <Link
-                href={`/connections/${id}/onboarding`}
-                className="btn-secondary mt-3 inline-flex !px-4 !py-2 text-sm"
-              >
-                {ANSWER_FIRST.reviewCta}
-              </Link>
-            </>
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                <Icon name="check" className="h-5 w-5" strokeWidth={2.2} />
+              </span>
+              <div>
+                <h2 className="text-lg">{ANSWER_FIRST.answeredHeadline}</h2>
+                <p className="mt-1 text-sm text-ink-soft">{ANSWER_FIRST.answeredBody}</p>
+                <Link
+                  href={`/connections/${id}/onboarding`}
+                  className="btn-secondary btn-sm mt-3 inline-flex"
+                >
+                  <Icon name="lock" className="h-3.5 w-3.5" />
+                  {ANSWER_FIRST.reviewCta}
+                </Link>
+              </div>
+            </div>
           ) : (
-            <>
-              <h2 className="text-lg">{ANSWER_FIRST.headline}</h2>
-              <p className="mt-1 text-sm text-ink-soft">
-                {answerFirstBody(questionCount)}
-              </p>
-              <form action={begin} className="mt-3">
-                <PendingButton className="btn-secondary" pendingLabel="Opening…">
-                  {ANSWER_FIRST.primaryCta}
-                </PendingButton>
-              </form>
-            </>
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+                <Icon name="eye-off" className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="text-lg">{ANSWER_FIRST.headline}</h2>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {answerFirstBody(questionCount)}
+                </p>
+                <form action={begin} className="mt-3">
+                  <PendingButton className="btn-secondary" pendingLabel="Opening…">
+                    {ANSWER_FIRST.primaryCta}
+                  </PendingButton>
+                </form>
+              </div>
+            </div>
           )}
         </section>
       )}
 
       {/* Both joined — first shared set / mutual-reveal activation */}
       {joinedCount >= 2 && conn.status !== "archived" && (
-        <section className="card mt-6">
+        <section className={`mt-6 ${instance && instance.status !== "revealed" ? "card-hero" : "card"}`}>
           {!instance ? (
             <>
               {/* Fallback if ensureOnboardingInstance failed at join time */}
               <h2 className="text-lg">{EMPTY_STATE.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{EMPTY_STATE.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/80">{EMPTY_STATE.trustLine}</p>
+              <p className="mt-2 text-xs text-ink-faint">{EMPTY_STATE.trustLine}</p>
               <form action={begin} className="mt-3">
                 <PendingButton pendingLabel="Setting up…">
                   {EMPTY_STATE.primaryCta}
@@ -577,23 +630,31 @@ export default async function ConnectionPage({
               </form>
             </>
           ) : instance.status === "revealed" ? (
-            <>
-              <h2 className="text-lg">You revealed together.</h2>
-              <p className="mt-1 text-sm">
-                <Link
-                  href={`/connections/${id}/onboarding`}
-                  className="text-brand-700 underline dark:text-brand-300"
-                >
-                  See your answers side by side →
-                </Link>
-              </p>
-            </>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
+                  <Icon name="sparkles" className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-lg">You revealed together.</h2>
+                  <p className="mt-0.5 text-sm text-ink-soft">Your first questions, side by side.</p>
+                </div>
+              </div>
+              <Link
+                href={`/connections/${id}/onboarding`}
+                className="btn-secondary btn-sm self-start sm:self-auto"
+              >
+                See answers
+                <Icon name="arrow-right" className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           ) : myResponse ? (
             <>
               {instance && <RevealWatcher instanceId={instance.id} />}
-              <h2 className="text-lg">{WAITING_ON_THEM.headline}</h2>
+              <p className="eyebrow">Your first questions</p>
+              <h2 className="mt-1 text-xl">{WAITING_ON_THEM.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_THEM.body}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <NudgePerson
                   connectionUrl={`${base}/connections/${id}`}
                   inviterName={myName}
@@ -601,38 +662,45 @@ export default async function ConnectionPage({
                 />
                 <Link
                   href={`/connections/${id}/onboarding`}
-                  className="btn-secondary !px-4 !py-2 text-sm"
+                  className="btn-secondary btn-sm"
                 >
                   {WAITING_ON_THEM.secondaryCta}
                 </Link>
               </div>
-              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_THEM.helper}</p>
+              <p className="mt-3 text-xs text-ink-faint">{WAITING_ON_THEM.helper}</p>
             </>
           ) : othersAnsweredOnboarding ? (
             <>
               {instance && <RevealWatcher instanceId={instance.id} />}
-              <h2 className="text-lg">{WAITING_ON_YOU.headline}</h2>
+              <p className="eyebrow">Your first questions</p>
+              <h2 className="mt-1 text-xl">{WAITING_ON_YOU.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">{WAITING_ON_YOU.body}</p>
-              <p className="mt-2 text-xs text-ink-soft/80">{WAITING_ON_YOU.trustLine}</p>
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-faint">
+                <Icon name="lock" className="h-3.5 w-3.5" />
+                {WAITING_ON_YOU.trustLine}
+              </p>
               <Link
                 href={`/connections/${id}/onboarding`}
-                className="mt-3 inline-flex btn-primary"
+                className="btn-primary mt-4 inline-flex"
               >
                 {WAITING_ON_YOU.primaryCta}
+                <Icon name="arrow-right" className="h-4 w-4" />
               </Link>
             </>
           ) : (
             <>
-              <h2 className="text-lg">{BOTH_JOINED.headline}</h2>
+              <p className="eyebrow">Your first questions</p>
+              <h2 className="mt-1 text-xl">{BOTH_JOINED.headline}</h2>
               <p className="mt-1 text-sm text-ink-soft">
                 {bothJoinedBody(questionCount)}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Link
                   href={`/connections/${id}/onboarding`}
                   className="inline-flex btn-primary"
                 >
                   {BOTH_JOINED.primaryCta}
+                  <Icon name="arrow-right" className="h-4 w-4" />
                 </Link>
                 <NudgePerson
                   connectionUrl={`${base}/connections/${id}`}
@@ -649,36 +717,40 @@ export default async function ConnectionPage({
       )}
 
       {/* Daily question, shown inline with where you both are on it */}
-      {conn.status === "active" && today && (
+      {conn.status === "active" && today && todayCopy && (
         <section
           id="today"
-          className={`card mt-6 scroll-mt-24 ${
-            today.state === "your_turn" || today.state === "answer"
-              ? "!border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:!bg-brand-900/20"
-              : ""
-          }`}
+          className={`mt-6 scroll-mt-24 ${todayIsAction ? "card-hero" : "card"}`}
         >
           {today.state !== "revealed" && <RevealWatcher instanceId={today.id} />}
-          <p className="eyebrow">Today&apos;s question</p>
-          <h2 className="mt-1 text-lg">{dailyCardCopy(today.state, themName).headline}</h2>
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow">Today&apos;s question</p>
+            {today.state === "revealed" ? (
+              <span className="pill-done">Revealed</span>
+            ) : today.state === "waiting" ? (
+              <span className="pill-quiet">Waiting on {themName ?? "them"}</span>
+            ) : today.state === "your_turn" ? (
+              <span className="pill-action">Your turn</span>
+            ) : null}
+          </div>
           {today.text && (
-            <p className="mt-2 font-display text-xl leading-snug text-ink">
+            <p className="mt-3 font-display text-2xl leading-snug text-ink">
               &ldquo;{today.text}&rdquo;
             </p>
           )}
-          <p className="mt-2 text-sm text-ink-soft">
-            {dailyCardCopy(today.state, themName).body}
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h2 className="mt-3 text-base font-sans font-semibold tracking-normal">{todayCopy.headline}</h2>
+          <p className="mt-1 text-sm text-ink-soft">{todayCopy.body}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <Link
               href={`/connections/${id}/prompts/${today.id}`}
               className={
                 today.state === "waiting" || today.state === "revealed"
-                  ? "btn-secondary !px-4 !py-2 text-sm"
+                  ? "btn-secondary btn-sm"
                   : "btn-primary"
               }
             >
-              {dailyCardCopy(today.state, themName).cta}
+              {todayCopy.cta}
+              <Icon name="arrow-right" className="h-4 w-4" />
             </Link>
             {today.state === "waiting" && (
               <NudgePerson
@@ -692,9 +764,10 @@ export default async function ConnectionPage({
       )}
       {conn.status === "active" && !today && (
         <section className="card mt-6">
-          <h2 className="text-lg">Today&apos;s question</h2>
+          <p className="eyebrow">Today&apos;s question</p>
+          <h2 className="mt-1 text-lg">A fresh prompt, every day</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            A fresh prompt each day to keep learning about each other.
+            Keep learning about each other, one question at a time.
           </p>
           <form action={ensureDaily.bind(null, id)} className="mt-3">
             <PendingButton pendingLabel="Opening…">
@@ -704,56 +777,69 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Quizzes & challenges */}
+      {/* Secondary tools: a two-up grid on wider screens. */}
       {conn.status === "active" && (
-        <section className="card mt-6">
-          <h2 className="text-lg">Quizzes &amp; challenges</h2>
-          {suggestion ? (
-            <div className="mt-2 rounded-2xl border border-brand-100 dark:border-surface-line bg-brand-50/50 dark:bg-brand-900/15 p-4">
-              <p className="eyebrow">
-                This week&apos;s {suggestion.kind === "quiz" ? "quiz" : "challenge"}
-              </p>
-              <p className="mt-1 font-display text-lg leading-snug text-ink">
-                {suggestion.title}
-              </p>
-              {suggestion.description && (
-                <p className="mt-1 text-sm text-ink-soft">{suggestion.description}</p>
-              )}
-              <form action={startElective.bind(null, id, suggestion.id)} className="mt-3">
-                <PendingButton className="btn-secondary !px-4 !py-2 text-sm" pendingLabel="Starting…">
-                  Start together
-                </PendingButton>
-              </form>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {/* Quizzes & challenges */}
+          <section className="card flex flex-col">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
+                <Icon name="grid" className="h-[18px] w-[18px]" />
+              </span>
+              <h2 className="text-lg">Quizzes &amp; challenges</h2>
             </div>
-          ) : (
-            <p className="mt-1 text-sm text-ink-soft">
-              Playful activities and reflections to do together.
-            </p>
-          )}
-          <Link
-            href={`/connections/${id}/explore`}
-            className="mt-3 inline-block text-sm text-brand-700 underline dark:text-brand-300"
-          >
-            Explore all activities →
-          </Link>
-        </section>
-      )}
+            {suggestion ? (
+              <div className="mt-3 flex-1 rounded-2xl border border-surface-line bg-paper-warm/60 p-4 dark:bg-surface-raised/60">
+                <p className="eyebrow">
+                  This week&apos;s {suggestion.kind === "quiz" ? "quiz" : "challenge"}
+                </p>
+                <p className="mt-1 font-display text-lg leading-snug text-ink">
+                  {suggestion.title}
+                </p>
+                {suggestion.description && (
+                  <p className="mt-1 text-sm text-ink-soft">{suggestion.description}</p>
+                )}
+                <form action={startElective.bind(null, id, suggestion.id)} className="mt-3">
+                  <PendingButton className="btn-secondary btn-sm" pendingLabel="Starting…">
+                    Start together
+                  </PendingButton>
+                </form>
+              </div>
+            ) : (
+              <p className="mt-2 flex-1 text-sm text-ink-soft">
+                Playful activities and reflections to do together.
+              </p>
+            )}
+            <Link
+              href={`/connections/${id}/explore`}
+              className="link mt-3 inline-flex items-center gap-1 text-sm"
+            >
+              Explore all activities
+              <Icon name="arrow-right" className="h-3.5 w-3.5" />
+            </Link>
+          </section>
 
-      {/* Relationship Blueprint (AI; premium) */}
-      {conn.status === "active" && (
-        <section className="card mt-6">
-          <h2 className="text-lg">Relationship Blueprint</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            An AI reflection on your strengths, shared goals, and areas to
-            nurture.
-          </p>
-          <Link
-            href={`/connections/${id}/blueprint`}
-            className="mt-2 inline-block text-sm text-brand-700 underline dark:text-brand-300"
-          >
-            View Blueprint →
-          </Link>
-        </section>
+          {/* Relationship Blueprint (AI; premium) */}
+          <section className="card flex flex-col">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+                <Icon name="wand" className="h-[18px] w-[18px]" />
+              </span>
+              <h2 className="text-lg">Relationship Blueprint</h2>
+            </div>
+            <p className="mt-2 flex-1 text-sm text-ink-soft">
+              An AI reflection on your strengths, shared goals, and areas to
+              nurture.
+            </p>
+            <Link
+              href={`/connections/${id}/blueprint`}
+              className="link mt-3 inline-flex items-center gap-1 text-sm"
+            >
+              View Blueprint
+              <Icon name="arrow-right" className="h-3.5 w-3.5" />
+            </Link>
+          </section>
+        </div>
       )}
 
       {/* Shared goals — both-edit, visible immediately */}
@@ -765,14 +851,19 @@ export default async function ConnectionPage({
       {conn.status === "active" && <LookingBack connectionId={id} />}
 
       {conn.status === "active" && (
-        <p className="mt-4 text-sm">
-          <Link
-            href={`/connections/${id}/history`}
-            className="text-brand-700 underline dark:text-brand-300"
-          >
-            Everything you&apos;ve revealed →
-          </Link>
-        </p>
+        <Link
+          href={`/connections/${id}/history`}
+          className="card card-hover mt-6 flex items-center gap-3 !p-4"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-paper-warm text-ink-soft">
+            <Icon name="history" className="h-[18px] w-[18px]" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-lg text-ink">Everything you&apos;ve revealed</span>
+            <span className="block text-sm text-ink-soft">Every reveal so far, newest first.</span>
+          </span>
+          <Icon name="chevron-right" className="h-5 w-5 shrink-0 text-ink-faint" />
+        </Link>
       )}
 
       {/* Weekly digest (AI; premium generates, both can read) */}
@@ -780,21 +871,24 @@ export default async function ConnectionPage({
 
       {/* Zodiac compatibility — just for fun */}
       {conn.status === "active" && compat && (
-        <section className="card mt-6 !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:bg-brand-900/20 dark:!bg-brand-900/20">
-          <h2 className="text-lg text-brand-800 dark:text-brand-200">Star match ✨</h2>
+        <section className="card-warm mt-6">
+          <h2 className="flex items-center gap-2 text-lg text-accent-800 dark:text-accent-200">
+            <Icon name="star" className="h-4 w-4" />
+            Star match
+          </h2>
           <p className="mt-1 text-sm text-ink-soft">{compat.blurb}</p>
-          <p className="mt-2 text-xs text-ink-soft/80">{ZODIAC_DISCLAIMER}</p>
+          <p className="mt-2 text-xs text-ink-faint">{ZODIAC_DISCLAIMER}</p>
         </section>
       )}
 
       {/* Leave — anyone can step away (teen-revocable). One extra tap so a
           stray click can't archive a shared space. */}
       {conn.status !== "archived" && (
-        <details className="mt-10 border-t border-gray-100 pt-6">
-          <summary className="cursor-pointer list-none text-sm text-ink-soft/80 hover:text-rose-600">
+        <details className="hairline mt-12 pt-6">
+          <summary className="cursor-pointer list-none text-sm font-medium text-ink-faint hover:text-rose-600 [&::-webkit-details-marker]:hidden">
             Leave this connection
           </summary>
-          <div className="mt-3 rounded-lg border border-rose-200 dark:border-rose-900/50 p-4">
+          <div className="mt-3 rounded-2xl border border-rose-200 p-4 dark:border-rose-900/50">
             <p className="text-sm text-ink-soft">
               This archives the connection for both of you. Nothing new can be
               started here afterwards, you each keep what you wrote, and the
@@ -802,7 +896,7 @@ export default async function ConnectionPage({
             </p>
             <form action={leave} className="mt-3">
               <PendingButton
-                className="btn-secondary !border-rose-300 !px-4 !py-2 text-sm !text-rose-700 hover:!bg-rose-50 dark:!text-rose-300 dark:hover:!bg-rose-950/40"
+                className="btn-danger btn-sm"
                 pendingLabel="Leaving…"
               >
                 Yes, leave this connection

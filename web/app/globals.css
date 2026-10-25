@@ -7,19 +7,23 @@
   --paper: 251 248 244;
   --paper-warm: 246 239 231;
   --ink: 34 26 34;
-  --ink-soft: 74 63 73;
+  --ink-soft: 92 78 91;
+  --ink-faint: 140 126 139;
   --surface: 255 255 255;
-  --surface-line: 244 233 243;
+  --surface-raised: 255 255 255;
+  --surface-line: 238 226 237;
 }
 
 .dark {
   color-scheme: dark;
-  --paper: 26 20 26;
-  --paper-warm: 34 26 34;
-  --ink: 244 237 243;
-  --ink-soft: 184 169 183;
-  --surface: 38 30 38;
-  --surface-line: 60 48 59;
+  --paper: 24 18 25;
+  --paper-warm: 32 24 33;
+  --ink: 246 239 245;
+  --ink-soft: 196 182 195;
+  --ink-faint: 150 134 149;
+  --surface: 36 28 37;
+  --surface-raised: 46 36 47;
+  --surface-line: 66 52 66;
 }
 
 @layer base {
@@ -31,14 +35,29 @@
     overflow-x: clip;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-paper text-ink antialiased;
+    font-feature-settings: "cv11", "ss01", "liga";
   }
 
   /* Editorial headings everywhere — every page gets the voice for free. */
   h1,
   h2 {
     @apply font-display tracking-tight text-ink;
+    text-wrap: balance;
+  }
+
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
@@ -50,11 +69,21 @@
   input,
   textarea,
   select,
+  summary,
   [tabindex] {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper rounded-sm;
+    @apply rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+  }
+
+  /* Thin, quiet scrollbars where supported. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--surface-line)) transparent;
   }
 
   @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
     *,
     ::before,
     ::after {
@@ -66,37 +95,139 @@
 }
 
 @layer components {
+  /* ------------------------------------------------------------ layout */
+  .page {
+    @apply mx-auto w-full max-w-2xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12;
+  }
+  .page-wide {
+    @apply mx-auto w-full max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12;
+  }
+  .page-narrow {
+    @apply mx-auto w-full max-w-xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12;
+  }
+
+  .back-link {
+    @apply inline-flex items-center gap-1 rounded-full py-1 pr-2 text-sm font-medium text-ink-soft transition hover:text-ink;
+  }
+
+  /* ------------------------------------------------------------ buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-700 px-5 py-2.5 text-sm font-medium text-white shadow-soft transition hover:bg-brand-800 hover:shadow-lift active:scale-[0.98] dark:bg-brand-500 dark:hover:bg-brand-400;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white transition active:scale-[0.98] disabled:cursor-not-allowed;
+    background-image: linear-gradient(180deg, #8b4486 0%, #74386f 55%, #67306a 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 1px 2px rgb(34 26 34 / 0.12),
+      0 8px 20px -8px rgb(116 56 111 / 0.6);
+  }
+  .btn-primary:hover {
+    background-image: linear-gradient(180deg, #96509f 0%, #7f3d7a 55%, #6d3370 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.25),
+      0 2px 4px rgb(34 26 34 / 0.12),
+      0 14px 28px -10px rgb(116 56 111 / 0.65);
+  }
+  .dark .btn-primary {
+    background-image: linear-gradient(180deg, #b273ad 0%, #a25d9d 55%, #8f4e8a 100%);
+    color: #fff8fd;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-surface-line bg-surface px-5 py-2.5 text-sm font-medium text-brand-800 transition hover:border-brand-300 hover:bg-paper-warm dark:text-brand-200;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-surface-line bg-surface px-5 py-2.5 text-sm font-semibold text-brand-800 shadow-soft transition hover:border-brand-300 hover:bg-paper-warm active:scale-[0.98] disabled:cursor-not-allowed dark:text-brand-200 dark:hover:bg-surface-raised;
+  }
+
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-100 px-5 py-2.5 text-sm font-semibold text-brand-800 transition hover:bg-brand-200 active:scale-[0.98] dark:bg-brand-900/40 dark:text-brand-100 dark:hover:bg-brand-900/60;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-surface-line/60 hover:text-ink;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-ink-soft transition hover:bg-surface-line/60 hover:text-ink;
   }
 
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-5 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60;
+  }
+
+  .btn-sm {
+    @apply !px-4 !py-2 !text-sm;
+  }
+  .btn-lg {
+    @apply !px-7 !py-3.5 !text-base;
+  }
+  .btn-icon {
+    @apply inline-flex h-11 w-11 items-center justify-center rounded-full text-ink-soft transition hover:bg-surface-line/60 hover:text-ink;
+  }
+
+  /* ------------------------------------------------------------ cards */
   .card {
     @apply rounded-2xl border border-surface-line bg-surface p-5 shadow-soft;
   }
 
   .card-hover {
-    @apply transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift;
+    @apply transition duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift;
   }
 
   /* Branded highlight card — a soft mulberry tint that works in both themes. */
   .card-tint {
-    @apply rounded-2xl border border-brand-200 bg-brand-50/60 p-5 shadow-soft dark:border-brand-800/60 dark:bg-brand-900/20;
+    @apply rounded-2xl border border-brand-200 bg-brand-50/70 p-5 shadow-soft dark:border-brand-800/60 dark:bg-brand-900/20;
   }
 
+  /* Warm tint for the other person / waiting states. */
+  .card-warm {
+    @apply rounded-2xl border border-accent-200/80 bg-accent-50/70 p-5 shadow-soft dark:border-accent-900/40 dark:bg-accent-950/20;
+  }
+
+  /* The moment card: a gradient hairline, a soft glow, a little lift. */
+  .card-hero {
+    @apply relative rounded-3xl border border-transparent bg-surface p-6 shadow-float sm:p-7;
+    background-image:
+      linear-gradient(rgb(var(--surface)), rgb(var(--surface))),
+      linear-gradient(135deg, #d4add1 0%, #f4e9f3 40%, #fed7aa 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+  .dark .card-hero {
+    background-image:
+      linear-gradient(rgb(var(--surface)), rgb(var(--surface))),
+      linear-gradient(135deg, #74386f 0%, #3a2a3b 45%, #9a3412 100%);
+  }
+
+  .card-dashed {
+    @apply rounded-3xl border border-dashed border-brand-300 bg-brand-50/40 p-8 text-center dark:border-brand-800/60 dark:bg-brand-900/10;
+  }
+
+  .card-glass {
+    @apply rounded-2xl border border-white/60 bg-white/70 p-5 shadow-soft backdrop-blur-md dark:border-white/10 dark:bg-surface/70;
+  }
+
+  /* ------------------------------------------------------------ small bits */
   .chip {
-    @apply inline-flex items-center rounded-full border border-surface-line bg-surface px-3 py-1 text-sm text-brand-800 dark:text-brand-200;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-surface-line bg-surface px-3 py-1.5 text-sm font-medium text-brand-800 transition dark:text-brand-200;
+  }
+  .chip-hover {
+    @apply hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-soft;
+  }
+
+  .pill {
+    @apply inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .pill-action {
+    @apply pill bg-brand-700 text-white shadow-brand-glow dark:bg-brand-500;
+  }
+  .pill-quiet {
+    @apply pill bg-paper-warm text-ink-soft;
+  }
+  .pill-done {
+    @apply pill bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200;
+  }
+  .pill-warm {
+    @apply pill bg-accent-100 text-accent-800 dark:bg-accent-900/40 dark:text-accent-200;
+  }
+  .pill-brand {
+    @apply pill bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-200;
   }
 
   .input {
-    @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30;
+    @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink shadow-[inset_0_1px_2px_rgb(34_26_34/0.04)] placeholder:text-ink-faint transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
   }
 
   /* iOS Safari zooms any focused input under 16px and stays zoomed — with 20
@@ -108,22 +239,90 @@
   }
 
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300;
+    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300;
+  }
+
+  .hairline {
+    @apply border-t border-surface-line;
+  }
+
+  .link {
+    @apply font-medium text-brand-700 underline decoration-brand-300 underline-offset-[3px] transition hover:decoration-brand-600 dark:text-brand-300 dark:decoration-brand-700 dark:hover:decoration-brand-300;
+  }
+
+  /* Side-by-side answers: you (mulberry) and them (apricot). */
+  .answer-you {
+    @apply rounded-2xl border border-brand-200/80 bg-brand-50/70 p-3.5 dark:border-brand-800/50 dark:bg-brand-900/25;
+  }
+  .answer-them {
+    @apply rounded-2xl border border-accent-200/80 bg-accent-50/70 p-3.5 dark:border-accent-900/40 dark:bg-accent-950/25;
   }
 
   /* Soft radial glow behind heroes and feature moments. */
   .hero-glow {
     background:
       radial-gradient(46rem 24rem at 50% -4rem, rgb(212 173 209 / 0.45), transparent 70%),
-      radial-gradient(30rem 18rem at 85% 8rem, rgb(250 224 200 / 0.5), transparent 70%),
+      radial-gradient(30rem 18rem at 85% 8rem, rgb(254 215 170 / 0.45), transparent 70%),
       radial-gradient(26rem 16rem at 12% 12rem, rgb(244 233 243 / 0.9), transparent 70%);
   }
 
   .dark .hero-glow {
     background:
-      radial-gradient(46rem 24rem at 50% -4rem, rgb(116 56 111 / 0.35), transparent 70%),
-      radial-gradient(30rem 18rem at 85% 8rem, rgb(95 47 91 / 0.30), transparent 70%),
+      radial-gradient(46rem 24rem at 50% -4rem, rgb(116 56 111 / 0.38), transparent 70%),
+      radial-gradient(30rem 18rem at 85% 8rem, rgb(154 52 18 / 0.22), transparent 70%),
       radial-gradient(26rem 16rem at 12% 12rem, rgb(60 48 59 / 0.55), transparent 70%);
+  }
+
+  /* Decorative blobs for hero sections (aria-hidden, pointer-events none). */
+  .blob {
+    @apply pointer-events-none absolute rounded-full blur-3xl;
+  }
+
+  /* Reading surface for library articles. */
+  .prose-article {
+    @apply text-[1.05rem] leading-[1.75] text-ink;
+  }
+  .prose-article p + p {
+    @apply mt-5;
+  }
+
+  /* Sticky mobile tab bar sits above the page; keep the last content clear of it. */
+  .has-tabbar {
+    @apply pb-24 sm:pb-0;
+  }
+
+  /* Progress bar for the answer flow. */
+  .progress-track {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-brand-100 dark:bg-brand-900/40;
+  }
+  .progress-fill {
+    @apply h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-700 transition-[width] duration-500 ease-out dark:from-brand-400 dark:to-brand-500;
+  }
+
+  /* Stagger children fade-ups without per-element inline styles. */
+  .stagger > * {
+    @apply animate-fade-up;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 70ms;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 210ms;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 280ms;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 350ms;
+  }
+  .stagger > *:nth-child(7) {
+    animation-delay: 420ms;
+  }
+  .stagger > *:nth-child(n + 8) {
+    animation-delay: 480ms;
   }
 }
 

@@ -8,6 +8,7 @@ import { aiEnabled } from "@/lib/grok";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
 import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import PendingButton from "@/components/PendingButton";
+import { Icon } from "@/components/ui/Icon";
 
 type Payload = {
   safety?: boolean;
@@ -84,10 +85,15 @@ export default async function WeeklyDigest({
 
   return (
     <section className="card mt-6">
-      <h2 className="text-lg">Weekly digest</h2>
+      <h2 className="flex items-center gap-2.5 text-lg">
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
+          <Icon name="calendar" className="h-[18px] w-[18px]" />
+        </span>
+        Weekly digest
+      </h2>
 
       {payload?.safety ? (
-        <div className="mt-3 rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-4">
+        <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/40">
           <p className="text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
           <p className="mt-2 text-sm text-rose-900/90 dark:text-rose-200/90">
             {SAFETY_PRIVACY_LINE}
@@ -104,40 +110,48 @@ export default async function WeeklyDigest({
           </Link>
         </div>
       ) : payload ? (
-        <div className="mt-2 space-y-3 text-sm text-ink-soft">
+        <div className="mt-3 space-y-4 text-sm text-ink-soft">
           {generatedAt && (
-            <p className="text-xs text-ink-soft/80">
+            <p className="text-xs text-ink-faint">
               From your week up to {generatedAt.slice(0, 10)}
             </p>
           )}
-          {!!payload.highlights?.length && (
-            <div>
-              <h3 className="font-medium">Bright spots</h3>
-              <ul className="mt-1 list-disc pl-5 space-y-1">
-                {payload.highlights.map((h, i) => (
-                  <li key={i}>{h}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {!!payload.appreciations?.length && (
-            <div>
-              <h3 className="font-medium">Worth a thank-you</h3>
-              <ul className="mt-1 list-disc pl-5 space-y-1">
-                {payload.appreciations.map((a, i) => (
-                  <li key={i}>{a}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {!!payload.highlights?.length && (
+              <div className="rounded-2xl bg-paper-warm/70 p-4 dark:bg-surface-raised/60">
+                <h3 className="flex items-center gap-1.5 font-semibold text-ink">
+                  <Icon name="sparkles" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
+                  Bright spots
+                </h3>
+                <ul className="mt-2 space-y-1.5">
+                  {payload.highlights.map((h, i) => (
+                    <li key={i} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" /><span>{h}</span></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {!!payload.appreciations?.length && (
+              <div className="rounded-2xl bg-paper-warm/70 p-4 dark:bg-surface-raised/60">
+                <h3 className="flex items-center gap-1.5 font-semibold text-ink">
+                  <Icon name="heart" className="h-4 w-4 text-accent-600 dark:text-accent-300" />
+                  Worth a thank-you
+                </h3>
+                <ul className="mt-2 space-y-1.5">
+                  {payload.appreciations.map((a, i) => (
+                    <li key={i} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400" /><span>{a}</span></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
           {payload.gentle_suggestion && (
-            <div>
-              <h3 className="font-medium">One small thing to try</h3>
+            <div className="rounded-2xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-800/60 dark:bg-brand-900/20">
+              <h3 className="font-semibold text-ink">One small thing to try</h3>
               <p className="mt-1">{payload.gentle_suggestion}</p>
             </div>
           )}
           {payload.reflection && (
-            <p className="text-ink-soft whitespace-pre-wrap">{payload.reflection}</p>
+            <p className="whitespace-pre-wrap font-display text-base leading-relaxed text-ink">{payload.reflection}</p>
           )}
         </div>
       ) : (
@@ -168,7 +182,7 @@ export default async function WeeklyDigest({
       ) : (
         <p className="mt-3 text-sm text-ink-soft">
           Part of{" "}
-          <Link href="/pricing" className="text-brand-700 underline dark:text-brand-300">
+          <Link href="/pricing" className="link">
             Premium
           </Link>
           {" "}— your questions, reveals, and safety resources stay free.

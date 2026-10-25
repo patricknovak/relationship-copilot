@@ -6,6 +6,8 @@ import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
 import { questionPageBySlug } from "@/lib/questionPages";
 import { canonicalUrl } from "@/lib/site";
+import SharePublic from "@/components/SharePublic";
+import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
 
 export function generateStaticParams() {
   return FOR_PAGES.map((p) => ({ slug: p.slug }));
@@ -49,7 +51,7 @@ export default async function ForPage({
   const questionsPage = questionPageBySlug(page.slug);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="page">
       {/* type=application/ld+json is non-executable; safe under CSP. */}
       <script
         type="application/ld+json"
@@ -57,32 +59,42 @@ export default async function ForPage({
           __html: faqPageJsonLdScriptContent({ url, faqs }),
         }}
       />
-      <p className="eyebrow">For {page.label.toLowerCase()}</p>
-      <h1 className="mt-2 text-4xl sm:text-5xl">{page.title}</h1>
-      <p className="mt-4 text-base leading-relaxed text-ink-soft">{page.intro}</p>
+      <div className="flex items-start gap-4">
+        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-soft ${TYPE_TINT[page.type]}`}>
+          <Icon name={TYPE_ICON[page.type]} className="h-7 w-7" />
+        </span>
+        <div>
+          <p className="eyebrow">For {page.label.toLowerCase()}</p>
+          <h1 className="mt-2 text-display-lg">{page.title}</h1>
+        </div>
+      </div>
+      <p className="mt-5 text-base leading-relaxed text-ink-soft">{page.intro}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <AuthLink signedInHref={newHref} signedOutHref={loginHref} className="btn-primary">
+        <AuthLink signedInHref={newHref} signedOutHref={loginHref} className="btn-primary btn-lg">
           Invite your person
         </AuthLink>
-        <Link href="/about" className="btn-secondary">
+        <Link href="/about" className="btn-secondary btn-lg">
           How it works
         </Link>
       </div>
-      <p className="mt-3 text-xs text-ink-soft/80">
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-faint">
+        <Icon name="lock" className="h-3.5 w-3.5" />
         Free for the core experience. Answers stay private until you&apos;ve
         both shared.
       </p>
-      {questionsPage ? (
-        <p className="mt-4 text-sm text-ink-soft">
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <SharePublic url={url} text={page.title} label="Share this page" />
+        {questionsPage ? (
           <Link
             href={`/questions/${questionsPage.slug}`}
-            className="text-brand-700 underline dark:text-brand-300"
+            className="link inline-flex items-center gap-1 text-sm"
           >
             See the questions for {questionsPage.forLabel}
+            <Icon name="arrow-right" className="h-3.5 w-3.5" />
           </Link>
-        </p>
-      ) : null}
+        ) : null}
+      </div>
 
       <section className="mt-12">
         <h2 className="text-2xl">A few of the questions</h2>
@@ -91,11 +103,13 @@ export default async function ForPage({
           relationship. You each answer on your own; the reveal happens when
           both are in.
         </p>
-        <ol className="mt-5 space-y-3">
+        <ol className="stagger mt-5 space-y-3">
           {page.samples.map((q, i) => (
-            <li key={q} className="card !p-4">
-              <p className="eyebrow">Question {i + 1}</p>
-              <p className="mt-1 font-display text-lg leading-snug text-ink">
+            <li key={q} className="card flex gap-4 !p-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 font-display text-base text-brand-800 dark:bg-brand-900/40 dark:text-brand-100">
+                {i + 1}
+              </span>
+              <p className="pt-1.5 font-display text-lg leading-snug text-ink">
                 &ldquo;{q}&rdquo;
               </p>
             </li>
@@ -104,12 +118,16 @@ export default async function ForPage({
       </section>
 
       {page.article && (
-        <p className="mt-8 text-sm text-ink-soft">
-          From the library:{" "}
-          <Link href={`/library/${page.article.slug}`} className="text-brand-700 underline dark:text-brand-300">
-            {page.article.title}
-          </Link>
-        </p>
+        <Link href={`/library/${page.article.slug}`} className="card card-hover mt-8 flex items-center gap-3 !p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
+            <Icon name="book" className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="eyebrow block">From the library</span>
+            <span className="block font-display text-lg leading-snug text-ink">{page.article.title}</span>
+          </span>
+          <Icon name="chevron-right" className="h-5 w-5 shrink-0 text-ink-faint" />
+        </Link>
       )}
 
       <section className="mt-12">
@@ -117,11 +135,12 @@ export default async function ForPage({
         <div className="mt-5 space-y-3">
           {faqs.map((f) => (
             <details key={f.q} className="card group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-ink [&::-webkit-details-marker]:hidden">
                 {f.q}
-                <span aria-hidden className="text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300">
-                  +
-                </span>
+                <Icon
+                  name="plus"
+                  className="h-4 w-4 shrink-0 text-brand-500 transition-transform group-open:rotate-45 dark:text-brand-300"
+                />
               </summary>
               <p className="mt-3 text-sm leading-relaxed text-ink-soft">{f.a}</p>
             </details>
@@ -129,8 +148,8 @@ export default async function ForPage({
         </div>
       </section>
 
-      <section className="mt-12 card !rounded-3xl !border-brand-200 dark:!border-brand-800/60 !bg-brand-50/60 dark:!bg-brand-900/20 p-8 text-center">
-        <p className="font-display text-xl text-ink">Start with one question.</p>
+      <section className="card-hero mt-12 text-center">
+        <p className="font-display text-2xl text-ink">Start with one question.</p>
         <p className="mx-auto mt-2 max-w-sm text-sm text-ink-soft">
           Create the connection, send the link, and your first questions
           unlock the moment they join.
@@ -142,7 +161,8 @@ export default async function ForPage({
 
       <nav className="mt-10 flex flex-wrap gap-2 text-sm" aria-label="Other relationships">
         {FOR_PAGES.filter((p) => p.slug !== page.slug).map((p) => (
-          <Link key={p.slug} href={`/for/${p.slug}`} className="chip">
+          <Link key={p.slug} href={`/for/${p.slug}`} className="chip chip-hover">
+            <Icon name={TYPE_ICON[p.type]} className="h-3.5 w-3.5" />
             {p.label}
           </Link>
         ))}

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { postDiscussion } from "@/app/actions/prompts";
+import { Icon } from "@/components/ui/Icon";
 
 // Post-reveal chat composer: clears after sending (the old uncontrolled input
 // kept the sent text, inviting duplicate sends), disables while in flight,
@@ -44,13 +45,14 @@ export default function DiscussionForm({
           required
           placeholder="Share a thought…"
           aria-label="Message"
-          className="input flex-1"
+          className="input flex-1 !rounded-full"
         />
         <button
           disabled={pending || !body.trim()}
-          className="btn-primary shrink-0 disabled:opacity-60"
+          className="btn-primary shrink-0 !px-4 disabled:opacity-60"
+          aria-label={pending ? "Sending" : "Send"}
         >
-          {pending ? "Sending…" : "Send"}
+          {pending ? "Sending…" : <><span className="hidden sm:inline">Send</span><Icon name="send" className="h-4 w-4" /></>}
         </button>
       </div>
       {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}

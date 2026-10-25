@@ -3,12 +3,20 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import type { PromptQuestion } from "@/lib/database.types";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
 
 const KIND_LABEL: Record<string, string> = {
   onboarding: "First questions",
   daily: "Daily question",
   quiz: "Quiz",
   challenge: "Challenge",
+};
+const KIND_ICON: Record<string, IconName> = {
+  onboarding: "sparkles",
+  daily: "calendar",
+  quiz: "layers",
+  challenge: "flame",
 };
 
 // Everything this pair has revealed, newest first. Reads go through the
@@ -64,44 +72,54 @@ export default async function HistoryPage({
   });
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <Link href={`/connections/${id}`} className="text-sm text-ink-soft/80 hover:text-ink-soft">
-        ← Back
+    <div className="page has-tabbar">
+      <Link href={`/connections/${id}`} className="back-link">
+        <Icon name="arrow-left" className="h-4 w-4" />
+        Back
       </Link>
       <p className="eyebrow mt-3">{connectionLabel(conn.type)}</p>
-      <h1 className="mt-1 text-3xl">Everything you&apos;ve revealed</h1>
-      <p className="mt-2 text-sm text-ink-soft">
+      <h1 className="mt-2 text-display-md">Everything you&apos;ve revealed</h1>
+      <p className="mt-3 text-sm text-ink-soft">
         {items.length === 0
           ? "Nothing revealed yet. Once you've both answered something, it lands here."
           : `${items.length} reveal${items.length === 1 ? "" : "s"} so far, newest first.`}
       </p>
 
-      <ul className="mt-8 space-y-3">
-        {items.map((it) => (
-          <li key={it.id}>
-            <Link href={`/connections/${id}/prompts/${it.id}`} className="card card-hover block !p-4">
-              <div className="flex items-center justify-between gap-3 text-xs text-ink-soft/80">
-                <span>{KIND_LABEL[it.kind] ?? it.kind}</span>
-                {it.date && (
-                  <time dateTime={it.date}>
-                    {new Date(it.date).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </time>
+      {items.length === 0 ? (
+        <div className="mt-8">
+          <EmptyState icon="history" title="Your history starts with one reveal" body="Answer something together and it lands here, newest first." />
+        </div>
+      ) : (
+        <ol className="relative mt-8 space-y-3 border-l border-surface-line pl-6">
+          {items.map((it) => (
+            <li key={it.id} className="relative">
+              <span className="absolute -left-[31px] top-4 flex h-6 w-6 items-center justify-center rounded-full bg-surface text-brand-600 ring-2 ring-surface-line dark:text-brand-300">
+                <Icon name={KIND_ICON[it.kind] ?? "sparkles"} className="h-3.5 w-3.5" />
+              </span>
+              <Link href={`/connections/${id}/prompts/${it.id}`} className="card card-hover block !p-4">
+                <div className="flex items-center justify-between gap-3 text-xs text-ink-soft">
+                  <span className="font-medium">{KIND_LABEL[it.kind] ?? it.kind}</span>
+                  {it.date && (
+                    <time dateTime={it.date}>
+                      {new Date(it.date).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </time>
+                  )}
+                </div>
+                <p className="mt-1.5 font-display text-lg leading-snug text-ink">
+                  {it.title ? `“${it.title}”` : "Untitled"}
+                </p>
+                {it.count > 1 && (
+                  <p className="mt-1 text-xs text-ink-faint">{it.count} questions</p>
                 )}
-              </div>
-              <p className="mt-1.5 font-display text-lg leading-snug text-ink">
-                {it.title ? `“${it.title}”` : "Untitled"}
-              </p>
-              {it.count > 1 && (
-                <p className="mt-1 text-xs text-ink-soft/80">{it.count} questions</p>
-              )}
-            </Link>
-          </li>
-        ))}
-      </ul>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
