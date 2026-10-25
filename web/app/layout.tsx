@@ -10,7 +10,7 @@ import ConsentDefaults from "@/components/ConsentDefaults";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import AppTabBar from "@/components/AppTabBar";
-import { LogoMark } from "@/components/SiteHeader";
+import { LogoMark } from "@/components/Brand";
 import { Icon } from "@/components/ui/Icon";
 import { CANONICAL_ORIGIN } from "@/lib/site";
 import { CSP_NONCE_HEADER } from "@/lib/cspNonce";
@@ -107,7 +107,7 @@ export default async function RootLayout({
             <div className="grid gap-10 sm:grid-cols-[1.3fr_1fr_1fr]">
               <div>
                 <p className="flex items-center gap-2.5 font-display text-xl text-white">
-                  <LogoMark className="h-6 w-8" />
+                  <LogoMark className="h-6 w-8 text-white" />
                   Relationship&nbsp;Copilot
                 </p>
                 <p className="mt-3 max-w-sm text-sm leading-relaxed">

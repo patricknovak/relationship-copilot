@@ -18,7 +18,7 @@ import {
 } from "@/lib/inviteStatus";
 import Turnstile from "@/components/Turnstile";
 import { Icon } from "@/components/ui/Icon";
-import { LogoMark } from "@/components/SiteHeader";
+import { BrandTile } from "@/components/Brand";
 
 const ENABLED_PROVIDERS = parseAuthProviders(
   process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
@@ -153,7 +153,7 @@ export default function LoginForm({
       <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:py-24">
         {/* Brand panel: desktop only, no interactive elements. */}
         <aside className="hidden lg:block">
-          <LogoMark className="h-10 w-14" />
+          <BrandTile className="h-16 w-16 drop-shadow-xl" />
           <h2 className="mt-6 text-display-lg">Answer in private. Reveal together.</h2>
           <p className="mt-4 max-w-md text-base leading-relaxed text-ink-soft">
             One account, every relationship that matters. Your answers stay
