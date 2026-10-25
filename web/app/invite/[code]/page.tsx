@@ -15,7 +15,7 @@ import AuthFragmentSession from "@/components/AuthFragmentSession";
 import { inviterAnsweredLine } from "@/lib/firstRevealCopy";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
-import { LogoMark } from "@/components/SiteHeader";
+import { BrandTile } from "@/components/Brand";
 
 // Static for every code — never look up the invite in generateMetadata.
 // Unfurl caches and search indexes must not see inviter names, relationship
@@ -294,8 +294,8 @@ function Shell({ children }: { children: React.ReactNode }) {
           refreshes so the signed-in view (auto-join) renders. */}
       <AuthFragmentSession />
       <div className="relative mx-auto max-w-md px-4 py-14 text-center sm:py-20">
-        <p className="mb-5 flex items-center justify-center gap-2 font-display text-sm text-ink-soft">
-          <LogoMark className="h-5 w-7" />
+        <p className="mb-5 flex flex-col items-center justify-center gap-3 font-display text-sm text-ink-soft">
+          <BrandTile className="h-14 w-14 drop-shadow-xl" />
           Relationship Copilot
         </p>
         <div className="card-hero animate-pop !p-8 sm:!p-10">

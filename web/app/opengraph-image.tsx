@@ -27,9 +27,33 @@ export default function OgImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <svg width="84" height="50" viewBox="0 0 40 24" fill="none">
-            <circle cx="14" cy="12" r="10" stroke="#74386f" strokeWidth="2.4" />
-            <circle cx="26" cy="12" r="10" stroke="#f0a060" strokeWidth="2.4" />
+      <svg width="84" height="84" viewBox="0 0 512 512">
+            <defs>
+              <linearGradient id="og-tile" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#6b3366" />
+                <stop offset="0.55" stopColor="#4a2247" />
+                <stop offset="1" stopColor="#2a1230" />
+              </linearGradient>
+              <linearGradient id="og-a" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#fbf1fa" />
+                <stop offset="1" stopColor="#d9a9d5" />
+              </linearGradient>
+              <linearGradient id="og-b" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#ffd1a3" />
+                <stop offset="1" stopColor="#f97316" />
+              </linearGradient>
+              <radialGradient id="og-lens" cx="0.5" cy="0.38" r="0.75">
+                <stop offset="0" stopColor="#fff4e6" />
+                <stop offset="0.55" stopColor="#fdba74" />
+                <stop offset="1" stopColor="#f97316" />
+              </radialGradient>
+            </defs>
+            <rect width="512" height="512" rx="116" fill="url(#og-tile)" />
+            <path d="M256 154.4 A118 118 0 0 1 256 357.6 A118 118 0 0 1 256 154.4 Z" fill="url(#og-lens)" />
+            <circle cx="196" cy="256" r="118" fill="none" stroke="url(#og-a)" strokeWidth="34" />
+            <circle cx="316" cy="256" r="118" fill="none" stroke="url(#og-b)" strokeWidth="34" />
+            <path d="M235.6 144.8 A118 118 0 0 1 274.3 167.8" fill="none" stroke="url(#og-a)" strokeWidth="34" />
+            <circle cx="238" cy="206" r="13" fill="#ffffff" opacity="0.85" />
           </svg>
           <div
             style={{

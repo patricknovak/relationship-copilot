@@ -1,7 +1,54 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#74386f"/>
-  <g fill="none" stroke-width="5">
-    <circle cx="26" cy="32" r="14" stroke="#f4e9f3"/>
-    <circle cx="38" cy="32" r="14" stroke="#d4add1" stroke-opacity="0.9"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Relationship Copilot brand mark: two rings, and the space they share lit up.
+       Source of truth for every icon size; scripts/brand-icons.mjs renders the PNGs. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6b3366"/>
+      <stop offset="0.55" stop-color="#4a2247"/>
+      <stop offset="1" stop-color="#2a1230"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.22" cy="0.12" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ringA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf1fa"/>
+      <stop offset="1" stop-color="#d9a9d5"/>
+    </linearGradient>
+    <linearGradient id="ringB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd1a3"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </linearGradient>
+    <radialGradient id="lens" cx="0.5" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#fff4e6"/>
+      <stop offset="0.55" stop-color="#fdba74"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="116" fill="url(#tile)"/>
+  <rect width="512" height="512" rx="116" fill="url(#sheen)"/>
+
+  <!-- mark:start -->
+  <!-- Soft light behind the shared space -->
+  <ellipse cx="256" cy="256" rx="92" ry="128" fill="#fb923c" opacity="0.55" filter="url(#glow)"/>
+
+  <!-- The lens: where both circles overlap -->
+  <path d="M256 154.4 A118 118 0 0 1 256 357.6 A118 118 0 0 1 256 154.4 Z" fill="url(#lens)"/>
+
+  <!-- The two rings -->
+  <g fill="none" stroke-width="34" stroke-linecap="round">
+    <circle cx="196" cy="256" r="118" stroke="url(#ringA)"/>
+    <circle cx="316" cy="256" r="118" stroke="url(#ringB)"/>
+    <!-- Weave: the left ring passes over the right one at the top crossing -->
+    <path d="M235.6 144.8 A118 118 0 0 1 274.3 167.8" stroke="url(#ringA)" stroke-linecap="butt"/>
   </g>
+
+  <!-- Catchlight -->
+  <circle cx="238" cy="206" r="13" fill="#ffffff" opacity="0.85"/>
+  <!-- mark:end -->
 </svg>
