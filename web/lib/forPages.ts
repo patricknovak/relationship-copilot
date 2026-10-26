@@ -41,9 +41,9 @@ export const FOR_PAGES: ForPage[] = [
     type: "romantic",
     label: "Partners",
     article: { slug: "bids-for-connection", title: "Bids for connection: the small moments that matter" },
-    title: "Questions for couples and partners",
+    title: "Questions for couples to answer",
     description:
-      "Daily questions for couples, answered in private and revealed together. Free, grounded in research, no peeking.",
+      "Questions for couples, answered in private and revealed together. Start with 20 questions. Free for up to 3 connections.",
     intro:
       "Dating, married, or somewhere in between: a question a day you each answer on your own, then read side by side. It is the easiest way to keep learning about each other.",
     samples: [
@@ -65,9 +65,9 @@ export const FOR_PAGES: ForPage[] = [
     slug: "friends",
     type: "friend",
     label: "Friends",
-    title: "Questions to ask a close friend",
+    title: "Deep questions to ask a best friend",
     description:
-      "Deep questions for best friends, answered privately and revealed together. A daily way to stay close when life gets busy.",
+      "Deep questions for best friends, answered privately and revealed together. A daily way to stay close. Free to start.",
     intro:
       "Friendships rarely get the structure couples get. One question a day, answered separately and revealed together, keeps a friendship honest and current across cities and busy seasons.",
     samples: [
@@ -90,9 +90,9 @@ export const FOR_PAGES: ForPage[] = [
     type: "sibling",
     label: "Siblings",
     article: { slug: "adult-siblings-meeting-again", title: "Adult siblings: meeting again as grown-ups" },
-    title: "Questions to ask your brother or sister",
+    title: "Questions for adult siblings",
     description:
-      "Questions for adult siblings to reconnect, answered in private and revealed together. Beyond the roles you grew up in.",
+      "Questions for adult siblings to reconnect, answered in private and revealed together. Get to know each other as grown-ups.",
     intro:
       "Siblings share a childhood and often not much else as adults. These questions help you meet each other as the people you are now, one honest answer at a time.",
     samples: [
@@ -115,9 +115,9 @@ export const FOR_PAGES: ForPage[] = [
     type: "family",
     label: "Family",
     article: { slug: "sharing-care-for-aging-parent", title: "Sharing the care of an aging parent" },
-    title: "Questions to ask your parents and family",
+    title: "Questions to ask your parents",
     description:
-      "Conversation questions for parents, adult children and relatives, answered privately and revealed together.",
+      "Conversation questions for parents, adult children and relatives, answered privately and revealed together. Free to start.",
     intro:
       "For a parent and adult child, cousins, in-laws, or anyone you call family: questions that get past logistics and into the stories and feelings that usually go unsaid.",
     samples: [
@@ -142,7 +142,7 @@ export const FOR_PAGES: ForPage[] = [
     article: { slug: "teens-autonomy-not-surveillance", title: "Teens, trust and the case against surveillance" },
     title: "Questions for parents and teens",
     description:
-      "A trust-first way for a parent and teenager to talk: questions answered in private, revealed together, never surveillance.",
+      "A trust-first way for a parent and teen to talk: questions answered in private, revealed together. Never surveillance.",
     intro:
       "Teenagers open up when they are not being monitored. Each of you answers on your own, the reveal only happens when both are in, and the teen can leave at any time. It is connection, not control.",
     samples: [
@@ -169,9 +169,9 @@ export const FOR_PAGES: ForPage[] = [
     type: "coworker",
     label: "Coworkers",
     article: { slug: "two-coworkers-psychological-safety", title: "Psychological safety between two coworkers" },
-    title: "Questions for coworkers and teammates",
+    title: "Check-in questions for coworkers",
     description:
-      "Check-in questions for two colleagues who work closely: feedback, priorities and trust, answered privately and revealed together.",
+      "Check-in questions for two colleagues: feedback, priorities and trust, answered privately and revealed together. Free to start.",
     intro:
       "For a manager and report, two co-founders, or any pair that ships together. Short questions about priorities, feedback and what is actually going on, answered without an audience.",
     samples: [
@@ -196,7 +196,7 @@ export const FOR_PAGES: ForPage[] = [
     article: { slug: "mentoring-that-actually-works", title: "Mentoring that actually works" },
     title: "Questions for mentors and mentees",
     description:
-      "Structure for a mentoring relationship: questions on goals, feedback and candor, answered privately and revealed together.",
+      "Questions for a mentor and mentee on goals, feedback and candor, answered privately and revealed together. Free to start.",
     intro:
       "Most mentoring fizzles for lack of structure. A question a day, answered by both of you, keeps the relationship specific, honest and useful in both directions.",
     samples: [

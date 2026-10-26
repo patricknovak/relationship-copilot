@@ -117,6 +117,18 @@ export default async function ForPage({
         </ol>
       </section>
 
+      <section className="mt-10">
+        <AuthLink signedInHref={newHref} signedOutHref={loginHref} className="btn-primary">
+          {page.slug === "partners"
+            ? "Try a question with your partner"
+            : "Try a question together"}
+        </AuthLink>
+        <p className="mt-3 text-sm text-ink-soft">
+          Answer one question each, then reveal your answers together. Sign in
+          with Google to start, free for up to 3 connections.
+        </p>
+      </section>
+
       {page.article && (
         <Link href={`/library/${page.article.slug}`} className="card card-hover mt-8 flex items-center gap-3 !p-4">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
