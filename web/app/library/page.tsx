@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AuthLink } from "@/components/AuthHint";
 import { createClient } from "@/lib/supabase/server";
 import { canonicalUrl } from "@/lib/site";
 import { FOR_PAGES } from "@/lib/forPages";
 import { Icon } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
-  title: "Library",
+  title: "Relationship reads from research",
   description:
-    "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
+    "Short, research-grounded reads for partners, friends, family and coworkers, each rated for how strong the science is.",
   alternates: { canonical: canonicalUrl("/library") },
   openGraph: {
-    title: "Library — Relationship Copilot",
+    title: "Relationship reads from research — Relationship Copilot",
     description:
-      "Short, research-grounded reads on building healthier relationships — honestly rated for how strong the science is.",
+      "Short, research-grounded reads for partners, friends, family and coworkers, each rated for how strong the science is.",
     url: canonicalUrl("/library"),
   },
 };
@@ -36,6 +37,19 @@ export default async function LibraryPage() {
           Evidence-rated guides on building healthier relationships — honest
           about how strong the science is.
         </p>
+        <div className="mt-6">
+          <AuthLink
+            signedInHref="/connections/new"
+            signedOutHref="/login?next=/connections/new"
+            className="btn-primary"
+          >
+            Try a question together
+          </AuthLink>
+          <p className="mt-3 text-sm text-ink-soft">
+            Answer one question each, then reveal your answers together. Sign in
+            with Google to start, free for up to 3 connections.
+          </p>
+        </div>
       </div>
 
       <ul className="stagger mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

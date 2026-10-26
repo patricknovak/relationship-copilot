@@ -20,6 +20,50 @@ describe("for pages", () => {
     }
   });
 
+  it("uses rc-x1 query-matched titles and meta descriptions", () => {
+    const expected: Record<string, { title: string; description: string }> = {
+      partners: {
+        title: "Questions for couples to answer",
+        description:
+          "Questions for couples, answered in private and revealed together. Start with 20 questions. Free for up to 3 connections.",
+      },
+      friends: {
+        title: "Deep questions to ask a best friend",
+        description:
+          "Deep questions for best friends, answered privately and revealed together. A daily way to stay close. Free to start.",
+      },
+      siblings: {
+        title: "Questions for adult siblings",
+        description:
+          "Questions for adult siblings to reconnect, answered in private and revealed together. Get to know each other as grown-ups.",
+      },
+      family: {
+        title: "Questions to ask your parents",
+        description:
+          "Conversation questions for parents, adult children and relatives, answered privately and revealed together. Free to start.",
+      },
+      "parents-and-teens": {
+        title: "Questions for parents and teens",
+        description:
+          "A trust-first way for a parent and teen to talk: questions answered in private, revealed together. Never surveillance.",
+      },
+      coworkers: {
+        title: "Check-in questions for coworkers",
+        description:
+          "Check-in questions for two colleagues: feedback, priorities and trust, answered privately and revealed together. Free to start.",
+      },
+      mentors: {
+        title: "Questions for mentors and mentees",
+        description:
+          "Questions for a mentor and mentee on goals, feedback and candor, answered privately and revealed together. Free to start.",
+      },
+    };
+    for (const p of FOR_PAGES) {
+      expect(p.title).toBe(expected[p.slug].title);
+      expect(p.description).toBe(expected[p.slug].description);
+    }
+  });
+
   it("looks up by slug", () => {
     expect(forPageBySlug("siblings")?.type).toBe("sibling");
     expect(forPageBySlug("nope")).toBeNull();
