@@ -19,6 +19,7 @@ import {
 import Turnstile from "@/components/Turnstile";
 import { Icon } from "@/components/ui/Icon";
 import { BrandTile } from "@/components/Brand";
+import { friendlyAuthError } from "@/lib/authErrors";
 
 const ENABLED_PROVIDERS = parseAuthProviders(
   process.env.NEXT_PUBLIC_AUTH_PROVIDERS,
@@ -95,7 +96,7 @@ export default function LoginForm({
       setCaptchaToken(null);
       setCaptchaKey((k) => k + 1);
     }
-    if (error) setError(error.message);
+    if (error) setError(friendlyAuthError(error.message));
     else setSent(true);
   }
 
@@ -138,7 +139,7 @@ export default function LoginForm({
       setError(
         error.message.toLowerCase().includes("not enabled")
           ? `Sign-in with ${provider[0].toUpperCase()}${provider.slice(1)} isn't available yet — try email or another provider.`
-          : error.message,
+          : `We couldn't start sign-in with ${provider[0].toUpperCase()}${provider.slice(1)}. Please try again.`,
       );
     }
   }
@@ -278,7 +279,11 @@ export default function LoginForm({
               </div>
             ) : (
               <form ref={formRef} onSubmit={sendMagicLink} className="space-y-3">
+                <label htmlFor="login-email" className="sr-only">
+                  Email address
+                </label>
                 <input
+                  id="login-email"
                   ref={emailInputRef}
                   type="email"
                   required

@@ -4,6 +4,7 @@
 // siblings + mentors from 0013_content_coverage_and_hardening.sql).
 // Do not invent new question text here.
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
+import { continueLine } from "@/lib/signInCopy";
 
 export type QuestionSource = {
   file: string;
@@ -49,8 +50,7 @@ export const QUESTIONS_CTA_HREF = "/login?next=/connections/new";
 
 export const QUESTIONS_SIGNED_IN_HREF = "/connections/new";
 
-export const QUESTIONS_SIGN_IN_HINT =
-  "Continue with Google — no password to invent.";
+export const QUESTIONS_SIGN_IN_HINT = continueLine();
 
 /** Three FAQ answers that mirror shipped product facts only. */
 export const QUESTIONS_SHARED_FAQS: { q: string; a: string }[] = [

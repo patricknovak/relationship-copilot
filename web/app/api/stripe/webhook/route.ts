@@ -61,11 +61,29 @@ async function handleEvent(
 ) {
   const str = (v: unknown) => (typeof v === "string" ? v : null);
 
+  // Account deletion cancels the subscription and then removes the person,
+  // so Stripe's follow-up events can name a user who no longer exists.
+  // Writing for them would fail on the foreign key, release the claim and
+  // make Stripe retry for days; there is nothing left to update, so ack.
+  const accountGone = async (userId: string): Promise<boolean> => {
+    const { data, error } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return !data;
+  };
+
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
       const userId = s.metadata?.user_id ?? s.client_reference_id ?? null;
-      if (userId) {
+      // Delayed payment methods complete checkout before the money arrives
+      // ("unpaid"). Entitlement then comes from customer.subscription.updated
+      // once the subscription is actually active.
+      const paid = s.payment_status === "paid" || s.payment_status === "no_payment_required";
+      if (userId && paid && !(await accountGone(userId))) {
         const { error } = await admin.from("subscriptions").upsert({
           user_id: userId,
           plan: "premium",
@@ -82,7 +100,7 @@ async function handleEvent(
       const sub = event.data.object as Stripe.Subscription;
       const userId = sub.metadata?.user_id ?? null;
       const active = sub.status === "active" || sub.status === "trialing";
-      if (userId) {
+      if (userId && !(await accountGone(userId))) {
         // Out-of-order / multi-subscription guard: a late event for an older
         // subscription must not downgrade a newer, still-entitled one.
         const { data: existing, error: readErr } = await admin

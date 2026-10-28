@@ -9,6 +9,13 @@ import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 import { pricingJsonLdScriptContent } from "@/lib/jsonLd";
 import { Icon } from "@/components/ui/Icon";
+import { aiEnabled } from "@/lib/grok";
+import { freeBlueprintSupported } from "@/lib/freeBlueprint";
+
+// What is on sale depends on runtime secrets (whether the AI provider is
+// switched on) and on the database, so this page must never be prerendered
+// at build time, when no secrets exist.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -32,8 +39,9 @@ const FREE = [
   "Core education library",
   "Safety resources — always free",
 ];
+const FREE_BLUEPRINT = "One free AI Blueprint per connection";
 const PREMIUM = [
-  "AI Relationship Blueprint",
+  "AI Relationship Blueprint, regenerated as you grow",
   "Weekly AI digests",
   "Covers both people in every connection you share",
   "Unlimited connections",
@@ -81,6 +89,15 @@ export default async function PricingPage({
   const isPremium = user
     ? (await supabase.rpc("has_premium", { uid: user.id })).data
     : false;
+  // Premium is mostly the AI layer. Until the AI provider is switched on
+  // here, the page says so and checkout stays closed rather than selling
+  // something that cannot run. The free Blueprint is listed only where it
+  // exists (migration 0043) and can actually be generated.
+  const aiOn = aiEnabled();
+  const freeFeatures =
+    aiOn && (await freeBlueprintSupported(supabase))
+      ? [...FREE.slice(0, 4), FREE_BLUEPRINT, ...FREE.slice(4)]
+      : FREE;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6">
@@ -91,7 +108,7 @@ export default async function PricingPage({
           __html: pricingJsonLdScriptContent({
             url: canonicalUrl("/pricing"),
             faqs: FAQS,
-            freeFeatures: FREE,
+            freeFeatures,
             premiumFeatures: PREMIUM,
           }),
         }}
@@ -106,12 +123,14 @@ export default async function PricingPage({
         message={
           error === "checkout"
             ? "Checkout couldn't start — you weren't charged. Please try again."
-            : null
+            : error === "soon"
+              ? "Premium opens as soon as its AI features are switched on. Nothing was charged."
+              : null
         }
       />
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 sm:items-start">
-        <Plan title="Free" price="$0" features={FREE} highlight={false}>
+        <Plan title="Free" price="$0" features={freeFeatures} highlight={false}>
           {user ? (
             <Link href="/connections" className="btn-secondary btn-lg w-full">
               Go to your connections
@@ -129,6 +148,17 @@ export default async function PricingPage({
               <Icon name="sparkles" className="h-4 w-4" />
               You&apos;re on Premium
             </span>
+          ) : !aiOn ? (
+            <div className="rounded-2xl border border-surface-line bg-surface/70 p-4 text-center dark:bg-surface-raised/60">
+              <p className="flex items-center justify-center gap-2 text-sm font-semibold text-ink">
+                <Icon name="clock" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
+                Opening soon
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+                Premium opens as soon as its AI features are switched on.
+                Everything in Free works today.
+              </p>
+            </div>
           ) : (
             <div className="space-y-2">
               <form action={createCheckout}>

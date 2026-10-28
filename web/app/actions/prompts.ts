@@ -22,21 +22,29 @@ import { notifyDiscussionReply, notifyOtherMembersAfterSubmit } from "@/lib/noti
 // Always-free, plan-independent: log a safety event when free-text content
 // raises a high-severity signal, so support can be surfaced regardless of tier.
 // Returns true when resources should be shown inline to the writer.
-async function logSafety(userId: string, text: string): Promise<boolean> {
+// Free, always-on screen for anything a person writes (answers and
+// discussion replies alike). High severity is logged for review and the
+// writer sees crisis resources; elevated gets a quiet pointer to Safety. The
+// text is never blocked, and the other person is never told.
+async function screenText(
+  userId: string,
+  text: string,
+  source: "answer" | "discussion",
+): Promise<"high" | "elevated" | "none"> {
   const signal = detectSafetySignals(text);
-  if (signal.severity !== "high") return false;
+  if (signal.severity !== "high") return signal.severity;
   try {
     await createAdminClient()
       .from("safety_events")
       .insert({
         user_id: userId,
         category: signal.categories[0] ?? "abuse",
-        surfaced_resources: { categories: signal.categories } as Json,
+        surfaced_resources: { categories: signal.categories, source } as Json,
       });
   } catch {
     /* never block the user's action on safety logging */
   }
-  return true;
+  return "high";
 }
 
 // Ensure the connection's onboarding instance exists (idempotent via the
@@ -130,7 +138,7 @@ export async function submitResponse(input: {
   instanceId: string;
   connectionId: string;
   answers: Record<string, string>;
-}): Promise<{ error?: string; revealed?: boolean; safety?: boolean }> {
+}): Promise<{ error?: string; revealed?: boolean; safety?: boolean; gentle?: boolean }> {
   const { instanceId, connectionId } = input;
   if (!instanceId || !connectionId) {
     return { error: "This question is no longer available." };
@@ -190,7 +198,9 @@ export async function submitResponse(input: {
     };
   }
 
-  const safety = await logSafety(user.id, Object.values(answers).join(" "));
+  const level = await screenText(user.id, Object.values(answers).join(" "), "answer");
+  const safety = level === "high";
+  const gentle = level === "elevated";
 
   // If onboarding just fully revealed, mark the connection active.
   let revealed = false;
@@ -274,7 +284,7 @@ export async function submitResponse(input: {
   revalidatePath(`/connections/${connectionId}/onboarding`);
   revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);
   revalidatePath(`/connections/${connectionId}`);
-  return { revealed, safety };
+  return { revealed, safety, gentle };
 }
 
 // Pull (or create) today's daily question for a connection, then open it.
@@ -346,7 +356,7 @@ export async function postDiscussion(input: {
   instanceId: string;
   connectionId: string;
   body: string;
-}): Promise<{ error?: string }> {
+}): Promise<{ error?: string; safety?: boolean; gentle?: boolean }> {
   const { instanceId, connectionId } = input;
   const body = (input.body ?? "").trim().slice(0, MAX_ANSWER_LENGTH);
   if (!instanceId || !body) return {};
@@ -386,7 +396,11 @@ export async function postDiscussion(input: {
     }),
   );
 
+  // Replies get the same free screen as answers (they were the one piece of
+  // user text that skipped it). Only the writer sees the result.
+  const level = await screenText(user.id, body, "discussion");
+
   revalidatePath(`/connections/${connectionId}/onboarding`);
   revalidatePath(`/connections/${connectionId}/prompts/${instanceId}`);
-  return {};
+  return { safety: level === "high", gentle: level === "elevated" };
 }

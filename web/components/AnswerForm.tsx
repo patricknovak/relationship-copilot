@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { submitResponse } from "@/app/actions/prompts";
 import { MICROCOPY } from "@/lib/firstRevealCopy";
-import {
-  INLINE_RESOURCES,
-  SAFETY_NOTE,
-  SAFETY_PRIVACY_LINE,
-} from "@/lib/safety";
+import SafetySupport from "@/components/SafetySupport";
 import type { PromptQuestion } from "@/lib/database.types";
 import { Icon } from "@/components/ui/Icon";
 
@@ -41,7 +37,7 @@ export default function AnswerForm({
   const [restoredDraft, setRestoredDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [showSafety, setShowSafety] = useState(false);
+  const [support, setSupport] = useState<"high" | "elevated" | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const hydrated = useRef(false);
@@ -99,7 +95,8 @@ export default function AnswerForm({
       } catch {
         /* ignore */
       }
-      if (result?.safety) setShowSafety(true);
+      if (result?.safety) setSupport("high");
+      else if (result?.gentle) setSupport("elevated");
       setSaved(true);
       router.refresh();
     });
@@ -116,29 +113,7 @@ export default function AnswerForm({
         </p>
       )}
 
-      {showSafety && (
-        <div
-          role="status"
-          className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/40"
-        >
-          <p className="text-sm text-rose-900 dark:text-rose-200">{SAFETY_NOTE}</p>
-          <p className="mt-2 text-xs text-rose-800/80 dark:text-rose-200/80">
-            {SAFETY_PRIVACY_LINE}
-          </p>
-          <ul className="mt-3 space-y-1.5 text-sm text-rose-900 dark:text-rose-100">
-            {INLINE_RESOURCES.map((r) => (
-              <li key={r.name}>
-                <span className="font-medium">{r.name}</span>
-                {" — "}
-                {r.contact}
-              </li>
-            ))}
-          </ul>
-          <Link href="/safety" className="link mt-3 inline-block text-sm">
-            More Safety resources
-          </Link>
-        </div>
-      )}
+      {support && <SafetySupport level={support} />}
 
       <p className="flex items-center gap-2 text-sm text-ink-soft">
         <Icon name="eye-off" className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" />

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authorizeCronBearer } from "@/lib/cronAuth";
-import { notifyUser } from "@/lib/notify";
+import { notificationsConfigured, notifyUser } from "@/lib/notify";
 import { localHour } from "@/lib/dailyReminderBatch";
 import { cronBatchSummary } from "@/lib/cronBatch";
 
@@ -26,6 +26,10 @@ const MAX_RECIPIENTS = 100;
 async function run(req: Request) {
   if (!authorizeCronBearer(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  // Nothing to send without a channel; don't query the database every hour.
+  if (!notificationsConfigured()) {
+    return NextResponse.json({ skipped: "notifications not configured" });
   }
 
   const admin = createAdminClient();

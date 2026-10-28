@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { continueLine } from "@/lib/signInCopy";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -277,7 +278,7 @@ export default async function InvitePage({
             <Icon name="arrow-right" className="h-4 w-4" />
           </Link>
           <p className="mt-3 text-xs text-ink-faint">
-            Continue with Google — no password to invent.
+            {continueLine()}
           </p>
         </>
       )}

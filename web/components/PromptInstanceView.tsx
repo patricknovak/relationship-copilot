@@ -4,6 +4,10 @@ import RevealWatcher from "@/components/RevealWatcher";
 import AnswerForm from "@/components/AnswerForm";
 import DiscussionForm from "@/components/DiscussionForm";
 import SoftPremiumCard from "@/components/SoftPremiumCard";
+import NameNudge from "@/components/NameNudge";
+import { suggestedFirstName } from "@/lib/profileName";
+import { aiEnabled } from "@/lib/grok";
+import { freeBlueprintState } from "@/lib/freeBlueprint";
 import NudgePerson from "@/components/NudgePerson";
 import ReactionBar from "@/components/ReactionBar";
 import ShareMilestone from "@/components/ShareMilestone";
@@ -106,6 +110,10 @@ export default async function PromptInstanceView({
     myName = me?.display_name?.trim() || null;
   }
 
+  // Invitees reach the questions before they have named themselves.
+  const nameNudge =
+    user && !myName ? <NameNudge suggested={suggestedFirstName(user.user_metadata)} /> : null;
+
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const connectionUrl = `${site}/connections/${connectionId}`;
 
@@ -125,6 +133,14 @@ export default async function PromptInstanceView({
       p_conn: connectionId,
     });
     isPremium = !!premium;
+  }
+  // The soft card sells the AI layer, so it only appears when the AI is on;
+  // while the free Blueprint is unused it points there instead of pricing.
+  const aiOn = aiEnabled();
+  let freeBlueprintHref: string | null = null;
+  if (isFirstReveal && !isPremium && aiOn) {
+    const free = await freeBlueprintState(supabase, connectionId);
+    if (free === "available") freeBlueprintHref = `/connections/${connectionId}/blueprint`;
   }
 
   // ---- Revealed (first unlock hero) ----
@@ -396,7 +412,9 @@ export default async function PromptInstanceView({
           <DiscussionForm instanceId={instance.id} connectionId={connectionId} />
         </section>
 
-        {isFirstReveal && !isPremium && <SoftPremiumCard />}
+        {isFirstReveal && !isPremium && aiOn && (
+          <SoftPremiumCard freeBlueprintHref={freeBlueprintHref} />
+        )}
       </div>
     );
   }
@@ -410,6 +428,7 @@ export default async function PromptInstanceView({
           <Icon name="arrow-left" className="h-4 w-4" />
           Back
         </Link>
+        {nameNudge}
         <div className="card-warm mt-4">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
@@ -469,6 +488,7 @@ export default async function PromptInstanceView({
           <Icon name="arrow-left" className="h-4 w-4" />
           Back
         </Link>
+        {nameNudge}
         <div className="card-hero mt-4">
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">{heading}</p>
@@ -512,6 +532,7 @@ export default async function PromptInstanceView({
         <Icon name="arrow-left" className="h-4 w-4" />
         Back
       </Link>
+      {nameNudge}
       <div className="mt-4">
         <p className="eyebrow">{heading}</p>
         <h1 className="mt-2 text-display-md">{EMPTY_STATE.headline}</h1>

@@ -32,8 +32,13 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 // Email (Resend + NOTIFY_SECRET) and web push (VAPID) are independent
 // channels; the whole system is on when either is.
-function emailReady(): boolean {
+export function emailReady(): boolean {
   return emailConfigured() && !!notifySecret();
+}
+
+/** Which delivery channels can actually send here (Account shows this). */
+export function notificationChannels(): { email: boolean; push: boolean } {
+  return { email: emailReady(), push: !!vapidFromEnv() };
 }
 
 export function notificationsConfigured(): boolean {
