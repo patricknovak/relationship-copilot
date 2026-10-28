@@ -28,13 +28,21 @@ export async function freeBlueprintState(
   return data ? "used" : "available";
 }
 
-/** Whether the free Blueprint exists in this environment at all (public pages). */
+// PostgREST / Postgres codes for "this table does not exist here".
+const MISSING_TABLE = new Set(["PGRST205", "42P01"]);
+
+/**
+ * Whether the free Blueprint exists in this environment at all (public
+ * pages). Signed-out visitors may not read the table (RLS grants members
+ * only), so "permission denied" (42501) still means it exists; only a
+ * missing-table error means the migration has not been applied.
+ */
 export async function freeBlueprintSupported(supabase: Client): Promise<boolean> {
   const { error } = await supabase
     .from("free_blueprint_claims")
     .select("connection_id", { count: "exact", head: true })
     .limit(1);
-  return !error;
+  return !error || !MISSING_TABLE.has(error.code ?? "");
 }
 
 export type ClaimResult = "claimed" | "used" | "unsupported";

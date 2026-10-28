@@ -59,8 +59,16 @@ describe("free Blueprint storage", () => {
     );
   });
 
-  it("reports support from whether the table answers", async () => {
+  it("reports support from whether the table exists", async () => {
     expect(await freeBlueprintSupported(fakeClient({}))).toBe(true);
     expect(await freeBlueprintSupported(fakeClient({ error: { code: "PGRST205" } }))).toBe(false);
+    expect(await freeBlueprintSupported(fakeClient({ error: { code: "42P01" } }))).toBe(false);
+    // Signed-out visitors on /pricing may not read the table (members only),
+    // which proves it exists: the free Blueprint must still be listed.
+    expect(
+      await freeBlueprintSupported(
+        fakeClient({ error: { code: "42501", message: "permission denied for table free_blueprint_claims" } }),
+      ),
+    ).toBe(true);
   });
 });
