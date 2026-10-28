@@ -1,10 +1,48 @@
 # Go-live checklist
 
-Status audited 2026-07-31 against the real infrastructure (Supabase project
+Status refreshed 2026-10-28 (top section). Originally audited 2026-07-31 against the real infrastructure (Supabase project
 `digbnrhwsifmycrxyquo`, production at https://relationshipcopilot.com);
 code status refreshed 2026-10-18 after the Cloudflare cutover and the
 market / site / stack reviews (see `docs/ROADMAP.md` §5 for the ordered
 list of what remains). Update the checkboxes as items land.
+
+## Status on 2026-10-28: what stands between here and launch
+
+Code is complete for launch. The redesign (#141), the new icon (#146) and
+the launch-readiness PR from branch `claude/epic-euler-12bsoy` cover every
+code item from the 2026-10-28 review. Production has migrations 0001–0041;
+the same PR adds 0042–0044, which need Patrick's go.
+
+What only Patrick can do, in this order (each is a few minutes):
+
+1. **Apply migrations 0042, 0043, 0044** to production (Patrick's go, then
+   SQL editor or MCP, in order). 0042 lets the cron create and remind for
+   today's question from the day both people join; 0043 is the free
+   Blueprint table; 0044 is library content (idempotent). The app works
+   without them, but the free Blueprint and the new reads stay dark.
+2. **Stripe, Relationship account, live mode:** confirm the account is
+   activated for live charges; save the **Customer Portal** configuration
+   (cancel + update payment method); create the decided prices
+   ($9.99/month, $59.99/year) and send the two price IDs for the price PR.
+3. **Supabase Auth:** paste the Turnstile **secret** (Attack Protection) and
+   add `https://relationshipcopilot.com/invite/*` to Redirect URLs. Then
+   test one magic link and one emailed invite end to end.
+4. **Confirm the Worker secrets** (`npx wrangler secret list --name
+   relationship-copilot`): `XAI_NO_TRAINING_DPA=true` with `XAI_API_KEY`
+   (otherwise Premium shows "Opening soon"), `RESEND_API_KEY` **and**
+   `NOTIFY_SECRET` (both, or no email), `VAPID_*`, `SENTRY_DSN`,
+   `CRON_SECRET`.
+5. **Cloudflare:** the WAF rate-limiting rule on `/login`, `/invite/*` and
+   `/auth/*` (§5 below).
+6. **Decide `mission_control_counts`** (§5): commit it restricted to the
+   service role, or drop it.
+7. **Supabase:** check Database → Backups; turn on point-in-time recovery
+   before real users arrive (`docs/RUNBOOK.md` §6).
+8. **Legal review** of `/privacy` and `/terms`, and the safety-resource
+   review (sign-offs below).
+9. **Run the smoke test** in `docs/RUNBOOK.md` §9 with two real accounts.
+10. Housekeeping, any time: unschedule pg_cron `assign-daily-prompts`,
+    retire Vercel, delete stale branches.
 
 ## Already done (verified)
 
@@ -130,9 +168,11 @@ endpoint enforces captcha):
 
 `web/lib/grok.ts` refuses all AI calls in production unless
 `XAI_NO_TRAINING_DPA=true`, which should only be set once a no-training DPA
-is actually in place. Until then the app works but Blueprint/digest
-generation errors, and the safety classifier runs regex-only (its model
-escalation uses the same client; the regex fast path still gates).
+is actually in place. Since 2026-10-28 the product handles that state
+honestly: pricing shows "Opening soon" and checkout refuses, the Blueprint
+and digest say AI is switching on soon, and no AI upsell is shown. The
+safety classifier runs regex-only (its model escalation uses the same
+client; the regex fast path still gates).
 
 - [x] `XAI_API_KEY` present in Vercel (since Jun 11).
 - [x] **Decision (2026-10-18): stay on xAI.** xAI's Enterprise Terms of
@@ -185,8 +225,10 @@ product behaves exactly as before without them.
       each connection a time zone; 9am–8pm local only) and only emails
       people who opted in to "Today's question is ready". It does nothing
       until `RESEND_API_KEY` is set.
-- [ ] `NOTIFY_SECRET` for signing unsubscribe links is set on the Worker
-      (it falls back to a server-only key if missing). One-click unsubscribe is at
+- [ ] `NOTIFY_SECRET` for signing unsubscribe links is set on the Worker.
+      **Required with `RESEND_API_KEY`: there is no fallback.** Without it
+      every notification email is skipped (`lib/notify.ts`), and Account →
+      Notifications says email isn't live. One-click unsubscribe is at
       `/api/notifications/unsubscribe` and also set as the
       `List-Unsubscribe` header.
 - [ ] **Price (decided 2026-10-18): $9.99/month and $59.99/year, one plan
@@ -214,7 +256,8 @@ product behaves exactly as before without them.
 - [ ] **Rate limiting on the public invite and login routes.** Cloudflare
       dashboard → the zone → Security → WAF → Rate limiting rules → Create:
       expression `(http.request.uri.path matches "^/invite/") or
-      (http.request.uri.path eq "/login")`, characteristics IP, 30 requests
+      (http.request.uri.path eq "/login") or
+      (http.request.uri.path matches "^/auth/")`, characteristics IP, 30 requests
       per 10 seconds, action Block for 10 seconds. Invite codes are now 12
       characters (60 bits), so this is belt and braces against enumeration,
       and it also throttles magic-link spam.
@@ -224,10 +267,11 @@ product behaves exactly as before without them.
       migration 0041 (with the passcode moved to a Worker secret and the
       function restricted to `service_role`) or drop it. Decide before the
       next migration so `supabase/tests/run.sh` keeps matching production.
-- [ ] **Retire the pg_cron `assign-daily-prompts` job** one week after
-      #124 deploys, once Workers Logs show `cron_tick` for
-      `/api/cron/daily-reminder` with `created` > 0 on a day a pair was
-      active. Supabase → Integrations → Cron → unschedule. Harmless while
+- [ ] **Retire the pg_cron `assign-daily-prompts` job** once Workers Logs
+      show `cron_tick` for `/api/cron/daily-reminder` with `created` > 0 on a
+      day a pair was active. (Before 2026-10-28 the route returned early when
+      no notification channel was configured, so `created` could never rise;
+      it now creates today's question regardless.) Supabase → Integrations → Cron → unschedule. Harmless while
       both run; `ensure_daily_prompt` is idempotent.
 - [ ] **Retire Vercel.** Project settings → Integrations → remove the
       Supabase integration first (so it stops syncing env vars), then delete

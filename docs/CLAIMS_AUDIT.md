@@ -27,3 +27,14 @@ soften copy only where a claim cannot be true yet.
 
 **NO SEND.** Drafts only — do not send Rel activation drip mail
 (`docs/ga4-first-mutual-reveal.md`). This PR does not add drip sending.
+
+## Addendum (2026-10-28)
+
+| Claim | Location | Status | How it stays true |
+|---|---|---|---|
+| One free AI Blueprint per connection | Pricing (Free list), Blueprint page, hub card, post-reveal card | **true where shown** | Rendered only when migration 0043 exists **and** the AI provider is on (`lib/freeBlueprint.ts`, `aiEnabled()`); the primary key enforces once per connection |
+| Premium (AI Blueprint, digests) for sale | Pricing | **true when AI is on** | With `XAI_NO_TRAINING_DPA` unset, pricing shows "Opening soon" and `createCheckout` refuses |
+| Deeper premium library reads | Pricing, library footer | **true after 0044** | SQL test 25 fails if any Premium read is under 3,000 characters |
+| Daily question every day | Home, /for pages | **true from the day both join** (0042) | Previously only after the first 20 were revealed |
+| "They sign in with Google" | Hub, invite card, library, /for, /questions, invite page | **derived** | `lib/signInCopy.ts` follows `NEXT_PUBLIC_AUTH_PROVIDERS` |
+| Notifications by email and on your devices | Account | **derived** | `NotificationPrefs` names only the channels that can send (`notificationChannels()`) |

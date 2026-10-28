@@ -132,7 +132,8 @@ export async function saveDisplayNameInline(
     .eq("id", user.id);
   if (error) return { error: "Couldn't save that just now. Try again in a moment." };
 
-  revalidatePath("/connections", "layout");
+  // No revalidation here: re-rendering this page would unmount the form
+  // (and its confirmation) mid-answer. Other pages read the name fresh.
   return { name: displayName };
 }
 

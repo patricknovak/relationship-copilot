@@ -46,7 +46,7 @@ export default async function PromptInstanceView({
 
   const { data: instance } = await supabase
     .from("prompt_instances")
-    .select("id, questions, status, template_id")
+    .select("id, questions, status, template_id, kind, scheduled_for")
     .eq("id", instanceId)
     .maybeSingle();
 
@@ -71,7 +71,9 @@ export default async function PromptInstanceView({
       .select("title, config")
       .eq("id", instance.template_id)
       .maybeSingle();
-    if (tmpl?.title) heading = tmpl.title;
+    // Daily templates carry internal titles ("Daily — Anyone"); a daily is
+    // always "Today's question" to the people answering it.
+    if (tmpl?.title && instance.kind !== "daily") heading = tmpl.title;
     scored = isDimensionScored(tmpl?.config);
   }
 
@@ -109,6 +111,52 @@ export default async function PromptInstanceView({
       .maybeSingle();
     myName = me?.display_name?.trim() || null;
   }
+
+  // The daily pool is deep but finite; once a pair has seen every question
+  // for their type, ensure_daily_prompt repeats one. A repeat is a chance to
+  // see what changed, so link back to the earlier reveal of the same question.
+  let earlier: { id: string; scheduled_for: string | null } | null = null;
+  if (instance.kind === "daily" && instance.template_id) {
+    const { data } = await supabase
+      .from("prompt_instances")
+      .select("id, scheduled_for")
+      .eq("connection_id", connectionId)
+      .eq("template_id", instance.template_id)
+      .eq("status", "revealed")
+      .neq("id", instance.id)
+      .order("scheduled_for", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    earlier = data;
+  }
+  const earlierOn = earlier?.scheduled_for
+    ? new Date(`${earlier.scheduled_for}T12:00:00Z`).toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+  const repeatNote = earlier ? (
+    <Link
+      href={`/connections/${connectionId}/prompts/${earlier.id}`}
+      className="card card-hover mt-4 flex items-center gap-3 !p-4"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
+        <Icon name="history" className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0 flex-1 text-sm">
+        <span className="block font-semibold text-ink">
+          You&apos;ve answered this one before{earlierOn ? `, on ${earlierOn}` : ""}.
+        </span>
+        <span className="block text-ink-soft">
+          {instance.status === "revealed"
+            ? "See what you both said then, and what changed."
+            : "Answer fresh first, then look back at what you both said then."}
+        </span>
+      </span>
+      <Icon name="chevron-right" className="h-5 w-5 shrink-0 text-ink-faint" />
+    </Link>
+  ) : null;
 
   // Invitees reach the questions before they have named themselves.
   const nameNudge =
@@ -191,6 +239,7 @@ export default async function PromptInstanceView({
           <Icon name="arrow-left" className="h-4 w-4" />
           Back
         </Link>
+        {repeatNote}
 
         {isFirstReveal ? (
           <header className="card-hero mt-4 overflow-hidden">
@@ -230,10 +279,14 @@ export default async function PromptInstanceView({
                 <ShareMilestone kind="first_reveal" count={questions.length} />
               </div>
               <Link
-                href={`/connections/${connectionId}#today`}
+                href={`/connections/${connectionId}`}
                 className="link mt-4 inline-block text-sm"
               >
-                {FIRST_REVEAL_UNLOCK.tertiaryCta}
+                {/* Since 0042 the first reveal is often today's question
+                    itself; then the way on is the first set, not "today". */}
+                {instance.kind === "daily"
+                  ? "Back to your connection"
+                  : FIRST_REVEAL_UNLOCK.tertiaryCta}
               </Link>
             </div>
           </header>
@@ -429,6 +482,7 @@ export default async function PromptInstanceView({
           Back
         </Link>
         {nameNudge}
+        {repeatNote}
         <div className="card-warm mt-4">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-200">
@@ -489,6 +543,7 @@ export default async function PromptInstanceView({
           Back
         </Link>
         {nameNudge}
+        {repeatNote}
         <div className="card-hero mt-4">
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow">{heading}</p>
@@ -533,6 +588,7 @@ export default async function PromptInstanceView({
         Back
       </Link>
       {nameNudge}
+      {repeatNote}
       <div className="mt-4">
         <p className="eyebrow">{heading}</p>
         <h1 className="mt-2 text-display-md">{EMPTY_STATE.headline}</h1>

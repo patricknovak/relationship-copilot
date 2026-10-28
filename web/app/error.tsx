@@ -14,7 +14,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surfaced in Vercel logs for triage; no PII beyond the message.
+    // Surfaced in Workers Logs (and Sentry, scrubbed) for triage; no PII beyond the message.
     console.error(error);
   }, [error]);
 

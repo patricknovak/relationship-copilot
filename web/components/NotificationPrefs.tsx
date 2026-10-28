@@ -21,7 +21,7 @@ export default function NotificationPrefs({
   channels?: { email: boolean; push: boolean };
 }) {
   const how =
-    channels.email && channels.push
+    channels.email === channels.push
       ? "by email and on any device where you turn notifications on"
       : channels.email
         ? "by email"

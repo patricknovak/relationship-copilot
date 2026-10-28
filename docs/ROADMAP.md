@@ -5,6 +5,36 @@ production database, the codebase, and the 2026 relationship-app market.
 This is the single development plan; `docs/launch-checklist.md` tracks the
 non-code go-live items it depends on. Update both as items land.
 
+## 0. Update, 2026-10-28
+
+Shipped since the 2026-10-18 review: the full UI redesign with sharing to
+messaging apps and social networks (#141), a new brand icon (#146), and the
+launch-readiness PR from `claude/epic-euler-12bsoy`, which closes these
+plan items:
+
+- **Item 4, one free Blueprint per connection:** done (migration 0043).
+- **Item 5, while you wait:** done (reads and upcoming questions for the
+  type, plus a resend nudge).
+- **Item 6, Home Screen install nudge:** done (once, on phones, after the
+  first reveal; iPhone steps and the Android install prompt).
+- **Item 11, discussion replies through the safety scan:** done, plus a
+  quiet Safety pointer on elevated severity.
+- **New, from the 2026-10-28 review:** the daily question now opens the day
+  both people join instead of after 40 answers (0042); invitees name
+  themselves in place; first-run profile asks for a name only; nothing AI
+  is sold or offered while the AI provider is off; notification settings
+  say which channels can send; Stripe webhook handles unpaid checkouts and
+  deleted accounts; sign-in wording follows the configured providers; the
+  library's six flagship reads are real articles and friends and family
+  have reads of their own (0044); repeated daily questions link back to
+  the earlier reveal.
+
+Usage on 2026-10-28 is unchanged in substance: 8 accounts, 1 active pair,
+2 reveals, no sign-in in the last 7 days. What remains before launch is
+the ordered list at the top of `docs/launch-checklist.md`: keys, Stripe
+and Supabase dashboard settings, applying 0042–0044, and the smoke test.
+Item 3 (the price change) waits on the two Stripe price IDs.
+
 ## 1. Where we are
 
 **Built and live** (`main`, production at relationshipcopilot.com on a
