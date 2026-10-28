@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signInVia } from "@/lib/signInCopy";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
@@ -35,6 +36,11 @@ import SharedGoals from "@/components/SharedGoals";
 import { questionsInviteCopy } from "@/lib/questionsCta";
 import { Avatar, DuoAvatars } from "@/components/ui/Avatar";
 import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
+import { aiEnabled } from "@/lib/grok";
+import { blueprintOffer, freeBlueprintState } from "@/lib/freeBlueprint";
+import WhileYouWait from "@/components/WhileYouWait";
+import InstallNudge from "@/components/InstallNudge";
+import { vapidFromEnv } from "@/lib/webPush";
 
 const NOTICES: Record<
   string,
@@ -165,7 +171,9 @@ export default async function ConnectionPage({
       .eq("status", "revealed")
       .gte("scheduled_for", streakFrom.toISOString().slice(0, 10)),
     // Today's daily, if cron already created it (members only under RLS).
-    conn.status === "active" && user
+    // 0042: available from the day both people join, not only after the
+    // first set is revealed.
+    (conn.status === "active" || conn.status === "onboarding") && user
       ? supabase
           .from("prompt_instances")
           .select("id, status, questions")
@@ -181,6 +189,10 @@ export default async function ConnectionPage({
   ]);
   const joinedCount = (members ?? []).filter((m) => m.joined_at).length;
   const myName = me?.display_name?.trim() || null;
+  // Today's question opens the day both people are in, so the first reveal
+  // can be one answer each instead of the whole first set.
+  const dailyOpen =
+    joinedCount >= 2 && (conn.status === "active" || conn.status === "onboarding");
 
   // The other person's name for the heading and the daily card. Read through
   // the partner_profiles view, which exposes only display fields of people
@@ -248,7 +260,7 @@ export default async function ConnectionPage({
     localToday,
   );
 
-  // Today's question, inline. The instance is pre-created by cron for active
+  // Today's question, inline. The instance is pre-created by cron for joined
   // connections; ensure_daily_prompt is the idempotent fallback (members
   // only). Both answer flags are read under RLS / via the boolean-only RPC, so
   // the card never sees the other person's words early.
@@ -257,7 +269,7 @@ export default async function ConnectionPage({
     text: string;
     state: ReturnType<typeof dailyState>;
   } | null = null;
-  if (conn.status === "active" && user) {
+  if (dailyOpen && user) {
     const date = localToday;
     let daily = dailyRow;
     if (!daily) {
@@ -361,8 +373,97 @@ export default async function ConnectionPage({
   const newLink = regenerateInvite.bind(null, id);
   const saveNote = setInviteNote.bind(null, id);
 
+  // The Blueprint card says when this connection's first one is free.
+  let blueprintCardOffer: ReturnType<typeof blueprintOffer> | null = null;
+  if (conn.status === "active" && user) {
+    const [{ data: hubPremium }, freeState] = await Promise.all([
+      supabase.rpc("connection_has_premium", { p_conn: id }),
+      freeBlueprintState(supabase, id),
+    ]);
+    blueprintCardOffer = blueprintOffer({
+      isPremium: !!hubPremium,
+      aiOn: aiEnabled(),
+      revealed: instance?.status === "revealed",
+      free: freeState,
+    });
+  }
+
   const todayCopy = today ? dailyCardCopy(today.state, themName) : null;
+  // After the pair's first reveal of anything, phones get one install card.
+  const hasRevealed =
+    instance?.status === "revealed" || streak > 0 || today?.state === "revealed";
   const todayIsAction = today?.state === "your_turn" || today?.state === "answer";
+
+  const todaySection = dailyOpen ? (
+    <>
+      {/* Daily question, shown inline with where you both are on it */}
+      {today && todayCopy && (
+        <section
+          id="today"
+          className={`mt-6 scroll-mt-24 ${todayIsAction ? "card-hero" : "card"}`}
+        >
+          {today.state !== "revealed" && <RevealWatcher instanceId={today.id} />}
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow">Today&apos;s question</p>
+            {today.state === "revealed" ? (
+              <span className="pill-done">Revealed</span>
+            ) : today.state === "waiting" ? (
+              <span className="pill-quiet">Waiting on {themName ?? "them"}</span>
+            ) : today.state === "your_turn" ? (
+              <span className="pill-action">Your turn</span>
+            ) : null}
+          </div>
+          {today.text && (
+            <p className="mt-3 font-display text-2xl leading-snug text-ink">
+              &ldquo;{today.text}&rdquo;
+            </p>
+          )}
+          <h2 className="mt-3 text-base font-sans font-semibold tracking-normal">{todayCopy.headline}</h2>
+          <p className="mt-1 text-sm text-ink-soft">{todayCopy.body}</p>
+          {conn.status === "onboarding" && today.state !== "revealed" && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-ink-faint">
+              <Icon name="sparkles" className="h-3.5 w-3.5" />
+              One question, one reveal. Your first set stays open alongside it.
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/connections/${id}/prompts/${today.id}`}
+              className={
+                today.state === "waiting" || today.state === "revealed"
+                  ? "btn-secondary btn-sm"
+                  : "btn-primary"
+              }
+            >
+              {todayCopy.cta}
+              <Icon name="arrow-right" className="h-4 w-4" />
+            </Link>
+            {today.state === "waiting" && (
+              <NudgePerson
+                connectionUrl={`${base}/connections/${id}`}
+                inviterName={myName}
+                variant="finish"
+              />
+            )}
+          </div>
+        </section>
+      )}
+      {!today && (
+        <section className="card mt-6">
+          <p className="eyebrow">Today&apos;s question</p>
+          <h2 className="mt-1 text-lg">A fresh prompt, every day</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Keep learning about each other, one question at a time.
+          </p>
+          <form action={ensureDaily.bind(null, id)} className="mt-3">
+            <PendingButton pendingLabel="Opening…">
+              Open today&apos;s question
+            </PendingButton>
+          </form>
+        </section>
+      )}
+    </>
+  ) : null;
 
   return (
     <div className="page has-tabbar">
@@ -492,12 +593,12 @@ export default async function ConnectionPage({
               <p className="mt-1 text-sm text-ink-soft">
                 {listInviteCopy
                   ? listInviteCopy
-                  : "Share the invite link in one tap. They sign in with Google, join, and answer — then you reveal together. Nothing is visible early."}
+                  : `Share the invite link in one tap. They sign in with ${signInVia()}, join, and answer — then you reveal together. Nothing is visible early.`}
               </p>
               {listInviteCopy ? (
                 <p className="mt-1 text-sm text-ink-soft">
-                  Share the invite link in one tap. They sign in with Google, join,
-                  and answer — then you reveal together. Nothing is visible early.
+                  Share the invite link in one tap. They sign in with {signInVia()},
+                  join, and answer — then you reveal together. Nothing is visible early.
                 </p>
               ) : null}
             </div>
@@ -614,6 +715,15 @@ export default async function ConnectionPage({
         </section>
       )}
 
+      {/* While the first set is open, today's single question comes first:
+          it is the quickest way to a first reveal. */}
+      {conn.status === "onboarding" && todaySection}
+
+      {/* The inviter has answered and the link is out: give the wait something. */}
+      {joinedCount < 2 && inviteUrl && myResponse && conn.status !== "archived" && (
+        <WhileYouWait type={conn.type} />
+      )}
+
       {/* Both joined — first shared set / mutual-reveal activation */}
       {joinedCount >= 2 && conn.status !== "archived" && (
         <section className={`mt-6 ${instance && instance.status !== "revealed" ? "card-hero" : "card"}`}>
@@ -716,65 +826,10 @@ export default async function ConnectionPage({
         </section>
       )}
 
-      {/* Daily question, shown inline with where you both are on it */}
-      {conn.status === "active" && today && todayCopy && (
-        <section
-          id="today"
-          className={`mt-6 scroll-mt-24 ${todayIsAction ? "card-hero" : "card"}`}
-        >
-          {today.state !== "revealed" && <RevealWatcher instanceId={today.id} />}
-          <div className="flex items-center justify-between gap-3">
-            <p className="eyebrow">Today&apos;s question</p>
-            {today.state === "revealed" ? (
-              <span className="pill-done">Revealed</span>
-            ) : today.state === "waiting" ? (
-              <span className="pill-quiet">Waiting on {themName ?? "them"}</span>
-            ) : today.state === "your_turn" ? (
-              <span className="pill-action">Your turn</span>
-            ) : null}
-          </div>
-          {today.text && (
-            <p className="mt-3 font-display text-2xl leading-snug text-ink">
-              &ldquo;{today.text}&rdquo;
-            </p>
-          )}
-          <h2 className="mt-3 text-base font-sans font-semibold tracking-normal">{todayCopy.headline}</h2>
-          <p className="mt-1 text-sm text-ink-soft">{todayCopy.body}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Link
-              href={`/connections/${id}/prompts/${today.id}`}
-              className={
-                today.state === "waiting" || today.state === "revealed"
-                  ? "btn-secondary btn-sm"
-                  : "btn-primary"
-              }
-            >
-              {todayCopy.cta}
-              <Icon name="arrow-right" className="h-4 w-4" />
-            </Link>
-            {today.state === "waiting" && (
-              <NudgePerson
-                connectionUrl={`${base}/connections/${id}`}
-                inviterName={myName}
-                variant="finish"
-              />
-            )}
-          </div>
-        </section>
-      )}
-      {conn.status === "active" && !today && (
-        <section className="card mt-6">
-          <p className="eyebrow">Today&apos;s question</p>
-          <h2 className="mt-1 text-lg">A fresh prompt, every day</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Keep learning about each other, one question at a time.
-          </p>
-          <form action={ensureDaily.bind(null, id)} className="mt-3">
-            <PendingButton pendingLabel="Opening…">
-              Open today&apos;s question
-            </PendingButton>
-          </form>
-        </section>
+      {conn.status === "active" && todaySection}
+
+      {hasRevealed && conn.status !== "archived" && (
+        <InstallNudge pushAvailable={!!vapidFromEnv()} />
       )}
 
       {/* Secondary tools: a two-up grid on wider screens. */}
@@ -830,6 +885,9 @@ export default async function ConnectionPage({
             <p className="mt-2 flex-1 text-sm text-ink-soft">
               An AI reflection on your strengths, shared goals, and areas to
               nurture.
+              {(blueprintCardOffer === "free" || blueprintCardOffer === "free-later") &&
+                " Your first one is on us."}
+              {blueprintCardOffer === "ai-off" && " Switching on soon."}
             </p>
             <Link
               href={`/connections/${id}/blueprint`}

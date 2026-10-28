@@ -5,12 +5,17 @@ import { generateBlueprint, setBlueprintIntakeConsent } from "@/app/actions/blue
 import { intakeFromProfile } from "@/lib/blueprint";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
 import { isPendingInsightPayload } from "@/lib/insightRateLimit";
+import { aiEnabled } from "@/lib/grok";
+import { blueprintOffer, freeBlueprintState } from "@/lib/freeBlueprint";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 const ERRORS: Record<string, string> = {
-  premium: "The Blueprint is a Premium feature — upgrade to generate one.",
+  premium:
+    "This connection's free Blueprint has been used. Premium regenerates it whenever you like.",
+  aioff:
+    "AI reflections aren't switched on yet. Nothing you've written has been sent anywhere.",
   ratelimit:
     "A Blueprint was generated just now. Give it a few minutes before regenerating.",
   notready: "Finish your first questions together first — then the Blueprint unlocks.",
@@ -84,6 +89,11 @@ export default async function BlueprintPage({
   const payload = (
     isPendingInsightPayload(rawPayload) ? null : rawPayload
   ) as Payload | null;
+  const aiOn = aiEnabled();
+  const free = isPremium ? "used" : await freeBlueprintState(supabase, id);
+  const offer = blueprintOffer({ isPremium: !!isPremium, aiOn, revealed, free });
+  // A Blueprint that exists on a non-Premium connection is its free one.
+  const showsFreeNote = !!payload && !payload.safety && !isPremium;
   const generate = generateBlueprint.bind(null, id);
   const setConsent = setBlueprintIntakeConsent.bind(null, id);
 
@@ -135,7 +145,7 @@ export default async function BlueprintPage({
       {payload?.safety ? (
         <>
           <SafetyCard />
-          {isPremium && (
+          {isPremium && aiOn && (
             <form action={generate} className="mt-4">
               <PendingButton
                 className="btn-secondary !px-4 !py-2 text-sm"
@@ -162,7 +172,16 @@ export default async function BlueprintPage({
               </p>
             </div>
           )}
-          {isPremium && (
+          {showsFreeNote && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
+              <Icon name="sparkles" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
+              This was your connection&apos;s free Blueprint.
+              <Link href="/pricing" className="link">
+                Premium regenerates it as you grow
+              </Link>
+            </p>
+          )}
+          {isPremium && aiOn && (
             <div className="flex flex-wrap items-center gap-3">
               {insight?.generated_at && (
                 <p className="text-xs text-ink-soft/80">
@@ -185,19 +204,28 @@ export default async function BlueprintPage({
             </div>
           )}
         </div>
-      ) : isPremium ? (
+      ) : offer === "premium" || offer === "free" ? (
         <div className="card-hero mt-6">
           {revealed ? (
             <>
+              {offer === "free" && (
+                <p className="pill-brand mb-3 inline-flex">
+                  <Icon name="sparkles" className="h-3.5 w-3.5" />
+                  Your first Blueprint is on us
+                </p>
+              )}
               <p className="text-sm text-ink-soft">
                 Generate an AI reflection on your strengths, shared goals, and
-                areas to nurture — based on your{" "}
-                {answerCount > 0 ? `${answerCount} ` : ""}first answers.
+                areas to nurture, based on your{" "}
+                {answerCount > 0 ? `${answerCount} ` : ""}first answers and
+                what you&apos;ve revealed since.
+                {offer === "free" &&
+                  " Either of you can generate it once, free; it's shared with you both."}
               </p>
               <form action={generate} className="mt-4">
                 <PendingButton pendingLabel="Generating — this takes a moment…">
                   <Icon name="sparkles" className="h-4 w-4" />
-                  Generate Blueprint
+                  {offer === "free" ? "Generate our free Blueprint" : "Generate Blueprint"}
                 </PendingButton>
               </form>
             </>
@@ -208,6 +236,34 @@ export default async function BlueprintPage({
             </p>
           )}
         </div>
+      ) : offer === "free-later" ? (
+        <div className="card-tint mt-6">
+          <h2 className="flex items-center gap-2 font-semibold text-brand-700 dark:text-brand-300">
+            <Icon name="sparkles" className="h-4 w-4" />
+            Your first Blueprint is on us
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Once you&apos;ve both answered your first questions and revealed
+            them, either of you can generate one AI Blueprint for this
+            connection, free. Premium regenerates it as you grow.
+          </p>
+          <Link href={`/connections/${id}/onboarding`} className="mt-3 inline-flex btn-primary">
+            Go to your first questions
+            <Icon name="arrow-right" className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : offer === "ai-off" ? (
+        <div className="card-tint mt-6">
+          <h2 className="flex items-center gap-2 font-semibold text-brand-700 dark:text-brand-300">
+            <Icon name="clock" className="h-4 w-4" />
+            Switching on soon
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            The AI Blueprint isn&apos;t switched on yet. Nothing you&apos;ve
+            written has been sent to an AI provider. Your questions, reveals,
+            and safety resources work as normal in the meantime.
+          </p>
+        </div>
       ) : (
         <div className="card-tint mt-6">
           <h2 className="flex items-center gap-2 font-semibold text-brand-700 dark:text-brand-300">
@@ -215,10 +271,10 @@ export default async function BlueprintPage({
             A Premium feature
           </h2>
           <p className="mt-1 text-sm text-ink-soft">
-            The AI Relationship Blueprint and weekly digests are part of Premium.
-            One Premium plan covers both people in a connection. Your core
-            experience — questions, daily prompts, and safety resources — stays
-            free.
+            Regenerating the AI Relationship Blueprint and weekly digests are
+            part of Premium. One Premium plan covers both people in a
+            connection. Your core experience — questions, daily prompts, and
+            safety resources — stays free.
           </p>
           <Link
             href="/pricing"
@@ -231,7 +287,7 @@ export default async function BlueprintPage({
 
       {/* Shown on premium connections, and always to someone who opted in,
           so consent can be withdrawn even after a plan lapses. */}
-      {user && (isPremium || iShare) && conn.status !== "archived" && (
+      {user && (isPremium || offer === "free" || iShare) && conn.status !== "archived" && (
         <section className="card mt-8 !p-4">
           <h2 className="font-semibold">Your profile reflections</h2>
           <p className="mt-1 text-sm text-ink-soft">

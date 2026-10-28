@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signInVia } from "@/lib/signInCopy";
 import { createClient } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { dailyBadge, dailyState, firstSetBadge, todayIn, todayUtc } from "@/lib/dailyState";
@@ -119,12 +120,13 @@ export default async function ConnectionsPage() {
     }
   }
 
-  // Today's daily state per active connection, so the list says whose turn
-  // it is. Reads go through RLS; the boolean RPC is the only way to learn the
-  // other person has answered before you have.
+  // Today's daily state per joined connection (0042: the daily starts the
+  // day both people join, alongside the first set), so the list says whose
+  // turn it is. Reads go through RLS; the boolean RPC is the only way to
+  // learn the other person has answered before you have.
   const badgeByConnection = new Map<string, ReturnType<typeof dailyBadge>>();
   const activeIds = (connections ?? [])
-    .filter((c) => c.status === "active")
+    .filter((c) => c.status === "active" || c.status === "onboarding")
     .map((c) => c.id);
   if (activeIds.length && user) {
     // Each connection has its own local "today"; fetch a three-day window
@@ -212,7 +214,12 @@ export default async function ConnectionsPage() {
         theyAnswered: !!inst && (inst.status === "revealed" || othersFirst.has(inst.id)),
       });
       const badge = firstSetBadge(state, partnerJoined.has(connId));
-      if (badge) badgeByConnection.set(connId, badge);
+      // A "your turn" on today's question is never hidden by a quieter
+      // first-set badge.
+      const existing = badgeByConnection.get(connId);
+      if (badge && !(existing?.tone === "action" && badge.tone !== "action")) {
+        badgeByConnection.set(connId, badge);
+      }
     }
   }
 
@@ -255,7 +262,7 @@ export default async function ConnectionsPage() {
             body={
               <>
                 Create a connection, share the link, and answer your first
-                questions together. Sign-in is Google. Safety resources stay
+                questions together. You both sign in with {signInVia()}. Safety resources stay
                 free; Premium ({PREMIUM_MONTHLY_DISPLAY}) is optional.
               </>
             }

@@ -1,4 +1,4 @@
-# Relationship Copilot — New Architecture (Supabase · Next.js/Vercel · Grok)
+# Relationship Copilot — New Architecture (Supabase · Next.js on Cloudflare Workers · Grok)
 
 This is the re-platform of Relationship Copilot onto the org-standard stack. It
 makes the **mutual-reveal question loop** and the **AI Relationship Blueprint**
@@ -13,7 +13,7 @@ family, coworker, parent–teen). Full design lives in the approved plan.
 ## Stack
 
 - **Supabase** — Postgres, Auth, Realtime, Storage, Row-Level Security.
-- **Next.js (App Router) on Vercel** — UI, server actions, route handlers.
+- **Next.js (App Router) on a Cloudflare Worker** — UI, server actions, route handlers. (Hosted on Vercel until the 2026-10-18 cutover; see `docs/CLOUDFLARE_MIGRATION.md`.)
 - **Grok (xAI)** — question/insight generation (OpenAI-compatible API), server-side only.
 - **Stripe** — freemium billing (most core features free; AI behind a subscription).
 

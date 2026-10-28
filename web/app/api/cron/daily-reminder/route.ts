@@ -30,14 +30,14 @@ async function run(req: Request) {
   if (!authorizeCronBearer(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (!notificationsConfigured()) {
-    return NextResponse.json({ skipped: "notifications not configured" });
-  }
 
   const admin = createAdminClient();
   const now = new Date();
   const counts = { created: 0, candidates: 0, sent: 0, skipped: 0, failed: 0 };
 
+  // Today's question is created for every joined pair inside its local window
+  // whether or not any notification channel is set up: creating it is what
+  // lets the pg_cron assigner be retired, and it must not depend on email.
   const { data: created, error: ensureError } = await admin.rpc(
     "ensure_daily_prompts_in_window",
     { p_from_hour: SEND_HOUR_FROM, p_to_hour: SEND_HOUR_TO, p_limit: MAX_ENSURE },
@@ -47,6 +47,10 @@ async function run(req: Request) {
     return NextResponse.json({ error: "ensure failed" }, { status: 500 });
   }
   counts.created = created ?? 0;
+
+  if (!notificationsConfigured()) {
+    return NextResponse.json({ ...counts, skipped: "notifications not configured" });
+  }
 
   // Ask for one more than the batch so the response can say whether a
   // backlog remains; only MAX_RECIPIENTS are notified this run.

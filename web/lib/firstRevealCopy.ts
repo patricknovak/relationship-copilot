@@ -113,6 +113,15 @@ export const SOFT_PREMIUM = {
   dismiss: "Not now",
 } as const;
 
+// Shown instead of SOFT_PREMIUM while the connection's one free Blueprint
+// (0043) is still unused.
+export const SOFT_FREE_BLUEPRINT = {
+  headline: "Your first Blueprint is on us",
+  body: "Once your first questions are revealed, either of you can generate one AI Blueprint for this connection, free: strengths, shared goals, and what to nurture, written from what you both said. Names, emails, and phones are stripped first.",
+  primaryCta: "See your Blueprint",
+  dismiss: "Not now",
+} as const;
+
 export const MICROCOPY = {
   aboveQuestion: "Answer honestly. They'll only see this when you've both shared.",
   belowQuestion: "Private until mutual reveal.",

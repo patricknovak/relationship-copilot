@@ -7,7 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buildRedactor } from "@/lib/redact";
 import { assessSafety } from "@/lib/safetyClassifier";
 import { logAudit } from "@/lib/audit";
-import { grokChat, grokModel } from "@/lib/grok";
+import { aiEnabled, grokChat, grokModel } from "@/lib/grok";
+import { claimFreeBlueprint, releaseFreeBlueprint } from "@/lib/freeBlueprint";
 import {
   blueprintSystemPrompt,
   blueprintUserPrompt,
@@ -26,10 +27,13 @@ import type { PromptQuestion, Json } from "@/lib/database.types";
 
 const BLUEPRINT_GAP_MS = 10 * 60 * 1000; // one generation per connection per 10 minutes
 
-// Generate the AI Relationship Blueprint. AI generation is PREMIUM-gated here
-// (defense in depth — the UI also gates). Safety detection runs regardless and
-// is never paywalled: a high-severity signal withholds the AI analysis and
-// surfaces support instead, logging a safety_event for review.
+// Generate the AI Relationship Blueprint. Premium connections generate and
+// regenerate; every other connection gets one free Blueprint, ever (0043),
+// claimed only after the membership and reveal checks below and given back
+// if no Blueprint comes out of it. Entitlement is checked here as well as in
+// the UI. Safety detection runs regardless and is never paywalled: a
+// high-severity signal withholds the AI analysis and surfaces support
+// instead, logging a safety_event for review.
 export async function generateBlueprint(connectionId: string) {
   // Predictable failures redirect back with a message the page renders as a
   // banner — throwing would replace the page with the generic error boundary.
@@ -49,12 +53,16 @@ export async function generateBlueprint(connectionId: string) {
     .maybeSingle();
   if (!conn) redirect("/connections");
 
-  // --- entitlement gate: Premium covers the connection (either member's
-  // plan unlocks the shared Blueprint). No Grok call fires otherwise. ---
+  // The AI provider must be switched on here (production requires the
+  // no-training attestation, lib/grok.ts). Checked first so nobody spends
+  // their free Blueprint, or a Premium click, on a call that cannot run.
+  if (!aiEnabled()) back("aioff");
+
+  // --- entitlement: Premium covers the connection (either member's plan
+  // unlocks the shared Blueprint); otherwise the free one, claimed below. ---
   const { data: isPremium } = await supabase.rpc("connection_has_premium", {
     p_conn: connectionId,
   });
-  if (!isPremium) back("premium");
 
   // Need a revealed onboarding instance so both answers are readable.
   const { data: instance } = await supabase
@@ -71,9 +79,24 @@ export async function generateBlueprint(connectionId: string) {
     .eq("instance_id", instance!.id);
   if (!responses || responses.length < 2) back("notready");
 
+  // Membership is proven (RLS read of the connection and both responses)
+  // and the first set is revealed, so the service role may now claim the
+  // connection's one free Blueprint. The primary key makes it once-only.
+  const admin = createAdminClient();
+  let usedFree = false;
+  if (!isPremium) {
+    const claim = await claimFreeBlueprint(admin, connectionId, user.id);
+    if (claim !== "claimed") back("premium");
+    usedFree = true;
+    await logAudit(user.id, "blueprint.free_claim", connectionId);
+  }
+  // Every exit below that does not produce a Blueprint gives the free one back.
+  const giveBackFree = async () => {
+    if (usedFree) await releaseFreeBlueprint(admin, connectionId);
+  };
+
   // Atomic rate limit after readiness: insert a claim row first, then verify
   // we are the only generation inside the gap (insert-then-verify).
-  const admin = createAdminClient();
   const slot = await claimInsightSlot(
     admin,
     connectionId,
@@ -81,6 +104,7 @@ export async function generateBlueprint(connectionId: string) {
     BLUEPRINT_GAP_MS,
   );
   if (!slot.ok) {
+    await giveBackFree();
     back("ratelimit");
   }
   // slot.ok is true here; redirect()/back is typed loosely under tsc.
@@ -216,6 +240,8 @@ export async function generateBlueprint(connectionId: string) {
       } as Json,
     });
     await logAudit(user.id, "blueprint.withheld_safety", connectionId);
+    // Support was shown instead of a Blueprint, so the free one is not spent.
+    await giveBackFree();
     revalidatePath(`/connections/${connectionId}/blueprint`);
     redirect(`/connections/${connectionId}/blueprint`);
   }
@@ -241,6 +267,7 @@ export async function generateBlueprint(connectionId: string) {
     bp = parseBlueprint(content);
   } catch {
     await releaseInsightClaim(admin, claimId);
+    await giveBackFree();
     back("ai");
     return; // unreachable — for control-flow analysis
   }
@@ -254,7 +281,7 @@ export async function generateBlueprint(connectionId: string) {
       categories: signal.categories,
     } as Json,
   });
-  await logAudit(user.id, "blueprint.generate", connectionId);
+  await logAudit(user.id, "blueprint.generate", connectionId, { free: usedFree });
 
   revalidatePath(`/connections/${connectionId}/blueprint`);
   revalidatePath(`/connections/${connectionId}`);

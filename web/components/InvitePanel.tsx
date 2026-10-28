@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { signInVia } from "@/lib/signInCopy";
 import { markInviteShared, sendEmailInvite } from "@/app/actions/connections";
 import { buildInviteMessage } from "@/lib/invite";
 import { inviteShareTargets } from "@/lib/share";
@@ -119,7 +120,8 @@ export default function InvitePanel({
       <p className="flex items-start gap-2 text-xs text-ink-faint">
         <Icon name="lock" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         The link works once — whoever opens it first becomes your person here.
-        That&apos;s why it belongs in a message, not a public post. Sign-in is Google.
+        That&apos;s why it belongs in a message, not a public post. They sign in
+        with {signInVia()}.
       </p>
     </div>
   );

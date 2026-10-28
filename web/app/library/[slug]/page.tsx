@@ -69,7 +69,7 @@ export default async function ArticlePage({
         Library
       </Link>
       <p className="eyebrow mt-4">
-        {article.framework ? `${article.framework} · ` : ""}From the library
+        {article.framework ? `${article.framework.replace(/_/g, " ")} · ` : ""}From the library
       </p>
       <h1 className="mt-2 text-display-lg">{article.title}</h1>
       {article.summary && (

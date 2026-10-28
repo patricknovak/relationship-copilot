@@ -17,7 +17,7 @@ Relationship Copilot is built around two ideas:
 ## Stack
 
 - **Supabase** — Postgres, Auth, Realtime, Row-Level Security (`supabase/`)
-- **Next.js (App Router) on Vercel** — UI, server actions, route handlers (`web/`)
+- **Next.js (App Router) on a Cloudflare Worker** (built with vinext, region-placed next to the database) — UI, server actions, route handlers, hourly Cron Triggers (`web/`)
 - **Grok (xAI)** — question/insight generation and safety classification, server-side only
 - **Stripe** — freemium billing; safety features are never paywalled
 

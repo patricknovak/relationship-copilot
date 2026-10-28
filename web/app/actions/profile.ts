@@ -112,6 +112,31 @@ export async function setDisplayName(formData: FormData) {
   redirect(`${next}${sep}notice=named`);
 }
 
+// Same as setDisplayName, without navigating: used on the question pages,
+// where a reload would throw away answers that are being typed.
+export async function saveDisplayNameInline(
+  raw: string,
+): Promise<{ error?: string; name?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please sign in again." };
+
+  const displayName = String(raw ?? "").trim().slice(0, 80);
+  if (!displayName) return { error: "Please enter a name first." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_name: displayName })
+    .eq("id", user.id);
+  if (error) return { error: "Couldn't save that just now. Try again in a moment." };
+
+  // No revalidation here: re-rendering this page would unmount the form
+  // (and its confirmation) mid-answer. Other pages read the name fresh.
+  return { name: displayName };
+}
+
 // Account → Notifications. Checkboxes arrive only when checked, so every
 // known kind is written explicitly (unchecked = false). Merged into the
 // user's own preferences blob under RLS; no other key is touched.

@@ -1,9 +1,6 @@
 # Moving relationshipcopilot.com from Vercel to Cloudflare Workers
 
-Status (2026-10-16): **Cutover code is complete** (PRs #82/#83 merged). The Worker is live on `workers.dev` and matches Vercel. Production still runs on Vercel. Three things only Patrick can do stand between here and the cutover (§5):
-1. Paste five server secrets into the Worker.
-2. Swap DNS to the Worker (the agent's Cloudflare token has no DNS permission).
-3. Add two GitHub secrets so CI deploys on merge.
+Status (2026-10-28): **Cutover complete on 2026-10-18.** Production runs on the Worker `relationship-copilot` at relationshipcopilot.com (apex, `www` 308s to it). CI deploys every push to `main` after unit, SQL and e2e tests, and ships only the current tip. Vercel is still provisioned as a rollback until it is retired (`docs/launch-checklist.md`). The history below is kept as the record of how the move was made; the day-to-day operations guide is `docs/RUNBOOK.md`.
 
 Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatible, 0 issues) · Playbook: `docs/CLOUDFLARE_MIGRATION_PLAYBOOK.md`.
 
@@ -39,7 +36,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
   - Scripts `build:vinext`, `start:vinext` and `deploy:vinext`.
   - `next build` still works, so Vercel stays the fallback.
 - **Local gotcha:** run `rm -rf .next` between `npm run build` and `npm run build:vinext` before `npm run typecheck`. vinext rewrites `.next/types/routes.d.ts`, which clashes with `next build`'s validator. CI typechecks a fresh tree first, so it isn't affected.
-- **CI:** Lint plus the Cloudflare build on every PR. `deploy-cloudflare` runs on push to `main` only when `vars.CLOUDFLARE_DEPLOY == 'true'`, and fails fast without the Cloudflare secrets.
+- **CI:** Lint plus the Cloudflare build on every PR. `deploy-cloudflare` runs on every push to `main` after the `web`, `database` and `e2e-core` jobs pass, and deploys only if the commit is still the tip of `main`. (The original `CLOUDFLARE_DEPLOY` gate described below was removed at cutover.)
 - **`web/scripts/cloudflare-env.mjs`:** copies Vercel's production **server** env to Worker secrets without printing values (playbook §8). `NEXT_PUBLIC_*` stay in `web/.env.production` — the script does not push them to GitHub Actions variables (empty GH vars would override the file).
 
 - **Cutover branch (`claude/cloudflare-cutover`):**

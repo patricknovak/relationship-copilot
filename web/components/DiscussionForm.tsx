@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { postDiscussion } from "@/app/actions/prompts";
 import { Icon } from "@/components/ui/Icon";
+import SafetySupport from "@/components/SafetySupport";
 
 // Post-reveal chat composer: clears after sending (the old uncontrolled input
 // kept the sent text, inviting duplicate sends), disables while in flight,
@@ -17,6 +18,7 @@ export default function DiscussionForm({
 }) {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [support, setSupport] = useState<"high" | "elevated" | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -31,6 +33,7 @@ export default function DiscussionForm({
         setError(result.error);
         return;
       }
+      setSupport(result?.safety ? "high" : result?.gentle ? "elevated" : null);
       setBody("");
       router.refresh();
     });
@@ -56,6 +59,11 @@ export default function DiscussionForm({
         </button>
       </div>
       {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+      {support && (
+        <div className="mt-3">
+          <SafetySupport level={support} />
+        </div>
+      )}
     </form>
   );
 }

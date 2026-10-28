@@ -39,11 +39,12 @@ export default async function OnboardingPage({
     <div className="page-narrow has-tabbar">
       <p className="eyebrow">{isFirstRun ? "Welcome" : "Your profile"}</p>
       <h1 className="mt-2 text-display-md">
-        {isFirstRun ? "Set up your profile" : "Edit your profile"}
+        {isFirstRun ? "What should we call you?" : "Edit your profile"}
       </h1>
       <p className="mt-3 text-ink-soft">
-        A few quick things so your connections feel more personal. You can
-        change these anytime.
+        {isFirstRun
+          ? "That's all we need to start. Everything else is optional and can wait until you want it."
+          : "A few things that make your connections feel more personal. You can change these anytime."}
       </p>
 
       <NoticeBanner
@@ -76,8 +77,21 @@ export default async function OnboardingPage({
             className="input mt-1.5"
           />
         </div>
+        </div>
 
-        <div className="mt-5">
+        {/* First run asks for a name only; the rest waits in here. On later
+            edits it is open. Collapsed fields still submit (empty), exactly
+            as before, so saveProfile is unchanged. */}
+        <details
+          open={!isFirstRun}
+          className="group space-y-5 [&>summary::-webkit-details-marker]:hidden"
+        >
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl border border-dashed border-surface-line px-4 py-3 text-sm font-medium text-ink-soft transition hover:border-brand-300 hover:text-ink group-open:hidden">
+            <span>Add more about you (optional)</span>
+            <Icon name="plus" className="h-4 w-4" />
+          </summary>
+        <div className="card">
+        <div>
           <label className="block text-sm font-semibold text-ink" htmlFor="birthday">
             Birthday <span className="font-normal text-ink-faint">(optional)</span>
           </label>
@@ -156,9 +170,10 @@ export default async function OnboardingPage({
             ))}
           </div>
         </fieldset>
+        </details>
 
         <PendingButton className="btn-primary btn-lg w-full" pendingLabel="Saving…">
-          Save and continue
+          {isFirstRun ? "Continue" : "Save and continue"}
           <Icon name="arrow-right" className="h-4 w-4" />
         </PendingButton>
 

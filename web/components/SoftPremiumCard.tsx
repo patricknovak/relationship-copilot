@@ -2,14 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { SOFT_PREMIUM } from "@/lib/firstRevealCopy";
+import { SOFT_FREE_BLUEPRINT, SOFT_PREMIUM } from "@/lib/firstRevealCopy";
 import { Icon } from "@/components/ui/Icon";
 
 const STORAGE_KEY = "rc-soft-premium-after-reveal-dismissed";
 
 // Optional, dismissible Premium path — only after a mutual reveal, never
-// blocking answers/discussion. Local dismiss so it stays soft.
-export default function SoftPremiumCard() {
+// blocking answers/discussion. Local dismiss so it stays soft. While the
+// connection's free Blueprint is unused it points there instead of pricing.
+export default function SoftPremiumCard({
+  freeBlueprintHref = null,
+}: {
+  freeBlueprintHref?: string | null;
+}) {
+  const copy = freeBlueprintHref ? SOFT_FREE_BLUEPRINT : SOFT_PREMIUM;
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -39,21 +45,21 @@ export default function SoftPremiumCard() {
     >
       <h3 className="flex items-center gap-2 font-display text-lg text-ink">
         <Icon name="wand" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
-        {SOFT_PREMIUM.headline}
+        {copy.headline}
       </h3>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-        {SOFT_PREMIUM.body}
+        {copy.body}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Link href="/pricing" className="btn-secondary btn-sm">
-          {SOFT_PREMIUM.primaryCta}
+        <Link href={freeBlueprintHref ?? "/pricing"} className="btn-secondary btn-sm">
+          {copy.primaryCta}
         </Link>
         <button
           type="button"
           onClick={dismiss}
           className="btn-ghost btn-sm"
         >
-          {SOFT_PREMIUM.dismiss}
+          {copy.dismiss}
         </button>
       </div>
     </aside>

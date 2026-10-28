@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { signInVia } from "@/lib/signInCopy";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuthLink } from "@/components/AuthHint";
@@ -125,7 +126,7 @@ export default async function ForPage({
         </AuthLink>
         <p className="mt-3 text-sm text-ink-soft">
           Answer one question each, then reveal your answers together. Sign in
-          with Google to start, free for up to 3 connections.
+          with {signInVia()} to start, free for up to 3 connections.
         </p>
       </section>
 

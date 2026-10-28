@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { logAudit } from "@/lib/audit";
+import { aiEnabled } from "@/lib/grok";
 
 // Start a Stripe Checkout subscription for Premium. The webhook flips the
 // `subscriptions` row once payment completes; entitlement is read from there.
@@ -21,6 +22,10 @@ export async function createCheckout(formData?: FormData) {
   } = await supabase.auth.getUser();
   // Signed-out visitors keep their upgrade intent through the login round-trip.
   if (!user) redirect("/login?next=/pricing");
+
+  // Premium is mostly the AI layer: never take money for it while the AI
+  // provider is switched off here (the pricing page says "opening soon").
+  if (!aiEnabled()) redirect("/pricing?error=soon");
 
   // Already premium? Never start a second concurrent subscription.
   const { data: isPremium } = await supabase.rpc("has_premium", {

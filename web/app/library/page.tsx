@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { signInVia } from "@/lib/signInCopy";
 import Link from "next/link";
 import { AuthLink } from "@/components/AuthHint";
 import { createClient } from "@/lib/supabase/server";
@@ -47,7 +48,7 @@ export default async function LibraryPage() {
           </AuthLink>
           <p className="mt-3 text-sm text-ink-soft">
             Answer one question each, then reveal your answers together. Sign in
-            with Google to start, free for up to 3 connections.
+            with {signInVia()} to start, free for up to 3 connections.
           </p>
         </div>
       </div>

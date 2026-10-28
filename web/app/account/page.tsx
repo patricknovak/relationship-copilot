@@ -9,6 +9,7 @@ import NoticeBanner from "@/components/NoticeBanner";
 import NotificationPrefs from "@/components/NotificationPrefs";
 import PushToggle from "@/components/PushToggle";
 import { parseNotificationPrefs } from "@/lib/notifications";
+import { notificationChannels } from "@/lib/notify";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
 
@@ -188,6 +189,7 @@ export default async function AccountPage({
         <NotificationPrefs
           prefs={notificationPrefs}
           saved={saved === "notifications"}
+          channels={notificationChannels()}
         />
         <PushToggle vapidPublicKey={process.env.VAPID_PUBLIC_KEY?.trim() || null} />
       </div>

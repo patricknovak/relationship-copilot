@@ -446,6 +446,13 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      // 0043: the one free Blueprint per connection. Server-written only.
+      free_blueprint_claims: {
+        Row: { connection_id: string; claimed_by: string | null; claimed_at: string };
+        Insert: { connection_id: string; claimed_by?: string | null; claimed_at?: string };
+        Update: never;
+        Relationships: [];
+      };
       subscriptions: {
         Row: {
           user_id: string;
