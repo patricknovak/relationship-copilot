@@ -15,11 +15,16 @@ the same PR adds 0042–0044, which need Patrick's go.
 
 What only Patrick can do, in this order (each is a few minutes):
 
-1. **Apply migrations 0042, 0043, 0044** to production (Patrick's go, then
-   SQL editor or MCP, in order). 0042 lets the cron create and remind for
-   today's question from the day both people join; 0043 is the free
-   Blueprint table; 0044 is library content (idempotent). The app works
-   without them, but the free Blueprint and the new reads stay dark.
+1. **Migrations 0042–0044.** Patrick's go: "Apply migrations and
+   continue." (2026-10-28, about 04:45 UTC).
+   - [x] 0042 `daily_from_join` applied 2026-10-28 04:46:58 UTC (MCP,
+     recorded in `schema_migrations`).
+   - [x] 0043 `free_blueprint` applied 2026-10-28 04:47:10 UTC (MCP,
+     recorded; `free_blueprint_claims` exists).
+   - [ ] 0044 `library_depth` **not yet applied**: the Supabase connector
+     paused for a confirmation that got no answer in time, and nothing ran.
+     Re-run it (idempotent). The repo file now renders the two numbered
+     step lists as bullets; apply this version.
 2. **Stripe, Relationship account, live mode:** confirm the account is
    activated for live charges; save the **Customer Portal** configuration
    (cancel + update payment method); create the decided prices

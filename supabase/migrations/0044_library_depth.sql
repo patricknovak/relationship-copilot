@@ -180,11 +180,11 @@ When heart rate climbs high enough, people physically struggle to listen. A brea
 
 Some fights leave a mark that a quick "sorry" does not reach. A fuller repair conversation, adapted from Gottman's "aftermath of a fight" exercise, goes in order:
 
-1. **Feelings.** Each person names what they felt, without explaining why yet. "I felt dismissed, and lonely."
-2. **Realities.** Each describes how it looked from their side, and the other summarises it back until it is heard right. Two realities can both be true.
-3. **Triggers.** What old sore spot did this touch? "When I'm interrupted I'm back at my family's dinner table."
-4. **Ownership.** Each names their own part, however small. "I was already stressed and I took it out on you."
-5. **Next time.** One concrete thing each person will do differently.
+- **1. Feelings.** Each person names what they felt, without explaining why yet. "I felt dismissed, and lonely."
+- **2. Realities.** Each describes how it looked from their side, and the other summarises it back until it is heard right. Two realities can both be true.
+- **3. Triggers.** What old sore spot did this touch? "When I'm interrupted I'm back at my family's dinner table."
+- **4. Ownership.** Each names their own part, however small. "I was already stressed and I took it out on you."
+- **5. Next time.** One concrete thing each person will do differently.
 
 The goal is not to agree on what happened. It is for each person to feel understood.
 
@@ -203,11 +203,11 @@ Later work by Sophie Havighurst and colleagues adapted the approach for parents 
 
 **The five steps, adapted for teens**
 
-1. **Notice the emotion, especially the small version.** Teens rarely announce feelings. Irritability, a closed door or "whatever" are often the visible edge of something bigger. Coaching is easiest when the feeling is still small.
-2. **See it as a chance to connect, not a fire to put out.** A teen's distress is an opening. You do not have to fix it, only be with it for a moment.
-3. **Listen and validate before anything else.** Validation means communicating that the feeling makes sense, not that the behaviour was fine. "That sounds really embarrassing" before "well, you shouldn't have posted it".
-4. **Help name the feeling.** Teens often have one word for many feelings ("annoyed"). Offering a more precise word ("it sounds like you felt left out") helps them make sense of it. Offer, don't impose: "is it more like disappointed, or more like hurt?"
-5. **Problem-solve together, with limits where needed.** Only once the feeling has been heard. Ask what they want to do. Keep the non-negotiables (safety, respect) clear and calm. All feelings are acceptable; not all behaviour is.
+- **1. Notice the emotion, especially the small version.** Teens rarely announce feelings. Irritability, a closed door or "whatever" are often the visible edge of something bigger. Coaching is easiest when the feeling is still small.
+- **2. See it as a chance to connect, not a fire to put out.** A teen's distress is an opening. You do not have to fix it, only be with it for a moment.
+- **3. Listen and validate before anything else.** Validation means communicating that the feeling makes sense, not that the behaviour was fine. "That sounds really embarrassing" before "well, you shouldn't have posted it".
+- **4. Help name the feeling.** Teens often have one word for many feelings ("annoyed"). Offering a more precise word ("it sounds like you felt left out") helps them make sense of it. Offer, don't impose: "is it more like disappointed, or more like hurt?"
+- **5. Problem-solve together, with limits where needed.** Only once the feeling has been heard. Ask what they want to do. Keep the non-negotiables (safety, respect) clear and calm. All feelings are acceptable; not all behaviour is.
 
 **Words that open, and words that close**
 
