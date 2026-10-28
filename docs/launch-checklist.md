@@ -21,10 +21,11 @@ What only Patrick can do, in this order (each is a few minutes):
      recorded in `schema_migrations`).
    - [x] 0043 `free_blueprint` applied 2026-10-28 04:47:10 UTC (MCP,
      recorded; `free_blueprint_claims` exists).
-   - [ ] 0044 `library_depth` **not yet applied**: the Supabase connector
-     paused for a confirmation that got no answer in time, and nothing ran.
-     Re-run it (idempotent). The repo file now renders the two numbered
-     step lists as bullets; apply this version.
+   - [x] 0044 `library_depth` applied 2026-10-28 by Patrick in the Supabase
+     SQL Editor (the connector's confirmation timed out twice), recorded in
+     `schema_migrations` afterwards (version 20261028150501). All 18
+     articles verified identical to the repo by md5 of body and summary;
+     live pages serve the new reads; security advisors unchanged.
 2. **Stripe, Relationship account, live mode:** confirm the account is
    activated for live charges; save the **Customer Portal** configuration
    (cancel + update payment method); create the decided prices
@@ -34,7 +35,8 @@ What only Patrick can do, in this order (each is a few minutes):
    test one magic link and one emailed invite end to end.
 4. **Confirm the Worker secrets** (`npx wrangler secret list --name
    relationship-copilot`): `XAI_NO_TRAINING_DPA=true` with `XAI_API_KEY`
-   (otherwise Premium shows "Opening soon"), `RESEND_API_KEY` **and**
+   (confirmed 2026-10-28: live /pricing shows "Upgrade to Premium", which
+   it only does when both are set), `RESEND_API_KEY` **and**
    `NOTIFY_SECRET` (both, or no email), `VAPID_*`, `SENTRY_DSN`,
    `CRON_SECRET`.
 5. **Cloudflare:** the WAF rate-limiting rule on `/login`, `/invite/*` and
