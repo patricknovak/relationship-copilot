@@ -9,6 +9,7 @@ import {
   readStoredConsent,
   shouldPromptForConsent,
   storeConsent,
+  writeConsentCookie,
   type ConsentChoice,
 } from "@/lib/analytics";
 
@@ -38,7 +39,11 @@ export default function CookieConsent() {
   );
 
   useEffect(() => {
-    setDecided(readStoredConsent());
+    const existing = readStoredConsent();
+    setDecided(existing);
+    // Refresh the first-party cookie mirror so request-scoped MP can see a
+    // prior localStorage choice without inventing a DB consent table.
+    if (existing) writeConsentCookie(existing);
   }, []);
 
   const show =

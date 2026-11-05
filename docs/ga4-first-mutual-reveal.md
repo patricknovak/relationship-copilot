@@ -56,10 +56,23 @@ Set in Vercel (Production):
 ```bash
 GA4_MEASUREMENT_ID=G-3HE7V5FTSR
 GA4_API_SECRET=...   # Admin → Data streams → Web stream → Measurement Protocol API secrets
+GA4_CLIENT_ID_SALT=...  # HMAC salt for stable pseudonymous client_id (Worker secret)
 NEXT_PUBLIC_GTM_ID=GTM-NT4DZRHK
 ```
 
-Unset secrets ⇒ tracking no-ops (correct for local/preview).
+Unset Measurement Protocol secrets ⇒ tracking no-ops (correct for local/preview).
+Missing `GA4_CLIENT_ID_SALT` also fails closed (no MP send).
+
+Generate and set the salt on the Worker (from `web/`):
+
+```bash
+openssl rand -hex 32
+npx wrangler secret put GA4_CLIENT_ID_SALT --name relationship-copilot
+```
+
+Funnel MP events fire only when the acting user's analytics consent cookie is
+`granted` (mirrors the banner localStorage choice). Denied or unknown → no send.
+Cron / other-partner paths have no consent record → no send.
 
 ## Admin: mark as Key event ON
 

@@ -12,6 +12,7 @@ import {
   scheduleGa4Event,
   shouldTrackFunnelStep,
 } from "@/lib/ga4";
+import { readRequestAnalyticsConsent } from "@/lib/analyticsConsent.server";
 import { claimAndTrackFirstQuestionAnswered } from "@/lib/funnelTrack";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
@@ -219,11 +220,14 @@ export async function submitResponse(input: {
 
   // Funnel: first onboarding answer on this connection (0041), then the
   // solo-before-join sibling (0033). Once-only claims; anonymous GA4 events.
-  // Failures never block the submit path.
+  // Failures never block the submit path. MP gated on this user's consent.
+  const analyticsConsent = await readRequestAnalyticsConsent();
   if (instance.kind === "onboarding") {
     await claimAndTrackFirstQuestionAnswered(
       supabase,
       instance.connection_id,
+      user.id,
+      analyticsConsent,
     );
 
     if (!revealed) {
@@ -243,7 +247,11 @@ export async function submitResponse(input: {
         if (stepError)
           console.error("[ga4] claim_funnel_step failed", stepError.message);
         else if (shouldTrackFunnelStep(claimedStep === true))
-          scheduleGa4Event(ANSWERED_BEFORE_JOIN);
+          scheduleGa4Event(
+            ANSWERED_BEFORE_JOIN,
+            {},
+            { userId: user.id, analyticsConsent },
+          );
       }
     }
   }
@@ -277,7 +285,12 @@ export async function submitResponse(input: {
         claimError.message,
       );
     } else if (shouldTrackFirstMutualReveal(claimed === true)) {
-      scheduleFirstMutualRevealCompleted();
+      // Per-user: only the acting member's consent applies on this path.
+      // Partner has no server-side consent record → never send for them here.
+      scheduleFirstMutualRevealCompleted({
+        userId: user.id,
+        analyticsConsent,
+      });
     }
   }
 
