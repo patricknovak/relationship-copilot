@@ -16,7 +16,7 @@ next-env.d.ts
 .env
 .env.local
 .env.*.local
-# Vercel env pull from the Cloudflare move (script now in docs/CLOUDFLARE_MIGRATION_PLAYBOOK.md Appendix A); real secrets.
+# Vercel env pull from the Cloudflare move (script now in docs/archive/CLOUDFLARE_MIGRATION_PLAYBOOK.md Appendix A); real secrets.
 .env.cloudflare
 
 # IDE
