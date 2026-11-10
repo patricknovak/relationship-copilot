@@ -33,7 +33,7 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 
 ## 3. Verify a deploy
 
-1. GitHub → Actions → the CI run for the merge commit: `web`, `database`, `e2e-core` green, then `deploy-cloudflare`.
+1. GitHub → Actions → the CI run for the merge commit: `web`, `database`, `e2e-core`, `e2e-vinext` green, then `deploy-cloudflare`.
 2. `curl -s https://relationshipcopilot.com/api/health` returns `{"ok":true,"commit":"<sha>"}`. The sha must be the tip of `main`. If it is older, a deploy was skipped or failed: re-run the `deploy-cloudflare` job on the tip commit.
 3. Spot-check `/`, `/pricing`, `/login`, `/safety` return 200.
 
