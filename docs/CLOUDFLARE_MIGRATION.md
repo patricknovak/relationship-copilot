@@ -37,7 +37,7 @@ Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatib
   - `next build` still works, so Vercel stays the fallback.
 - **Local gotcha:** run `rm -rf .next` between `npm run build` and `npm run build:vinext` before `npm run typecheck`. vinext rewrites `.next/types/routes.d.ts`, which clashes with `next build`'s validator. CI typechecks a fresh tree first, so it isn't affected.
 - **CI:** Lint plus the Cloudflare build on every PR. `deploy-cloudflare` runs on every push to `main` after the `web`, `database` and `e2e-core` jobs pass, and deploys only if the commit is still the tip of `main`. (The original `CLOUDFLARE_DEPLOY` gate described below was removed at cutover.)
-- **`web/scripts/cloudflare-env.mjs`:** copies Vercel's production **server** env to Worker secrets without printing values (playbook §8). `NEXT_PUBLIC_*` stay in `web/.env.production` — the script does not push them to GitHub Actions variables (empty GH vars would override the file).
+- **`web/scripts/cloudflare-env.mjs`** (removed after the cutover; the same script is Appendix A of the playbook): copied Vercel's production **server** env to Worker secrets without printing values (playbook §8). `NEXT_PUBLIC_*` stay in `web/.env.production` — the script does not push them to GitHub Actions variables (empty GH vars would override the file).
 
 - **Cutover branch (`claude/cloudflare-cutover`):**
   - `web/.env.production` holds the public `NEXT_PUBLIC_*` build values (Supabase URL and anon key, site URL, Stripe price, auth providers, GTM). They ship in the browser bundle anyway; the values were checked against Vercel's live bundles. CI no longer passes them as repo variables, because an unset variable arrives empty and overrides the file.

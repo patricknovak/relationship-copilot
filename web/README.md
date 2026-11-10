@@ -1,12 +1,12 @@
 # Relationship Copilot — Web
 
-Next.js (App Router) frontend for the Supabase/Next.js/Grok re-platform. See
+Next.js (App Router) app for Relationship Copilot. See
 `../NEW_ARCHITECTURE.md` for the overall design and the database foundation.
 
 ## Setup
 
 ```bash
-cp .env.example .env.local   # fill in Supabase (+ later Grok/Stripe) values
+cp .env.example .env.local   # fill in Supabase, Stripe and xAI values
 npm install
 npm run dev                  # http://localhost:3000
 ```
@@ -22,23 +22,17 @@ npm run dev                  # http://localhost:3000
 | `npm test` | Vitest unit tests (`lib/**/*.test.ts`) |
 | `npm run test:e2e` | Playwright against `next start` (build first). Optional `E2E_STORAGE_STATE` for a signed-in hub check; leave `RESEND_API_KEY` unset so drip/notification mail stays NO SEND. |
 
-## What's here so far
+## What's here
 
-- **Supabase auth wiring** (`lib/supabase/*`): browser, server (RLS as the
-  user), service-role admin (server-only, bypasses RLS), and a middleware
-  session refresher that guards protected routes.
-- **Auth**: passwordless magic-link + Google OAuth (`/login`,
-  `/auth/callback`).
-- **Always-free Safety page** (`/safety`) — crisis resources, never paywalled,
-  reachable from every screen via the header/footer.
-- **Landing shell** (`/`).
-
-## Next
-
-See `../docs/ROADMAP.md`. The sections above describe the first slice; the
-app now covers connections, onboarding + mutual reveal, the daily loop,
-electives, the library, the premium AI Blueprint/digest, billing, account
-lifecycle, and notification email (`lib/notify.ts`, `lib/email.ts`).
+Connections and invites, the 20-question onboarding with the mutual reveal,
+the daily question loop, electives (quizzes, challenges), the library, the
+premium AI Blueprint and weekly digest, Stripe billing, account export and
+deletion, and notification email and web push (`lib/notify.ts`,
+`lib/email.ts`, `lib/webPush.ts`). Supabase clients live in `lib/supabase/*`
+(browser, server as the user, and the RLS-bypassing service-role admin
+client, server-only). Production is a Cloudflare Worker built with vinext
+(`npm run build:vinext`); see `../docs/RUNBOOK.md` for operations and
+`../docs/ROADMAP.md` for what's next.
 
 ## Auth provider config
 

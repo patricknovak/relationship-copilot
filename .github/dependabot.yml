@@ -12,6 +12,12 @@ updates:
           - "react-dom"
           - "@types/react"
           - "@types/react-dom"
+      # @vinext/cloudflare peers on a matching vinext minor, so separate PRs
+      # fail npm ci until both land (#151-#158, #167/#168).
+      vinext:
+        patterns:
+          - "vinext"
+          - "@vinext/*"
 
   - package-ecosystem: github-actions
     directory: /

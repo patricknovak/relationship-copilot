@@ -6,8 +6,7 @@ the spine of the product, for *all* relationship types (romantic, friend,
 family, coworker, parent–teen). Full design lives in the approved plan.
 
 > The legacy Express/React monorepo (`server/`, `client/`, `shared/`) has been
-> removed from `main` (preserved in git history at commit `f5704eb`, tag
-> `legacy-monorepo`); its agent integration spec is kept as a design reference
+> removed from `main` (preserved in git history at commit `f5704eb`); its agent integration spec is kept as a design reference
 > in `docs/agent-sdk.md`.
 
 ## Stack
@@ -17,9 +16,9 @@ family, coworker, parent–teen). Full design lives in the approved plan.
 - **Grok (xAI)** — question/insight generation (OpenAI-compatible API), server-side only.
 - **Stripe** — freemium billing (most core features free; AI behind a subscription).
 
-## What's implemented so far (this PR)
+## Database foundation (the first migrations)
 
-The **database foundation** — fully migrated and tested:
+The core schema, fully migrated and tested:
 
 | File | Contents |
 | --- | --- |
@@ -97,7 +96,8 @@ app in `web/`:
   safety classification (regex fast path + escalate-only LLM pass).
 
 Safety-critical pure logic (redaction, safety detection, blueprint parsing,
-streak, compatibility) is unit-tested with vitest.
+streak) is unit-tested with vitest; zodiac compatibility is computed in SQL
+(`connection_zodiac_compat`, migration 0014).
 
 ## After the MVP (October 2026)
 

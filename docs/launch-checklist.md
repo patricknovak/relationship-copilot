@@ -1,6 +1,8 @@
 # Go-live checklist
 
-Status refreshed 2026-10-28 (top section). Originally audited 2026-07-31 against the real infrastructure (Supabase project
+Status refreshed 2026-10-28 (top section); items that have since changed are
+marked with their date (last pass 2026-11-10). The live, day-to-day list is
+the Launch checklist routine's latest file, not this document. Originally audited 2026-07-31 against the real infrastructure (Supabase project
 `digbnrhwsifmycrxyquo`, production at https://relationshipcopilot.com);
 code status refreshed 2026-10-18 after the Cloudflare cutover and the
 market / site / stack reviews (see `docs/ROADMAP.md` §5 for the ordered
@@ -41,15 +43,16 @@ What only Patrick can do, in this order (each is a few minutes):
    `CRON_SECRET`.
 5. **Cloudflare:** the WAF rate-limiting rule on `/login`, `/invite/*` and
    `/auth/*` (§5 below).
-6. **Decide `mission_control_counts`** (§5): commit it restricted to the
-   service role, or drop it.
+6. ~~**Decide `mission_control_counts`**~~ Decided 2026-10-31: keep it
+   anon-executable (passcode-gated; the Mission Control dashboard calls it
+   daily). It is still not in `supabase/migrations/` (§5).
 7. **Supabase:** check Database → Backups; turn on point-in-time recovery
    before real users arrive (`docs/RUNBOOK.md` §6).
 8. **Legal review** of `/privacy` and `/terms`, and the safety-resource
    review (sign-offs below).
 9. **Run the smoke test** in `docs/RUNBOOK.md` §9 with two real accounts.
-10. Housekeeping, any time: unschedule pg_cron `assign-daily-prompts`,
-    retire Vercel, delete stale branches.
+10. Housekeeping, any time: retire Vercel, delete stale branches. (pg_cron
+    `assign-daily-prompts` was unscheduled 2026-11-05.)
 
 ## Already done (verified)
 
@@ -254,7 +257,7 @@ product behaves exactly as before without them.
       indexes), 0039 (one article title), 0040 (daily reminder selection in
       SQL, 12-char invite codes). #121–#123 are merged and deployed; #124
       can merge any time since 0040 is already in.
-- [ ] **Merge #124, #126 and #127.** #127 matters first: three merges in a
+- [x] **Merge #124, #126 and #127.** (All merged.) #127 matters first: three merges in a
       row on 2026-10-18 cancelled the deploy of the newest commit (GitHub
       cancels the older *pending* job in a concurrency group), so nothing
       shipped until the job was re-run by hand. Until it is merged, after
@@ -274,7 +277,8 @@ product behaves exactly as before without them.
       migration 0041 (with the passcode moved to a Worker secret and the
       function restricted to `service_role`) or drop it. Decide before the
       next migration so `supabase/tests/run.sh` keeps matching production.
-- [ ] **Retire the pg_cron `assign-daily-prompts` job** once Workers Logs
+- [x] **Retire the pg_cron `assign-daily-prompts` job** (unscheduled 2026-11-05 at Patrick's go;
+      restore with `select cron.schedule('assign-daily-prompts', '5 * * * *', 'select assign_daily_prompts();');`) once Workers Logs
       show `cron_tick` for `/api/cron/daily-reminder` with `created` > 0 on a
       day a pair was active. (Before 2026-10-28 the route returned early when
       no notification channel was configured, so `created` could never rise;
@@ -283,14 +287,11 @@ product behaves exactly as before without them.
 - [ ] **Retire Vercel.** Project settings → Integrations → remove the
       Supabase integration first (so it stops syncing env vars), then delete
       the project. Keep the DNS as it is (Cloudflare proxied to the Worker).
-- [ ] **Delete the stale remote branches** the merge pass left (their PRs
-      are merged): `claude/cloudflare-cutover`, `claude/decisions-oct18`,
-      `claude/digest-on-visit`, `claude/post-cutover`,
-      `claude/post-cutover-fixes`, `claude/relationship-copilot-review-y373ct`,
-      `claude/relationship-program-review-3ixZU`, `claude/sentry-worker`,
-      `cursor/stripe-api-version-fbe0`, plus any `cursor/*` or `dependabot/*`
-      branch whose PR is closed. `git push origin --delete <branch>` for
-      each; branch deletion is blocked from the cloud session.
+- [ ] **Delete the stale remote branches.** As of 2026-11-10, 33
+      `claude/*` and `cursor/*` branches are fully merged (every one except
+      `cursor/ga4-stable-client-id-fbe0`, which is open PR #137). Then turn
+      on Settings → General → "Automatically delete head branches" so they
+      stop piling up. Branch deletion is blocked from the cloud session.
 
 ## Error alerting (Sentry, decided 2026-10-18)
 

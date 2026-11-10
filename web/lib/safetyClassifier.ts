@@ -114,7 +114,9 @@ export async function classifyWithModel(
 // our boundary" invariant) and take the stricter verdict.
 export async function assessSafety(
   rawText: string,
-  redactForModel: (t: string) => string = (t) => t,
+  // Required, not defaulted: a default would let a caller send raw text to
+  // the provider by omission (CLAUDE.md invariant 2).
+  redactForModel: (t: string) => string,
 ): Promise<SafetySignal> {
   const fast = detectSafetySignals(rawText);
   if (fast.severity === "high") return fast;

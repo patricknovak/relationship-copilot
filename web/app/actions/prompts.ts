@@ -271,7 +271,7 @@ export async function submitResponse(input: {
       { p_connection_id: connectionId },
     );
     if (claimError) {
-      // No connection/user IDs — surfaces a missing 0017 migration in Vercel logs.
+      // No connection/user IDs — surfaces a missing 0017 migration in Workers Logs.
       console.error(
         "[ga4] claim_first_mutual_reveal_ga4 failed",
         claimError.message,
