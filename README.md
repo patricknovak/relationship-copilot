@@ -79,7 +79,3 @@ The original Express/React monorepo (`server/`, `client/`, `shared/`) was
 superseded by this stack and removed; it is preserved in git history (last
 present at commit `f5704eb`) and its agent integration
 spec lives on in [docs/archive/agent-sdk.md](docs/archive/agent-sdk.md).
-
-## License
-
-MIT — see [LICENSE](LICENSE).
