@@ -5,7 +5,7 @@
 - `web/` — Next.js (App Router) + TypeScript + Tailwind. The product.
 - `supabase/migrations/` — Postgres schema, RLS policies, seed content. Applied in filename order.
 - `supabase/tests/` — SQL tests runnable against plain Postgres via `supabase/tests/run.sh` (stubs fake `auth.uid()` etc.).
-- `docs/agent-sdk.md` — design reference from the removed legacy platform (tag `legacy-monorepo`).
+- `docs/agent-sdk.md` — design reference from the removed legacy platform (git history, commit `f5704eb`).
 
 ## Commands
 

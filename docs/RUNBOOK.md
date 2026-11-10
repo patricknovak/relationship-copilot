@@ -9,7 +9,7 @@ Written 2026-10-28. Keep it short and true; update it when the setup changes.
 | --- | --- | --- |
 | Web app, server actions, API routes | Cloudflare Worker `relationship-copilot` | relationshipcopilot.com (apex); `www` 308s to apex. Placed in `aws:us-east-1`, next to the database. |
 | Hourly jobs | Worker Cron Triggers | `:20` → `/api/cron/daily-reminder` (creates today's question for joined pairs, then optional reminders). `:40` → `/api/cron/turn-reminder`. Both idempotent. |
-| Database, auth, realtime | Supabase project `digbnrhwsifmycrxyquo` (us-east-1, Pro plan) | RLS is the security boundary. pg_cron still runs `assign-daily-prompts` at `:05` until it is retired (harmless duplicate). |
+| Database, auth, realtime | Supabase project `digbnrhwsifmycrxyquo` (us-east-1, Pro plan) | RLS is the security boundary. The old pg_cron `assign-daily-prompts` job was unscheduled on 2026-11-05; the Worker cron now creates daily questions. |
 | Payments | Stripe, account "Relationship" | Webhook → `/api/stripe/webhook` (`checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`). |
 | Email | Resend | Auth mail via Supabase custom SMTP; notification mail via the Resend API from the Worker. |
 | AI | xAI (Grok) | Server-side only, redacted first, safety-screened. Refused in production unless `XAI_NO_TRAINING_DPA=true`. |

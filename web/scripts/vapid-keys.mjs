@@ -7,9 +7,8 @@
 //                                            # for VAPID_PUBLIC_KEY and
 //                                            # VAPID_PRIVATE_KEY on the Worker
 //
-// For Vercel (until the cutover), add the same two values as Sensitive env
-// vars; run with --print-private to see the private key once, in a private
-// terminal. Rotating the pair silently retires every existing browser
+// --print-private shows the private key once (private terminal only).
+// Rotating the pair silently retires every existing browser
 // subscription (people turn notifications on again from Account).
 import { execFileSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";

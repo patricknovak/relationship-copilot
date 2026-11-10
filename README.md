@@ -49,7 +49,7 @@ Apply `supabase/migrations/*.sql` to your Supabase project in filename order.
 ### Tests
 
 ```bash
-# App unit tests (safety, redaction, blueprint parsing, streak, compat)
+# App unit tests (safety, redaction, blueprint parsing, streak, …)
 cd web && npm test && npm run typecheck
 
 # Database: migrations + RLS reveal-gate tests against a throwaway Postgres
@@ -77,7 +77,7 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres ./supabase/test
 
 The original Express/React monorepo (`server/`, `client/`, `shared/`) was
 superseded by this stack and removed; it is preserved in git history (last
-present at commit `f5704eb`, tag `legacy-monorepo`) and its agent integration
+present at commit `f5704eb`) and its agent integration
 spec lives on in [docs/agent-sdk.md](docs/agent-sdk.md).
 
 ## License
