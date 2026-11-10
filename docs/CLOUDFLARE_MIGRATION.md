@@ -2,7 +2,7 @@
 
 Status (2026-10-28): **Cutover complete on 2026-10-18.** Production runs on the Worker `relationship-copilot` at relationshipcopilot.com (apex, `www` 308s to it). CI deploys every push to `main` after unit, SQL and e2e tests, and ships only the current tip. Vercel is still provisioned as a rollback until it is retired (`docs/launch-checklist.md`). The history below is kept as the record of how the move was made; the day-to-day operations guide is `docs/RUNBOOK.md`.
 
-Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatible, 0 issues) · Playbook: `docs/CLOUDFLARE_MIGRATION_PLAYBOOK.md`.
+Worker: `relationship-copilot` · Path: **vinext** (`vinext check`: 98% compatible, 0 issues) · Playbook: `docs/archive/CLOUDFLARE_MIGRATION_PLAYBOOK.md`.
 
 ## 1. Inventory (Phase 0)
 

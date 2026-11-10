@@ -7,7 +7,7 @@ family, coworker, parent–teen). Full design lives in the approved plan.
 
 > The legacy Express/React monorepo (`server/`, `client/`, `shared/`) has been
 > removed from `main` (preserved in git history at commit `f5704eb`); its agent integration spec is kept as a design reference
-> in `docs/agent-sdk.md`.
+> in `docs/archive/agent-sdk.md`.
 
 ## Stack
 

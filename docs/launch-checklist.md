@@ -45,7 +45,8 @@ What only Patrick can do, in this order (each is a few minutes):
    `/auth/*` (§5 below).
 6. ~~**Decide `mission_control_counts`**~~ Decided 2026-10-31: keep it
    anon-executable (passcode-gated; the Mission Control dashboard calls it
-   daily). It is still not in `supabase/migrations/` (§5).
+   daily). Recorded in the repo as migration 0045 (already in production;
+   do not apply).
 7. **Supabase:** check Database → Backups; turn on point-in-time recovery
    before real users arrive (`docs/RUNBOOK.md` §6).
 8. **Legal review** of `/privacy` and `/terms`, and the safety-resource
@@ -271,12 +272,10 @@ product behaves exactly as before without them.
       per 10 seconds, action Block for 10 seconds. Invite codes are now 12
       characters (60 bits), so this is belt and braces against enumeration,
       and it also throttles magic-link spam.
-- [ ] **Schema drift: `public.mission_control_counts`.** Production has
-      this function (anon-executable, `SECURITY DEFINER`, passcode-gated
-      aggregate counts) and the repository does not. Either commit it as
-      migration 0041 (with the passcode moved to a Worker secret and the
-      function restricted to `service_role`) or drop it. Decide before the
-      next migration so `supabase/tests/run.sh` keeps matching production.
+- [x] **Schema drift: `public.mission_control_counts`.** Decided
+      2026-10-31: keep it anon-executable and passcode-gated. Recorded as
+      migration 0045 on 2026-11-10 from the live definitions; it is already
+      in production, so do not apply it.
 - [x] **Retire the pg_cron `assign-daily-prompts` job** (unscheduled 2026-11-05 at Patrick's go;
       restore with `select cron.schedule('assign-daily-prompts', '5 * * * *', 'select assign_daily_prompts();');`) once Workers Logs
       show `cron_tick` for `/api/cron/daily-reminder` with `created` > 0 on a

@@ -20,7 +20,7 @@ npm run dev                  # http://localhost:3000
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest unit tests (`lib/**/*.test.ts`) |
-| `npm run test:e2e` | Playwright against `next start` (build first). Optional `E2E_STORAGE_STATE` for a signed-in hub check; leave `RESEND_API_KEY` unset so drip/notification mail stays NO SEND. |
+| `npm run test:e2e` | Playwright against `next start` (build first), or against the Worker with `E2E_TARGET=vinext` after `npm run build:vinext` (CI runs both). Optional `E2E_STORAGE_STATE` for a signed-in hub check; leave `RESEND_API_KEY` unset so drip/notification mail stays NO SEND. |
 
 ## What's here
 

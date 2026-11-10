@@ -78,8 +78,4 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres ./supabase/test
 The original Express/React monorepo (`server/`, `client/`, `shared/`) was
 superseded by this stack and removed; it is preserved in git history (last
 present at commit `f5704eb`) and its agent integration
-spec lives on in [docs/agent-sdk.md](docs/agent-sdk.md).
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+spec lives on in [docs/archive/agent-sdk.md](docs/archive/agent-sdk.md).
