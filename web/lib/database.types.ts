@@ -512,6 +512,28 @@ export interface Database {
         Args: { p_code: string };
         Returns: boolean;
       };
+      // Mission Control dashboard only (migration 0045): passcode-gated
+      // aggregate counts. Not called by the app.
+      mission_control_counts: {
+        Args: {
+          p_yesterday_start: string;
+          p_yesterday_end: string;
+          p_last7_start: string;
+          p_last7_end: string;
+          p_passcode: string;
+        };
+        Returns: {
+          signups_yesterday: number;
+          signups_7d: number;
+          signups_all: number;
+          signup_starts_yesterday: number;
+          signup_starts_7d: number;
+          signup_starts_all: number;
+          reveals_yesterday: number;
+          reveals_7d: number;
+          reveals_all: number;
+        }[];
+      };
       // Web push (migration 0034): the caller's own device rows only.
       save_push_subscription: {
         Args: { p_endpoint: string; p_p256dh: string; p_auth: string };
