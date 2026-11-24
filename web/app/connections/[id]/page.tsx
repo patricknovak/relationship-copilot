@@ -30,7 +30,17 @@ import {
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
-import { dailyCardCopy, dailyState, todayIn } from "@/lib/dailyState";
+import {
+  CATCH_UP_WINDOW_DAYS,
+  catchUpCopy,
+  catchUpDailies,
+  dailyCardCopy,
+  dailyState,
+  formatDay,
+  shiftDate,
+  todayIn,
+} from "@/lib/dailyState";
+import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
 import TimezoneSync from "@/components/TimezoneSync";
 import SharedGoals from "@/components/SharedGoals";
 import { questionsInviteCopy } from "@/lib/questionsCta";
@@ -316,6 +326,51 @@ export default async function ConnectionPage({
     }
   }
 
+  // Earlier days waiting on me. A new question opens every local day, so a
+  // pair who answer on different days never land on the same one: their
+  // answer sits on an earlier instance while this page shows me today's.
+  // List those so the reveal can still happen. Same reads as today's card:
+  // my own response rows under RLS, and the boolean-only "they answered"
+  // signal, so nothing here sees their words early.
+  let catchUp: { id: string; text: string; day: string }[] = [];
+  if (dailyOpen && user) {
+    const { data: openPast } = await supabase
+      .from("prompt_instances")
+      .select("id, status, scheduled_for, questions")
+      .eq("connection_id", id)
+      .eq("kind", "daily")
+      .eq("status", "open")
+      .lt("scheduled_for", localToday)
+      .gte("scheduled_for", shiftDate(localToday, -CATCH_UP_WINDOW_DAYS))
+      .order("scheduled_for", { ascending: false });
+    const pastIds = (openPast ?? []).map((i) => i.id);
+    if (pastIds.length) {
+      const { data: minePast } = await supabase
+        .from("prompt_responses")
+        .select("instance_id")
+        .in("instance_id", pastIds)
+        .eq("user_id", user.id);
+      const answeredByMe = new Set((minePast ?? []).map((r) => r.instance_id));
+      const answeredByThem = await fetchOthersHaveAnswered(
+        supabase,
+        pastIds.filter((pid) => !answeredByMe.has(pid)),
+      );
+      catchUp = catchUpDailies({
+        instances: openPast ?? [],
+        today: localToday,
+        answeredByMe,
+        answeredByThem,
+      }).map((i) => ({
+        id: i.id,
+        text: Array.isArray(i.questions)
+          ? ((i.questions as PromptQuestion[])[0]?.text ?? "")
+          : "",
+        day: formatDay(i.scheduled_for!),
+      }));
+    }
+  }
+  const catchUpText = catchUp.length ? catchUpCopy(catchUp.length, themName) : null;
+
   // One suggested quiz or challenge the pair hasn't started, rotating
   // weekly so the hub keeps offering something new without nagging.
   let suggestion: { id: string; kind: string; title: string; description: string | null } | null = null;
@@ -446,6 +501,34 @@ export default async function ConnectionPage({
               />
             )}
           </div>
+        </section>
+      )}
+      {catchUpText && (
+        <section id="catch-up" className="card mt-4 scroll-mt-24">
+          <div className="flex items-center justify-between gap-3">
+            <p className="eyebrow">Waiting on you</p>
+            <span className="pill-action">Your turn</span>
+          </div>
+          <h2 className="mt-3 text-base font-sans font-semibold tracking-normal">
+            {catchUpText.headline}
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">{catchUpText.body}</p>
+          <ul className="mt-3 space-y-2">
+            {catchUp.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/connections/${id}/prompts/${c.id}`}
+                  className="flex items-center gap-3 rounded-2xl border border-surface-line px-4 py-3 text-sm transition hover:border-brand-300"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs text-ink-faint">{c.day}</span>
+                    <span className="block truncate font-medium text-ink">{c.text}</span>
+                  </span>
+                  <Icon name="chevron-right" className="h-5 w-5 shrink-0 text-ink-faint" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
       {!today && (

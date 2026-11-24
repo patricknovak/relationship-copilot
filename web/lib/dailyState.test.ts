@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  catchUpCopy,
+  catchUpDailies,
+  dailyHeading,
+  formatDay,
+  shiftDate,
   dailyBadge,
   dailyCardCopy,
   dailyState,
@@ -130,5 +135,109 @@ describe("firstSetBadge", () => {
     expect(firstSetBadge("none", true)?.label).toBe("First questions");
     expect(firstSetBadge("answer", false)).toBeNull();
     expect(firstSetBadge("revealed", true)).toBeNull();
+  });
+});
+
+describe("catchUpDailies", () => {
+  const today = "2026-11-24";
+  const inst = (id: string, scheduled_for: string | null, status = "open") => ({
+    id,
+    scheduled_for,
+    status,
+  });
+
+  it("lists earlier open days they answered and I have not, newest first", () => {
+    // The production case this was written for: one person answered three
+    // days running while the other was away, and the hub only ever showed
+    // the returning person today's fresh question.
+    const out = catchUpDailies({
+      instances: [
+        inst("d19", "2026-11-19"),
+        inst("d20", "2026-11-20"),
+        inst("d21", "2026-11-21"),
+        inst("d22", "2026-11-22"), // nobody answered
+        inst("d24", today), // today's card handles this one
+      ],
+      today,
+      answeredByMe: new Set(),
+      answeredByThem: new Set(["d19", "d20", "d21", "d24"]),
+    });
+    expect(out.map((i) => i.id)).toEqual(["d21", "d20", "d19"]);
+  });
+
+  it("leaves out days I already answered, revealed days, and undated sets", () => {
+    const out = catchUpDailies({
+      instances: [
+        inst("mine", "2026-11-20"),
+        inst("revealed", "2026-11-21", "revealed"),
+        inst("undated", null),
+      ],
+      today,
+      answeredByMe: new Set(["mine"]),
+      answeredByThem: new Set(["mine", "revealed", "undated"]),
+    });
+    expect(out).toEqual([]);
+  });
+
+  it("never lists today or a future date (connection zone ahead of UTC)", () => {
+    const out = catchUpDailies({
+      instances: [inst("today", today), inst("tomorrow", "2026-11-25")],
+      today,
+      answeredByMe: new Set(),
+      answeredByThem: new Set(["today", "tomorrow"]),
+    });
+    expect(out).toEqual([]);
+  });
+
+  it("caps the list", () => {
+    const instances = Array.from({ length: 9 }, (_, i) =>
+      inst(`d${i}`, shiftDate(today, -(i + 1))),
+    );
+    const all = new Set(instances.map((i) => i.id));
+    expect(
+      catchUpDailies({ instances, today, answeredByMe: new Set(), answeredByThem: all }),
+    ).toHaveLength(5);
+    expect(
+      catchUpDailies({
+        instances,
+        today,
+        answeredByMe: new Set(),
+        answeredByThem: all,
+        limit: 2,
+      }).map((i) => i.id),
+    ).toEqual(["d0", "d1"]);
+  });
+});
+
+describe("shiftDate / formatDay / dailyHeading", () => {
+  it("shifts calendar dates across month and year ends", () => {
+    expect(shiftDate("2026-11-24", -30)).toBe("2026-10-25");
+    expect(shiftDate("2026-01-01", -1)).toBe("2025-12-31");
+    expect(shiftDate("2026-02-28", 1)).toBe("2026-03-01");
+  });
+
+  it("formats a calendar date without drifting a day", () => {
+    expect(formatDay("2026-11-19")).toBe("November 19");
+    expect(formatDay("2026-01-01")).toBe("January 1");
+    expect(formatDay("not-a-date")).toBe("not-a-date");
+  });
+
+  it("calls only the current local day today's question", () => {
+    expect(dailyHeading("2026-11-24", "2026-11-24")).toBe("Today's question");
+    expect(dailyHeading("2026-11-19", "2026-11-24")).toBe("Question from November 19");
+    expect(dailyHeading(null, "2026-11-24")).toBe("Today's question");
+  });
+});
+
+describe("catchUpCopy", () => {
+  it("names the other person and counts", () => {
+    expect(catchUpCopy(1, "Sam").headline).toBe("Sam answered an earlier question.");
+    expect(catchUpCopy(3, "Sam").headline).toBe("Sam answered 3 earlier questions.");
+    expect(catchUpCopy(3, "Sam").body).toContain("What Sam wrote stays private");
+  });
+
+  it("falls back to they", () => {
+    expect(catchUpCopy(2, null).headline).toBe("They answered 2 earlier questions.");
+    expect(catchUpCopy(2, "  ").body).toContain("What they wrote");
   });
 });
