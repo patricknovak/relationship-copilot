@@ -4,6 +4,7 @@ import {
   isInviteCodeFormat,
   smsHref,
   whatsappHref,
+  inviteExpired,
 } from "./invite";
 
 const URL_ = "https://relationshipcopilot.com/invite/ABC123";
@@ -80,5 +81,23 @@ describe("share hrefs", () => {
 
   it("builds a wa.me link with encoded text", () => {
     expect(whatsappHref("a b")).toBe("https://wa.me/?text=a%20b");
+  });
+});
+
+describe("inviteExpired", () => {
+  const now = new Date("2026-11-24T12:00:00Z");
+
+  it("is true at and after the expiry instant", () => {
+    // sendEmailInvite used to email a link that accept_invite would refuse.
+    expect(inviteExpired("2026-11-24T11:59:59Z", now)).toBe(true);
+    expect(inviteExpired("2026-11-24T12:00:00Z", now)).toBe(true);
+    expect(inviteExpired("2026-09-28T00:00:00+00:00", now)).toBe(true);
+  });
+
+  it("is false before expiry and when no expiry is recorded", () => {
+    expect(inviteExpired("2026-12-05T00:00:00Z", now)).toBe(false);
+    expect(inviteExpired(null, now)).toBe(false);
+    expect(inviteExpired(undefined, now)).toBe(false);
+    expect(inviteExpired("not a date", now)).toBe(false);
   });
 });

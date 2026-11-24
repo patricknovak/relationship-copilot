@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import { INVITE_CODE_LENGTH } from "@/lib/invite";
+import { INVITE_CODE_LENGTH, inviteExpired } from "@/lib/invite";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -317,11 +317,18 @@ export async function sendEmailInvite(
   // simply finds nothing. The invite must still be open (code unburned).
   const { data: conn } = await supabase
     .from("connections")
-    .select("id, invite_code")
+    .select("id, invite_code, invite_expires_at, status")
     .eq("id", connectionId)
     .maybeSingle();
-  if (!conn?.invite_code) {
+  if (!conn?.invite_code || conn.status === "archived" || conn.status === "blocked") {
     return { error: "This connection is no longer accepting invites." };
+  }
+  // An expired code still sits on the row; emailing it would send a link
+  // the join would refuse.
+  if (inviteExpired(conn.invite_expires_at)) {
+    return {
+      error: "This invite link has expired. Tap \"Get a new link\" first, then send it.",
+    };
   }
 
   // Rate limit invite email (creates accounts via admin API). Users can read
