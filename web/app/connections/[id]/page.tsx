@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { signInVia } from "@/lib/signInCopy";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { startOnboarding, ensureDaily, startElective } from "@/app/actions/prompts";
 import { pickWeeklySuggestion } from "@/lib/suggestion";
@@ -130,15 +130,15 @@ export default async function ConnectionPage({
   const { notice, error, list: listRaw } = await searchParams;
   const listInviteCopy = questionsInviteCopy(listRaw);
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: conn } = await supabase
-    .from("connections")
-    .select("id, type, status, invite_code, invite_expires_at, created_by, timezone")
-    .eq("id", id)
-    .maybeSingle();
+  // The signed-in user and the connection row don't depend on each other.
+  const [user, { data: conn }] = await Promise.all([
+    getUser(),
+    supabase
+      .from("connections")
+      .select("id, type, status, invite_code, invite_expires_at, created_by, timezone")
+      .eq("id", id)
+      .maybeSingle(),
+  ]);
   if (!conn) notFound();
 
   // Reads that need only the connection row run together; the ones below
@@ -207,19 +207,26 @@ export default async function ConnectionPage({
   // The other person's name for the heading and the daily card. Read through
   // the partner_profiles view, which exposes only display fields of people
   // you share a connection with.
-  let themName: string | null = null;
+  //
+  // From here the page needs seven independent groups of reads (the other
+  // person's name, the first set, today's question, catch-up, electives,
+  // zodiac, the Blueprint offer). Each group is its own async block and they
+  // all run at once, so the page waits for the slowest group instead of the
+  // sum of them. Every query, and the RLS it runs under, is unchanged.
   const otherId = (members ?? [])
     .map((m) => m.user_id)
     .find((uid) => uid !== user?.id);
-  if (otherId) {
+  const themNameP = (async (): Promise<string | null> => {
+    if (!otherId) return null;
     const { data: them } = await supabase
       .from("partner_profiles")
       .select("display_name")
       .eq("id", otherId)
       .maybeSingle();
-    themName = them?.display_name?.trim() || null;
-  }
+    return them?.display_name?.trim() || null;
+  })();
 
+  const firstSetP = (async () => {
   let instance = onboardingRow;
 
   // Lazy backfill for pairs who joined before acceptInvite started creating
@@ -241,12 +248,6 @@ export default async function ConnectionPage({
     }
   }
 
-  const inviteNote = joinedCount < 2 ? (noteRow?.note ?? null) : null;
-
-  const questionCount = Array.isArray(instance?.questions)
-    ? (instance.questions as PromptQuestion[]).length
-    : 0;
-
   let myResponse = null;
   let othersAnsweredOnboarding = false;
   if (instance && user) {
@@ -264,6 +265,8 @@ export default async function ConnectionPage({
       othersAnsweredOnboarding = !!others;
     }
   }
+  return { instance, myResponse, othersAnsweredOnboarding };
+  })();
 
   const streak = computeStreak(
     (dailies ?? []).map((d) => d.scheduled_for).filter((x): x is string => !!x),
@@ -274,11 +277,12 @@ export default async function ConnectionPage({
   // connections; ensure_daily_prompt is the idempotent fallback (members
   // only). Both answer flags are read under RLS / via the boolean-only RPC, so
   // the card never sees the other person's words early.
-  let today: {
+  type Today = {
     id: string;
     text: string;
     state: ReturnType<typeof dailyState>;
-  } | null = null;
+  };
+  const todayP = (async (): Promise<Today | null> => {
   if (dailyOpen && user) {
     const date = localToday;
     let daily = dailyRow;
@@ -313,7 +317,7 @@ export default async function ConnectionPage({
       const qs = Array.isArray(daily.questions)
         ? (daily.questions as PromptQuestion[])
         : [];
-      today = {
+      return {
         id: daily.id,
         text: qs[0]?.text ?? "",
         state: dailyState({
@@ -325,6 +329,8 @@ export default async function ConnectionPage({
       };
     }
   }
+  return null;
+  })();
 
   // Things waiting on me, starting with earlier days. A new question opens every local day, so a
   // pair who answer on different days never land on the same one: their
@@ -332,7 +338,8 @@ export default async function ConnectionPage({
   // List those so the reveal can still happen. Same reads as today's card:
   // my own response rows under RLS, and the boolean-only "they answered"
   // signal, so nothing here sees their words early.
-  let catchUp: { id: string; text: string; day: string }[] = [];
+  type CatchUp = { id: string; text: string; day: string };
+  const catchUpP = (async (): Promise<CatchUp[]> => {
   if (dailyOpen && user) {
     const { data: openPast } = await supabase
       .from("prompt_instances")
@@ -355,7 +362,7 @@ export default async function ConnectionPage({
         supabase,
         pastIds.filter((pid) => !answeredByMe.has(pid)),
       );
-      catchUp = catchUpDailies({
+      return catchUpDailies({
         instances: openPast ?? [],
         today: localToday,
         answeredByMe,
@@ -369,9 +376,13 @@ export default async function ConnectionPage({
       }));
     }
   }
+  return [];
+  })();
   // One suggested quiz or challenge the pair hasn't started, rotating
   // weekly so the hub keeps offering something new without nagging.
-  let suggestion: { id: string; kind: string; title: string; description: string | null } | null = null;
+  type Suggestion = { id: string; kind: string; title: string; description: string | null };
+  const electivesP = (async (): Promise<{ suggestion: Suggestion | null; waitingRuns: CatchUp[] }> => {
+  const waitingRuns: CatchUp[] = [];
   if (conn.status === "active" && joinedCount >= 2) {
     const [{ data: electives }, { data: started }] = await Promise.all([
       supabase
@@ -405,7 +416,7 @@ export default async function ConnectionPage({
       );
       for (const r of openRuns) {
         if (answeredRuns.has(r.id) || !theirRuns.has(r.id)) continue;
-        catchUp.push({
+        waitingRuns.push({
           id: r.id,
           text: (electives ?? []).find((t) => t.id === r.template_id)?.title ?? "",
           day: r.kind === "quiz" ? "Quiz" : "Challenge",
@@ -413,24 +424,51 @@ export default async function ConnectionPage({
       }
     }
     const done = new Set((started ?? []).map((s) => s.template_id).filter(Boolean));
-    suggestion = pickWeeklySuggestion(
+    const suggestion = pickWeeklySuggestion(
       (electives ?? []).map((t) => ({ ...t, title: t.title ?? "", kind: t.kind })),
       done,
       localToday,
     );
+    return { suggestion, waitingRuns };
   }
+  return { suggestion: null, waitingRuns };
+  })();
 
   // Zodiac compatibility (entertainment only). Computed server-side so
   // partner birth dates are never readable through profiles RLS.
-  let compat: { level: string; blurb: string; signs: string[] } | null = null;
-  if (joinedCount >= 2) {
+  type Compat = { level: string; blurb: string; signs: string[] };
+  const compatP = (async (): Promise<Compat | null> => {
+    if (joinedCount < 2) return null;
     const { data } = await supabase.rpc("connection_zodiac_compat", {
       p_conn: id,
     });
     if (data && typeof data === "object" && "blurb" in (data as object)) {
-      compat = data as { level: string; blurb: string; signs: string[] };
+      return data as Compat;
     }
-  }
+    return null;
+  })();
+
+  // The Blueprint card says when this connection's first one is free.
+  const blueprintP =
+    conn.status === "active" && user
+      ? Promise.all([
+          supabase.rpc("connection_has_premium", { p_conn: id }),
+          freeBlueprintState(supabase, id),
+        ])
+      : Promise.resolve(null);
+
+  const [themName, firstSet, today, dailyCatchUp, electivesResult, compat, blueprintReads] =
+    await Promise.all([themNameP, firstSetP, todayP, catchUpP, electivesP, compatP, blueprintP]);
+  const { instance, myResponse, othersAnsweredOnboarding } = firstSet;
+  const { suggestion } = electivesResult;
+  // Earlier days first, then quizzes and challenges, as before.
+  const catchUp = [...dailyCatchUp, ...electivesResult.waitingRuns];
+
+  const inviteNote = joinedCount < 2 ? (noteRow?.note ?? null) : null;
+
+  const questionCount = Array.isArray(instance?.questions)
+    ? (instance.questions as PromptQuestion[]).length
+    : 0;
 
   const catchUpText = catchUp.length ? catchUpCopy(catchUp.length, themName) : null;
 
@@ -453,13 +491,9 @@ export default async function ConnectionPage({
   const newLink = regenerateInvite.bind(null, id);
   const saveNote = setInviteNote.bind(null, id);
 
-  // The Blueprint card says when this connection's first one is free.
   let blueprintCardOffer: ReturnType<typeof blueprintOffer> | null = null;
-  if (conn.status === "active" && user) {
-    const [{ data: hubPremium }, freeState] = await Promise.all([
-      supabase.rpc("connection_has_premium", { p_conn: id }),
-      freeBlueprintState(supabase, id),
-    ]);
+  if (blueprintReads) {
+    const [{ data: hubPremium }, freeState] = blueprintReads;
     blueprintCardOffer = blueprintOffer({
       isPremium: !!hubPremium,
       aiOn: aiEnabled(),

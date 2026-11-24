@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { saveProfile } from "@/app/actions/profile";
 import { safeNextPath } from "@/lib/redirect";
 import { ATTACHMENT_ITEMS } from "@/lib/attachment";
@@ -24,9 +24,7 @@ export default async function OnboardingPage({
   // After first profile setup, go straight to creating + inviting a partner.
   const next = safeNextPath(rawNext, "/connections/new");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   const { data: profile } = await supabase
     .from("profiles")
     .select("display_name, birthday, intake")

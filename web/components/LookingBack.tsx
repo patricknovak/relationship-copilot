@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { pickRetrospectives } from "@/lib/retrospective";
 import type { PromptQuestion } from "@/lib/database.types";
 import { Icon } from "@/components/ui/Icon";
@@ -14,9 +14,7 @@ export default async function LookingBack({
   connectionId: string;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
 
   // Only need candidates near ~30 and ~365 days ago (± tolerance in

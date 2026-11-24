@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import RevealWatcher from "@/components/RevealWatcher";
 import AnswerForm from "@/components/AnswerForm";
 import DiscussionForm from "@/components/DiscussionForm";
@@ -42,15 +42,14 @@ export default async function PromptInstanceView({
   title: string;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: instance } = await supabase
-    .from("prompt_instances")
-    .select("id, questions, status, template_id, kind, scheduled_for")
-    .eq("id", instanceId)
-    .maybeSingle();
+  const [user, { data: instance }] = await Promise.all([
+    getUser(),
+    supabase
+      .from("prompt_instances")
+      .select("id, questions, status, template_id, kind, scheduled_for")
+      .eq("id", instanceId)
+      .maybeSingle(),
+  ]);
 
   if (!instance) {
     return (
@@ -68,85 +67,117 @@ export default async function PromptInstanceView({
     );
   }
 
-  // Prefer the template's own title (e.g. a specific quiz/challenge name).
-  // The config says whether the quiz has per-dimension scoring to reflect on.
+  // Everything below needs only the instance row, so it is read in one
+  // round of parallel requests instead of one after another. Same queries,
+  // same RLS: the reveal gate still decides which response rows come back.
+  const revealed = instance.status === "revealed";
+  const [
+    { data: tmpl },
+    { data: zone },
+    { data: responses },
+    { data: othersAnswered },
+    { count: joinedCount },
+    { data: me },
+    { data: earlier },
+    { data: revealedRows },
+    { data: premium },
+    { data: members },
+    { data: discussion },
+    { data: reactionRows },
+  ] = await Promise.all([
+    // Prefer the template's own title (e.g. a specific quiz/challenge name).
+    // The config says whether the quiz has per-dimension scoring to reflect on.
+    instance.template_id
+      ? supabase
+          .from("prompt_templates")
+          .select("title, config")
+          .eq("id", instance.template_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    instance.kind === "daily"
+      ? supabase.from("connections").select("timezone").eq("id", connectionId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("prompt_responses").select("user_id, answers").eq("instance_id", instance.id),
+    // Boolean-only: another member has content (no answer text). Needed when
+    // you haven't answered yet — RLS hides their row until you share too.
+    supabase.rpc("others_have_answered", { p_instance: instance.id }),
+    // Answer-first: before the other person joins, "nudge them" can't work
+    // (they can't open the connection yet), so point back at the invite.
+    supabase
+      .from("connection_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("connection_id", connectionId)
+      .not("joined_at", "is", null),
+    user
+      ? supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    // The daily pool is deep but finite; once a pair has seen every question
+    // for their type, ensure_daily_prompt repeats one. A repeat is a chance to
+    // see what changed, so link back to the earlier reveal of the same question.
+    instance.kind === "daily" && instance.template_id
+      ? supabase
+          .from("prompt_instances")
+          .select("id, scheduled_for")
+          .eq("connection_id", connectionId)
+          .eq("template_id", instance.template_id)
+          .eq("status", "revealed")
+          .neq("id", instance.id)
+          .order("scheduled_for", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    // First reveal? Two rows are enough to tell "exactly one" from "more",
+    // so a pair with a year of history doesn't fetch every revealed id.
+    revealed && user
+      ? supabase
+          .from("prompt_instances")
+          .select("id")
+          .eq("connection_id", connectionId)
+          .eq("status", "revealed")
+          .limit(2)
+      : Promise.resolve({ data: null }),
+    revealed && user
+      ? supabase.rpc("connection_has_premium", { p_conn: connectionId })
+      : Promise.resolve({ data: null }),
+    revealed
+      ? supabase.from("connection_members").select("user_id").eq("connection_id", connectionId)
+      : Promise.resolve({ data: null }),
+    revealed
+      ? supabase
+          .from("prompt_discussions")
+          .select("id, user_id, body, created_at")
+          .eq("instance_id", instance.id)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
+    // Reactions exist only on revealed instances (RLS), so this read is
+    // always post-reveal.
+    revealed
+      ? supabase
+          .from("answer_reactions")
+          .select("user_id, target_user_id, question_id, emoji")
+          .eq("instance_id", instance.id)
+      : Promise.resolve({ data: null }),
+  ]);
+
   let heading = title;
-  let scored = false;
-  if (instance.template_id) {
-    const { data: tmpl } = await supabase
-      .from("prompt_templates")
-      .select("title, config")
-      .eq("id", instance.template_id)
-      .maybeSingle();
-    // Daily templates carry internal titles ("Daily — Anyone"); a daily is
-    // always "Today's question" to the people answering it.
-    if (tmpl?.title && instance.kind !== "daily") heading = tmpl.title;
-    scored = isDimensionScored(tmpl?.config);
-  }
+  // Daily templates carry internal titles ("Daily — Anyone"); a daily is
+  // always "Today's question" to the people answering it.
+  if (tmpl?.title && instance.kind !== "daily") heading = tmpl.title;
+  const scored = isDimensionScored(tmpl?.config);
   // Only the connection's current local day is "Today's question". An
   // earlier daily (opened from the hub's catch-up card, the history, or an
   // old link) is named by its date so nobody mistakes it for today's.
   if (instance.kind === "daily") {
-    const { data: zone } = await supabase
-      .from("connections")
-      .select("timezone")
-      .eq("id", connectionId)
-      .maybeSingle();
     heading = dailyHeading(instance.scheduled_for, todayIn(zone?.timezone));
   }
 
   const questions = instance.questions as PromptQuestion[];
-  const { data: responses } = await supabase
-    .from("prompt_responses")
-    .select("user_id, answers")
-    .eq("instance_id", instance.id);
   const myResponse = (responses ?? []).find((r) => r.user_id === user?.id);
   const myAnswers = (myResponse?.answers ?? {}) as AnswerMap;
   const answered = !!myResponse;
-
-  // Boolean-only: another member has content (no answer text). Needed when
-  // you haven't answered yet — RLS hides their row until you share too.
-  const { data: othersAnswered } = await supabase.rpc("others_have_answered", {
-    p_instance: instance.id,
-  });
-
-  // Answer-first: before the other person joins, "nudge them" can't work
-  // (they can't open the connection yet), so point back at the invite.
-  const { count: joinedCount } = await supabase
-    .from("connection_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("connection_id", connectionId)
-    .not("joined_at", "is", null);
   const partnerJoined = (joinedCount ?? 0) >= 2;
   const inviteHref = `/connections/${connectionId}#invite`;
-
-  let myName: string | null = null;
-  if (user) {
-    const { data: me } = await supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", user.id)
-      .maybeSingle();
-    myName = me?.display_name?.trim() || null;
-  }
-
-  // The daily pool is deep but finite; once a pair has seen every question
-  // for their type, ensure_daily_prompt repeats one. A repeat is a chance to
-  // see what changed, so link back to the earlier reveal of the same question.
-  let earlier: { id: string; scheduled_for: string | null } | null = null;
-  if (instance.kind === "daily" && instance.template_id) {
-    const { data } = await supabase
-      .from("prompt_instances")
-      .select("id, scheduled_for")
-      .eq("connection_id", connectionId)
-      .eq("template_id", instance.template_id)
-      .eq("status", "revealed")
-      .neq("id", instance.id)
-      .order("scheduled_for", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    earlier = data;
-  }
+  const myName = me?.display_name?.trim() || null;
   const earlierOn = earlier?.scheduled_for
     ? new Date(`${earlier.scheduled_for}T12:00:00Z`).toLocaleDateString(undefined, {
         month: "long",
@@ -186,20 +217,8 @@ export default async function PromptInstanceView({
   // The big "You revealed together" hero and the soft Premium card belong to
   // the connection's first mutual reveal only; later reveals get a quieter
   // header so the daily loop doesn't shout every day.
-  let isFirstReveal = false;
-  let isPremium = false;
-  if (instance.status === "revealed" && user) {
-    const { data: revealedRows } = await supabase
-      .from("prompt_instances")
-      .select("id")
-      .eq("connection_id", connectionId)
-      .eq("status", "revealed");
-    isFirstReveal = (revealedRows ?? []).length === 1;
-    const { data: premium } = await supabase.rpc("connection_has_premium", {
-      p_conn: connectionId,
-    });
-    isPremium = !!premium;
-  }
+  const isFirstReveal = revealed && !!user && (revealedRows ?? []).length === 1;
+  const isPremium = revealed && !!user && !!premium;
   // The soft card sells the AI layer, so it only appears when the AI is on;
   // while the free Blueprint is unused it points there instead of pricing.
   const aiOn = aiEnabled();
@@ -211,10 +230,6 @@ export default async function PromptInstanceView({
 
   // ---- Revealed (first unlock hero) ----
   if (instance.status === "revealed") {
-    const { data: members } = await supabase
-      .from("connection_members")
-      .select("user_id")
-      .eq("connection_id", connectionId);
     const ids = (members ?? []).map((m) => m.user_id);
     const { data: profiles } = await supabase
       .from("partner_profiles")
@@ -231,18 +246,6 @@ export default async function PromptInstanceView({
       return p?.display_name || p?.username || "?";
     };
 
-    const { data: discussion } = await supabase
-      .from("prompt_discussions")
-      .select("id, user_id, body, created_at")
-      .eq("instance_id", instance.id)
-      .order("created_at", { ascending: true });
-
-    // Reactions exist only on revealed instances (RLS), so this read is
-    // always post-reveal.
-    const { data: reactionRows } = await supabase
-      .from("answer_reactions")
-      .select("user_id, target_user_id, question_id, emoji")
-      .eq("instance_id", instance.id);
     const reactions = groupReactions(reactionRows ?? []);
 
     // Stable answer order: you first, then the other person.

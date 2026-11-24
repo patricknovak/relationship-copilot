@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { createBillingPortal } from "@/app/actions/billing";
 import PendingButton from "@/components/PendingButton";
 import { sunSign, ZODIAC_DISCLAIMER } from "@/lib/zodiac";
@@ -26,20 +26,20 @@ export default async function AccountPage({
 }) {
   const { upgraded, error, saved } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, birthday, intake, preferences")
-    .eq("id", user!.id)
-    .maybeSingle();
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan, status, current_period_end, stripe_customer_id")
-    .eq("user_id", user!.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: sub }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, birthday, intake, preferences")
+      .eq("id", user!.id)
+      .maybeSingle(),
+    supabase
+      .from("subscriptions")
+      .select("plan, status, current_period_end, stripe_customer_id")
+      .eq("user_id", user!.id)
+      .maybeSingle(),
+  ]);
 
   const intake = (profile?.intake ?? {}) as Intake;
   const notificationPrefs = parseNotificationPrefs(profile?.preferences);
