@@ -228,7 +228,7 @@ function Plan({
   return (
     <div className={`relative ${highlight ? "card-hero" : "card !rounded-3xl !p-6 sm:!p-7"}`}>
       {highlight && (
-        <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-600 to-accent-500 px-3 py-1 text-xs font-semibold text-white shadow-soft">
+        <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-600 to-accent-700 px-3 py-1 text-xs font-semibold text-white shadow-soft">
           <Icon name="sparkles" className="h-3.5 w-3.5" />
           Covers both people
         </span>
@@ -246,14 +246,14 @@ function Plan({
         ))}
       </ul>
       <div className="mt-8">{children}</div>
-      <p className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
-        <Link href="/safety" className="hover:text-ink">
+      <p className="mt-4 flex flex-wrap gap-x-4 text-xs text-ink-faint">
+        <Link href="/safety" className="inline-block py-1.5 hover:text-ink">
           Safety
         </Link>
-        <Link href="/privacy" className="hover:text-ink">
+        <Link href="/privacy" className="inline-block py-1.5 hover:text-ink">
           Privacy
         </Link>
-        <Link href="/terms" className="hover:text-ink">
+        <Link href="/terms" className="inline-block py-1.5 hover:text-ink">
           Terms
         </Link>
       </p>

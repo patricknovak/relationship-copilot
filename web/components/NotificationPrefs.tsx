@@ -66,7 +66,7 @@ export default function NotificationPrefs({
         <PendingButton className="btn-secondary btn-sm" pendingLabel="Saving…">
           Save notifications
         </PendingButton>
-        {saved && <span className="text-xs text-ink-soft">Saved.</span>}
+        {saved && <span role="status" className="text-xs text-ink-soft">Saved.</span>}
       </div>
     </form>
   );

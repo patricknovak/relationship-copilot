@@ -73,6 +73,8 @@ export default async function OnboardingPage({
             required
             pattern=".*\S.*"
             title="Please enter your name"
+            autoComplete="given-name"
+            autoCapitalize="words"
             defaultValue={profile?.display_name ?? suggestedFirstName(user?.user_metadata)}
             className="input mt-1.5"
           />
@@ -149,12 +151,16 @@ export default async function OnboardingPage({
           <div className="mt-4 space-y-4">
             {ATTACHMENT_ITEMS.map((item) => (
               <div key={item.id}>
-                <p className="text-sm text-ink">{item.text}</p>
-                <div className="mt-2 flex gap-1.5">
+                <p id={`att_${item.id}_label`} className="text-sm text-ink">{item.text}</p>
+                <div
+                  className="mt-2 flex gap-1.5"
+                  role="radiogroup"
+                  aria-labelledby={`att_${item.id}_label`}
+                >
                   {[1, 2, 3, 4, 5].map((n) => (
                     <label
                       key={n}
-                      className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
+                      className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
                     >
                       <input
                         type="radio"

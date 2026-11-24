@@ -111,7 +111,7 @@ export default function CookieConsent() {
             type="button"
             onClick={() => choose("denied")}
             className={`rounded-full border border-surface-line font-medium text-ink-soft transition hover:bg-paper-warm hover:text-ink ${
-              compact ? "px-3 py-1.5 text-xs sm:text-sm" : "px-4 py-2 text-sm"
+              compact ? "min-h-10 px-4 py-2 text-xs sm:text-sm" : "min-h-10 px-4 py-2 text-sm"
             }`}
           >
             Decline
@@ -120,7 +120,7 @@ export default function CookieConsent() {
             type="button"
             onClick={() => choose("granted")}
             className={`rounded-full bg-brand-700 font-medium text-white transition hover:bg-brand-800 ${
-              compact ? "px-3 py-1.5 text-xs sm:text-sm" : "px-4 py-2 text-sm"
+              compact ? "min-h-10 px-4 py-2 text-xs sm:text-sm" : "min-h-10 px-4 py-2 text-sm"
             }`}
           >
             Accept

@@ -92,6 +92,12 @@ export default function InvitePanel({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="their@email.com"
             aria-label="Their email address"
+            autoComplete="off"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="send"
             className="input min-w-0 flex-1"
           />
           <button
@@ -103,10 +109,10 @@ export default function InvitePanel({
         </form>
         {notice && (
           <p
-            role="status"
+            role={notice.tone === "error" ? "alert" : "status"}
             className={`mt-2 text-sm ${
               notice.tone === "error"
-                ? "text-rose-600"
+                ? "text-rose-700 dark:text-rose-300"
                 : notice.tone === "ok"
                   ? "text-emerald-700 dark:text-emerald-300"
                   : "text-ink-soft"

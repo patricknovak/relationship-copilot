@@ -278,7 +278,7 @@ export default async function ConnectionsPage() {
           <ConnectionList items={live} />
           {rows.some((c) => c.status === "archived") && (
             <details className="mt-10">
-              <summary className="cursor-pointer list-none text-sm font-medium text-ink-faint hover:text-ink [&::-webkit-details-marker]:hidden">
+              <summary className="inline-block cursor-pointer list-none py-2 text-sm font-medium text-ink-faint hover:text-ink [&::-webkit-details-marker]:hidden">
                 Archived ({rows.filter((c) => c.status === "archived").length})
               </summary>
               <div className="mt-3 opacity-70">

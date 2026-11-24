@@ -34,7 +34,7 @@ export default function DeleteAccount() {
         This cannot be undone.
       </p>
       <form action={onSubmit} className="mt-3 space-y-2">
-        <label className="block text-xs text-ink-soft/80" htmlFor="confirm-delete">
+        <label className="block text-xs text-ink-soft" htmlFor="confirm-delete">
           Type <span className="font-mono font-semibold">DELETE</span> to confirm
         </label>
         <input
@@ -43,6 +43,10 @@ export default function DeleteAccount() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="off"
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          aria-describedby={error ? "delete-error" : undefined}
           className="input !rounded-xl focus:!border-rose-500 focus:!ring-rose-500/25"
         />
         <button
@@ -52,7 +56,7 @@ export default function DeleteAccount() {
         >
           {busy ? "Deleting…" : "Permanently delete my account"}
         </button>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+        {error && <p id="delete-error" role="alert" className="text-sm text-rose-700 dark:text-rose-300">{error}</p>}
       </form>
     </div>
   );

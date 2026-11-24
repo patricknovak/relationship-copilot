@@ -555,6 +555,9 @@ export default async function ConnectionPage({
               maxLength={80}
               placeholder="Your name"
               aria-label="Your name"
+              autoComplete="given-name"
+              autoCapitalize="words"
+              enterKeyHint="done"
               defaultValue={suggestedFirstName(user.user_metadata)}
               className="input flex-1"
             />
@@ -943,7 +946,7 @@ export default async function ConnectionPage({
           stray click can't archive a shared space. */}
       {conn.status !== "archived" && (
         <details className="hairline mt-12 pt-6">
-          <summary className="cursor-pointer list-none text-sm font-medium text-ink-faint hover:text-rose-600 [&::-webkit-details-marker]:hidden">
+          <summary className="inline-block cursor-pointer list-none py-2 text-sm font-medium text-ink-faint hover:text-rose-700 dark:hover:text-rose-300 [&::-webkit-details-marker]:hidden">
             Leave this connection
           </summary>
           <div className="mt-3 rounded-2xl border border-rose-200 p-4 dark:border-rose-900/50">

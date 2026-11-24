@@ -31,7 +31,7 @@ export default function AutoAcceptInvite({ code }: { code: string }) {
   if (error) {
     return (
       <div className="mt-8">
-        <p className="text-sm text-rose-600">{error}</p>
+        <p role="alert" className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
         <div className="mt-4 flex items-center justify-center gap-3">
           <button onClick={join} className="btn-secondary">
             Try again
@@ -45,8 +45,8 @@ export default function AutoAcceptInvite({ code }: { code: string }) {
   }
 
   return (
-    <div className="mt-8 flex items-center justify-center gap-2 text-sm text-ink-soft">
-      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
+    <div role="status" className="mt-8 flex items-center justify-center gap-2 text-sm text-ink-soft">
+      <span aria-hidden className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-300 border-t-brand-700" />
       Joining…
     </div>
   );

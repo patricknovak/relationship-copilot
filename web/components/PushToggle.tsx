@@ -153,7 +153,7 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
           <p className="text-sm text-ink-soft">This browser doesn&apos;t support notifications.</p>
         )}
       </div>
-      {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">{error}</p>}
     </div>
   );
 }
