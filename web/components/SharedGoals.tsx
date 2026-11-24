@@ -43,6 +43,7 @@ export default async function SharedGoals({
             <li key={g.id} className="group flex items-start gap-3 rounded-xl px-2 py-1.5 transition hover:bg-paper-warm/60">
               <form action={toggleGoal.bind(null, connectionId, g.id, true)}>
                 <PendingButton
+                  ariaLabel={`Mark done: ${g.body}`}
                   className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-brand-300 text-transparent transition hover:border-brand-600 hover:bg-brand-600 hover:text-white"
                   pendingLabel="…"
                 >
@@ -52,7 +53,7 @@ export default async function SharedGoals({
               <span className="flex-1 pt-0.5 text-sm text-ink">{g.body}</span>
               <form action={removeGoal.bind(null, connectionId, g.id)}>
                 <PendingButton
-                  className="text-xs text-ink-faint transition hover:text-rose-600 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                  className="py-1 text-xs text-ink-faint transition hover:text-rose-700 dark:hover:text-rose-300 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                   pendingLabel="…"
                 >
                   Remove
@@ -70,6 +71,8 @@ export default async function SharedGoals({
           maxLength={200}
           placeholder="Something to try, keep, or do together"
           aria-label="New shared goal"
+          autoComplete="off"
+          enterKeyHint="done"
           className="input flex-1"
         />
         <PendingButton className="btn-secondary btn-sm shrink-0" pendingLabel="Adding…">
@@ -80,7 +83,7 @@ export default async function SharedGoals({
 
       {done.length > 0 && (
         <details className="mt-3">
-          <summary className="cursor-pointer list-none text-xs font-medium text-ink-faint hover:text-ink [&::-webkit-details-marker]:hidden">
+          <summary className="inline-block cursor-pointer list-none py-1.5 text-xs font-medium text-ink-faint hover:text-ink [&::-webkit-details-marker]:hidden">
             Done ({done.length})
           </summary>
           <ul className="mt-2 space-y-1.5">
@@ -88,7 +91,7 @@ export default async function SharedGoals({
               <li key={g.id} className="flex items-center gap-2 text-sm text-ink-soft/80">
                 <span className="line-through">{g.body}</span>
                 <form action={toggleGoal.bind(null, connectionId, g.id, false)}>
-                  <PendingButton className="text-xs underline hover:text-ink" pendingLabel="…">
+                  <PendingButton className="py-1 text-xs underline hover:text-ink" pendingLabel="…">
                     Undo
                   </PendingButton>
                 </form>

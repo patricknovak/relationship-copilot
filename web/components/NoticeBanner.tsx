@@ -21,7 +21,7 @@ export default function NoticeBanner({
   return (
     <div
       className={`mt-4 flex items-start gap-2.5 rounded-2xl border px-4 py-3 text-sm animate-fade-up ${styles}`}
-      role="status"
+      role={tone === "error" ? "alert" : "status"}
     >
       <Icon name={icon} className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.2} />
       <span>{message}</span>

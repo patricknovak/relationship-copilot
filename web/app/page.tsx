@@ -376,7 +376,7 @@ function Step({ n, icon, title, body }: { n: string; icon: IconName; title: stri
     <div className="card card-hover relative">
       <span className="relative inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-brand-glow">
         <Icon name={icon} className="h-6 w-6" />
-        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent-400 font-display text-xs font-semibold text-white ring-2 ring-surface">
+        <span className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent-400 font-display text-xs font-semibold text-accent-950 ring-2 ring-surface">
           {n}
         </span>
       </span>

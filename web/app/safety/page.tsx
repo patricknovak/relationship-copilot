@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import QuickExit from "@/components/QuickExit";
 import { canonicalUrl } from "@/lib/site";
 import { Icon } from "@/components/ui/Icon";
+import { contactParts } from "@/lib/contactLinks";
 
 export const metadata: Metadata = {
   title: "Safety & Support",
@@ -94,14 +95,30 @@ function ResourceCard({ r, heading: H }: { r: Resource; heading: "h2" | "h3" }) 
       </span>
       <div className="min-w-0 flex-1">
         <H className="font-sans text-base font-semibold tracking-normal text-ink">{r.name}</H>
-        <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">{r.contact}</p>
+        {/* Same wording, but tappable: on a phone the number should dial. */}
+        <p className="mt-1 font-semibold text-brand-700 dark:text-brand-300">
+          {contactParts(r.contact).map((part, i) =>
+            part.href ? (
+              <a
+                key={i}
+                href={part.href}
+                className="rounded py-1 underline decoration-brand-300 underline-offset-[3px] hover:decoration-brand-600 dark:decoration-brand-700 dark:hover:decoration-brand-300"
+              >
+                {part.text}
+              </a>
+            ) : (
+              <span key={i}>{part.text}</span>
+            ),
+          )}
+        </p>
         <p className="mt-1 text-sm leading-relaxed text-ink-soft">{r.detail}</p>
         {r.href && (
           <a
             href={r.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="link mt-2 inline-flex items-center gap-1 text-sm"
+            aria-label={`${r.name} website (opens in a new tab)`}
+            className="link mt-1 inline-flex items-center gap-1 py-1 text-sm"
           >
             {r.href.replace("https://", "").replace(/^www\./, "")}
             <Icon name="external" className="h-3.5 w-3.5" />

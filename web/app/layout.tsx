@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { FOR_PAGES } from "@/lib/forPages";
 import Link from "next/link";
@@ -19,7 +19,7 @@ import "./globals.css";
 const display = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
-  axes: ["opsz", "SOFT", "WONK"],
+  axes: ["opsz"],
 });
 
 const sans = Inter({
@@ -55,6 +55,15 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+};
+
+// Browser chrome (address bar, status bar) matches the page instead of
+// flashing white above the dark theme.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf8f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#181219" },
+  ],
 };
 
 export default async function RootLayout({
@@ -122,28 +131,28 @@ export default async function RootLayout({
               </div>
               <div className="text-sm">
                 <p className="font-semibold text-white">Explore</p>
-                <ul className="mt-3 space-y-2">
+                <ul className="mt-2 space-y-0.5">
                   <li>
-                    <Link href="/library" className="hover:text-white">
+                    <Link href="/library" className="inline-block py-1 hover:text-white">
                       Library
                     </Link>
                   </li>
                   <li>
-                    <Link href="/questions" className="hover:text-white">
+                    <Link href="/questions" className="inline-block py-1 hover:text-white">
                       Questions to ask
                     </Link>
                   </li>
                   <li>
-                    <Link href="/pricing" className="hover:text-white">
+                    <Link href="/pricing" className="inline-block py-1 hover:text-white">
                       Pricing
                     </Link>
                   </li>
                 </ul>
                 <p className="mt-6 font-semibold text-white">Questions for</p>
-                <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-2">
+                <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-0.5">
                   {FOR_PAGES.map((p) => (
                     <li key={p.slug}>
-                      <Link href={`/for/${p.slug}`} className="hover:text-white">
+                      <Link href={`/for/${p.slug}`} className="inline-block py-1 hover:text-white">
                         {p.label}
                       </Link>
                     </li>
@@ -152,19 +161,19 @@ export default async function RootLayout({
               </div>
               <div className="text-sm">
                 <p className="font-semibold text-white">Trust</p>
-                <ul className="mt-3 space-y-2">
+                <ul className="mt-2 space-y-0.5">
                   <li>
-                    <Link href="/privacy" className="hover:text-white">
+                    <Link href="/privacy" className="inline-block py-1 hover:text-white">
                       Privacy
                     </Link>
                   </li>
                   <li>
-                    <Link href="/terms" className="hover:text-white">
+                    <Link href="/terms" className="inline-block py-1 hover:text-white">
                       Terms
                     </Link>
                   </li>
                   <li>
-                    <Link href="/about" className="hover:text-white">
+                    <Link href="/about" className="inline-block py-1 hover:text-white">
                       About
                     </Link>
                   </li>

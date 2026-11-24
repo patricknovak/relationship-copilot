@@ -52,6 +52,8 @@ export default function NameNudge({ suggested }: { suggested: string }) {
           required
           maxLength={80}
           autoComplete="given-name"
+          autoCapitalize="words"
+          enterKeyHint="done"
           placeholder="Your name"
           className="input flex-1"
         />

@@ -13,6 +13,7 @@ import ReactionBar from "@/components/ReactionBar";
 import ShareMilestone from "@/components/ShareMilestone";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
 import { groupReactions, isReactionEmoji, reactionKey } from "@/lib/reactions";
 import { dimensionLabel, isDimensionScored, quizReflection } from "@/lib/quizResult";
 import {
@@ -54,10 +55,15 @@ export default async function PromptInstanceView({
   if (!instance) {
     return (
       <div className="page has-tabbar">
-        <p className="text-ink-soft">This question is no longer available.</p>
-        <Link href={`/connections/${connectionId}`} className="link mt-2 inline-block">
-          Back to the connection
-        </Link>
+        <EmptyState
+          icon="clock"
+          title="This question is no longer available"
+          body="Head back to your connection to see what's waiting for you."
+        >
+          <Link href={`/connections/${connectionId}`} className="btn-primary">
+            Back to the connection
+          </Link>
+        </EmptyState>
       </div>
     );
   }
@@ -405,7 +411,8 @@ export default async function PromptInstanceView({
                         if (mine) {
                           // Their reaction to my answer, if any.
                           return got.length > 0 ? (
-                            <p className="mt-2 text-sm" aria-label="Reactions to your answer">
+                            <p className="mt-2 text-sm">
+                              <span className="sr-only">Reactions to your answer: </span>
                               {got.map((x) => (
                                 <span
                                   key={x.user_id}

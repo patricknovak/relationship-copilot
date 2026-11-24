@@ -79,7 +79,7 @@ export default function RevealWatcher({ instanceId }: { instanceId: string }) {
 
   return (
     <div
-      aria-live="polite"
+      role="status"
       className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
     >
       {pieces.map((i) => (

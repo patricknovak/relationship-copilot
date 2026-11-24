@@ -77,7 +77,7 @@ export default async function NewConnectionPage({
           {CONNECTION_TYPES.map((t) => (
             <label
               key={t.value}
-              className="group relative flex cursor-pointer items-start gap-3 rounded-2xl border border-surface-line bg-surface p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 has-[:checked]:shadow-lift has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 dark:has-[:checked]:bg-brand-900/25"
+              className="group relative flex cursor-pointer items-start gap-3 rounded-2xl border border-surface-line bg-surface p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lift has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/70 has-[:checked]:shadow-lift has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 dark:has-[:checked]:bg-brand-900/25"
             >
               <input
                 type="radio"

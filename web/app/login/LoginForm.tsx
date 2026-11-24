@@ -231,7 +231,7 @@ export default function LoginForm({
                 <button
                   type="button"
                   onClick={() => setEmailOpen(true)}
-                  className="w-full text-center text-sm font-medium text-ink-soft underline-offset-[3px] transition hover:text-ink hover:underline"
+                  className="w-full rounded-full py-2.5 text-center text-sm font-medium text-ink-soft underline-offset-[3px] transition hover:text-ink hover:underline"
                 >
                   Or use email instead
                 </button>
@@ -249,7 +249,7 @@ export default function LoginForm({
 
           {error && (
             <div className="mb-4 space-y-2">
-              <p className="text-sm text-rose-600">{error}</p>
+              <p id="login-error" role="alert" className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
               {authLinkFailed && !sent && (
                 <button
                   type="button"
@@ -265,7 +265,7 @@ export default function LoginForm({
           {emailOpen &&
             (sent ? (
               <div className="space-y-3">
-                <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:border-brand-800/60 dark:bg-brand-900/30 dark:text-brand-200">
+                <div role="status" className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-800 dark:border-brand-800/60 dark:bg-brand-900/30 dark:text-brand-200">
                   <Icon name="mail" className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>Check your inbox for a sign-in link. It works on any device.</span>
                 </div>
@@ -292,6 +292,12 @@ export default function LoginForm({
                   placeholder="you@example.com"
                   className="input"
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="send"
+                  aria-describedby={error ? "login-error" : undefined}
                 />
                 {TURNSTILE_SITE_KEY && (
                   <Turnstile

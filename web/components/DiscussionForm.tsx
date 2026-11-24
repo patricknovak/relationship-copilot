@@ -48,6 +48,8 @@ export default function DiscussionForm({
           required
           placeholder="Share a thought…"
           aria-label="Message"
+          autoComplete="off"
+          enterKeyHint="send"
           className="input flex-1 !rounded-full"
         />
         <button
@@ -58,7 +60,7 @@ export default function DiscussionForm({
           {pending ? "Sending…" : <><span className="hidden sm:inline">Send</span><Icon name="send" className="h-4 w-4" /></>}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-sm text-rose-700 dark:text-rose-300">{error}</p>}
       {support && (
         <div className="mt-3">
           <SafetySupport level={support} />

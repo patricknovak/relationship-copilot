@@ -8,14 +8,17 @@ export default function PendingButton({
   children,
   pendingLabel = "Working…",
   className = "btn-primary",
+  ariaLabel,
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
   className?: string;
+  /** Accessible name for icon-only buttons. */
+  ariaLabel?: string;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={`${className} disabled:opacity-60`}>
+    <button type="submit" disabled={pending} aria-busy={pending || undefined} aria-label={ariaLabel} className={`${className} disabled:opacity-60`}>
       {pending ? pendingLabel : children}
     </button>
   );

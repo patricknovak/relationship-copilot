@@ -8,7 +8,8 @@
   --paper-warm: 246 239 231;
   --ink: 34 26 34;
   --ink-soft: 92 78 91;
-  --ink-faint: 140 126 139;
+  /* Faint text still has to clear 4.5:1 on paper, white and paper-warm. */
+  --ink-faint: 112 98 111;
   --surface: 255 255 255;
   --surface-raised: 255 255 255;
   --surface-line: 238 226 237;
@@ -20,7 +21,7 @@
   --paper-warm: 32 24 33;
   --ink: 246 239 245;
   --ink-soft: 196 182 195;
-  --ink-faint: 150 134 149;
+  --ink-faint: 166 150 165;
   --surface: 36 28 37;
   --surface-raised: 46 36 47;
   --surface-line: 66 52 66;
@@ -71,7 +72,7 @@
   select,
   summary,
   [tabindex] {
-    @apply rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-paper;
+    @apply rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-paper dark:focus-visible:ring-brand-400;
   }
 
   /* Thin, quiet scrollbars where supported. */
@@ -127,7 +128,8 @@
       0 14px 28px -10px rgb(116 56 111 / 0.65);
   }
   .dark .btn-primary {
-    background-image: linear-gradient(180deg, #b273ad 0%, #a25d9d 55%, #8f4e8a 100%);
+    /* Stops chosen so the label keeps 4.5:1 across the whole gradient. */
+    background-image: linear-gradient(180deg, #9d5898 0%, #8f4e8a 55%, #81437c 100%);
     color: #fff8fd;
   }
 
@@ -227,7 +229,7 @@
   }
 
   .input {
-    @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink shadow-[inset_0_1px_2px_rgb(34_26_34/0.04)] placeholder:text-ink-faint transition focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+    @apply w-full rounded-xl border border-surface-line bg-surface px-3.5 py-2.5 text-sm text-ink shadow-[inset_0_1px_2px_rgb(34_26_34/0.04)] placeholder:text-ink-faint transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/40 dark:focus:border-brand-400 dark:focus:ring-brand-400/40;
   }
 
   /* iOS Safari zooms any focused input under 16px and stays zoomed — with 20

@@ -63,7 +63,7 @@ export default function NudgePerson({
       onClick={nudge}
       className={variant === "start" ? "btn-secondary" : "btn-primary"}
     >
-      {copied ? "Copied ✓" : label}
+      <span aria-live="polite">{copied ? "Copied ✓" : label}</span>
     </button>
   );
 }
