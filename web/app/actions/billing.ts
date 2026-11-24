@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { logAudit } from "@/lib/audit";
 import { aiEnabled } from "@/lib/grok";
+import { isStripeMissingCustomer } from "@/lib/stripeErrors";
 
 // Start a Stripe Checkout subscription for Premium. The webhook flips the
 // `subscriptions` row once payment completes; entitlement is read from there.
@@ -52,20 +53,34 @@ export async function createCheckout(formData?: FormData) {
   let url: string | null = null;
   try {
     const stripe = getStripe();
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price: price!, quantity: 1 }],
-      client_reference_id: user.id,
-      ...(existingCustomer
-        ? { customer: existingCustomer }
-        : { customer_email: user.email ?? undefined }),
-      metadata: { user_id: user.id },
-      subscription_data: { metadata: { user_id: user.id } },
-      success_url: `${site}/account?upgraded=1`,
-      cancel_url: `${site}/pricing`,
-    });
+    const open = (customer: string | null) =>
+      stripe.checkout.sessions.create({
+        mode: "subscription",
+        line_items: [{ price: price!, quantity: 1 }],
+        client_reference_id: user.id,
+        ...(customer
+          ? { customer }
+          : { customer_email: user.email ?? undefined }),
+        metadata: { user_id: user.id },
+        subscription_data: { metadata: { user_id: user.id } },
+        success_url: `${site}/account?upgraded=1`,
+        cancel_url: `${site}/pricing`,
+      });
+    let session;
+    try {
+      session = await open(existingCustomer);
+    } catch (err) {
+      // The stored customer is unknown to Stripe (deleted in the Dashboard,
+      // or created in test mode). Without this, that person could never
+      // check out again. Start a fresh customer; the webhook stores the new
+      // id on completion. Any other failure is not retried.
+      if (!existingCustomer || !isStripeMissingCustomer(err)) throw err;
+      console.error("stripe checkout: stored customer missing, starting a new one");
+      session = await open(null);
+    }
     url = session.url;
-  } catch {
+  } catch (err) {
+    console.error("stripe checkout session failed", err);
     redirect("/pricing?error=checkout");
   }
 
@@ -103,7 +118,13 @@ export async function createBillingPortal() {
     // Most likely cause: the portal has no saved configuration in the Stripe
     // Dashboard for this mode (Settings → Billing → Customer portal).
     console.error("stripe billing portal session failed", err);
-    redirect("/account?error=portal");
+    // A customer Stripe no longer knows has no billing to manage; say that
+    // instead of "try again in a moment", which would never work.
+    redirect(
+      isStripeMissingCustomer(err)
+        ? "/account?error=nobilling"
+        : "/account?error=portal",
+    );
   }
 
   await logAudit(user.id, "billing.portal");
