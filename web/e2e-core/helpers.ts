@@ -44,3 +44,26 @@ export async function answerAll(page: Page, text: string) {
   }
   await page.getByRole("button", { name: /share when ready/i }).click();
 }
+
+/**
+ * Make today's question for a connection a free-text one. ensure_daily_prompt
+ * picks a template at random, and about one in seven daily templates is a
+ * choice or scale question with nowhere to type, so a test that looks for its
+ * own typed answer after the reveal failed on those draws (PRs #180 and #184,
+ * 2026-11-24). Call after both people have joined and before either answers.
+ */
+export async function pinDailyToFreeText(connectionId: string) {
+  const { data: instanceId, error } = await admin.rpc("ensure_daily_prompt", {
+    p_conn: connectionId,
+  });
+  if (error || !instanceId) throw error ?? new Error("no daily prompt for this connection");
+  const { error: updateError } = await admin
+    .from("prompt_instances")
+    .update({
+      questions: [
+        { id: "q1", text: "What made you smile today?", format: "free_text" },
+      ],
+    })
+    .eq("id", instanceId);
+  if (updateError) throw updateError;
+}
