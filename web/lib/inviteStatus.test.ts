@@ -79,6 +79,10 @@ describe("inviteCodeFromNext / loginIntentFromNext", () => {
     expect(inviteCodeFromNext("/invite/ABC12345")).toBe("ABC12345");
     expect(inviteCodeFromNext("/invite/abc12345?x=1")).toBe("ABC12345");
     expect(inviteCodeFromNext("/invite/SHORT")).toBeNull();
+    // A malformed escape used to throw URIError and 500 the login page.
+    expect(inviteCodeFromNext("/invite/%E0%A4%A")).toBeNull();
+    expect(inviteCodeFromNext("/invite/%")).toBeNull();
+    expect(loginIntentFromNext("/invite/%E0")).toEqual({ kind: "generic" });
     expect(inviteCodeFromNext("/connections")).toBeNull();
     expect(inviteCodeFromNext(null)).toBeNull();
   });

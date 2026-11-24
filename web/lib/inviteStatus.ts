@@ -76,7 +76,14 @@ export function inviteCodeFromNext(
   if (!next) return null;
   const match = /^\/invite\/([^/?#]+)/i.exec(next);
   if (!match) return null;
-  const code = decodeURIComponent(match[1] ?? "");
+  // `next` is attacker-influenceable; a stray "%" must not throw (this runs
+  // while rendering /login, where a throw is a 500 instead of a sign-in form).
+  let code: string;
+  try {
+    code = decodeURIComponent(match[1] ?? "");
+  } catch {
+    return null;
+  }
   return isInviteCodeFormat(code) ? code.toUpperCase() : null;
 }
 
