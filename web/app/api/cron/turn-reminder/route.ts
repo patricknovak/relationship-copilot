@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 // once-only claim in notification_log), and never more than one email per
 // person per run however many sets are waiting on them:
 //
-// 1. Missed notifications (migration 0046, missed_notification_candidates).
+// 1. Missed notifications (migration 0048, missed_notification_candidates).
 //    "Your turn" and "you both answered" are sent once at submit; if that
 //    send didn't deliver (provider outage, the Worker cut off, email not
 //    configured at the time) this is what tries again. Selection is from
@@ -47,7 +47,7 @@ const SWEEP_TURN_MAX_HOURS = 14 * 24;
 const SWEEP_REVEAL_MAX_HOURS = 24;
 const SWEEP_MAX = 50;
 const RECENT_NUDGE_HOURS = 22;
-// PostgREST: function not found (migration 0046 not applied yet).
+// PostgREST: function not found (migration 0048 not applied yet).
 const FUNCTION_NOT_FOUND = "PGRST202";
 
 type Counts = { candidates: number; outside_window: number; held: number; sent: number; skipped: number; failed: number };

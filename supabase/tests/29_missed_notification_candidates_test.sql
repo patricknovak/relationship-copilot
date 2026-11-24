@@ -1,4 +1,4 @@
--- Migration 0046: missed_notification_candidates finds "your turn" and
+-- Migration 0048: missed_notification_candidates finds "your turn" and
 -- "revealed" notifications that never went out, from state alone. Every
 -- query is scoped to this file's connections: earlier tests leave rows behind.
 

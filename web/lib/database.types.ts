@@ -555,7 +555,7 @@ export interface Database {
           timezone: string;
         }[];
       };
-      // Migration 0046: service role only; ids, timezone and a first name.
+      // Migration 0048: service role only; ids, timezone and a first name.
       missed_notification_candidates: {
         Args: {
           p_min_minutes?: number;
