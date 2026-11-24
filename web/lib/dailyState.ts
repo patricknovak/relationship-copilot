@@ -211,18 +211,22 @@ export function dailyHeading(
   return `Question from ${formatDay(scheduledFor)}`;
 }
 
-/** Copy for the hub's catch-up card. `them` is a first name or null. */
+/**
+ * Copy for the hub's catch-up card: earlier daily questions, quizzes and
+ * challenges the other person has answered. `them` is a first name or null.
+ */
 export function catchUpCopy(
   count: number,
   them: string | null,
 ): { headline: string; body: string } {
   const Who = them?.trim() || "They";
   const who = them?.trim() || "they";
+  const verb = them?.trim() ? "is" : "are";
   return {
     headline:
       count === 1
-        ? `${Who} answered an earlier question.`
-        : `${Who} answered ${count} earlier questions.`,
+        ? `${Who} ${verb} waiting on your answer.`
+        : `${Who} ${verb} waiting on ${count} of your answers.`,
     body: `What ${who} wrote stays private until you answer too. Each one reveals as soon as you do.`,
   };
 }

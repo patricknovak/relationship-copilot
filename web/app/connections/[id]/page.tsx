@@ -326,7 +326,7 @@ export default async function ConnectionPage({
     }
   }
 
-  // Earlier days waiting on me. A new question opens every local day, so a
+  // Things waiting on me, starting with earlier days. A new question opens every local day, so a
   // pair who answer on different days never land on the same one: their
   // answer sits on an earlier instance while this page shows me today's.
   // List those so the reveal can still happen. Same reads as today's card:
@@ -369,8 +369,6 @@ export default async function ConnectionPage({
       }));
     }
   }
-  const catchUpText = catchUp.length ? catchUpCopy(catchUp.length, themName) : null;
-
   // One suggested quiz or challenge the pair hasn't started, rotating
   // weekly so the hub keeps offering something new without nagging.
   let suggestion: { id: string; kind: string; title: string; description: string | null } | null = null;
@@ -385,10 +383,35 @@ export default async function ConnectionPage({
         .order("id"),
       supabase
         .from("prompt_instances")
-        .select("template_id")
+        .select("id, template_id, status, kind")
         .eq("connection_id", id)
         .in("kind", ["quiz", "challenge"]),
     ]);
+    // A quiz or challenge the other person started and answered is waiting
+    // on me too, and nothing else on this page says so (the suggestion
+    // below skips anything already started). Same boolean-only reads.
+    const openRuns = (started ?? []).filter((r) => r.status === "open");
+    if (openRuns.length && user) {
+      const runIds = openRuns.map((r) => r.id);
+      const { data: mineRuns } = await supabase
+        .from("prompt_responses")
+        .select("instance_id")
+        .in("instance_id", runIds)
+        .eq("user_id", user.id);
+      const answeredRuns = new Set((mineRuns ?? []).map((r) => r.instance_id));
+      const theirRuns = await fetchOthersHaveAnswered(
+        supabase,
+        runIds.filter((rid) => !answeredRuns.has(rid)),
+      );
+      for (const r of openRuns) {
+        if (answeredRuns.has(r.id) || !theirRuns.has(r.id)) continue;
+        catchUp.push({
+          id: r.id,
+          text: (electives ?? []).find((t) => t.id === r.template_id)?.title ?? "",
+          day: r.kind === "quiz" ? "Quiz" : "Challenge",
+        });
+      }
+    }
     const done = new Set((started ?? []).map((s) => s.template_id).filter(Boolean));
     suggestion = pickWeeklySuggestion(
       (electives ?? []).map((t) => ({ ...t, title: t.title ?? "", kind: t.kind })),
@@ -408,6 +431,8 @@ export default async function ConnectionPage({
       compat = data as { level: string; blurb: string; signs: string[] };
     }
   }
+
+  const catchUpText = catchUp.length ? catchUpCopy(catchUp.length, themName) : null;
 
   const begin = startOnboarding.bind(null, id);
   const leave = leaveConnection.bind(null, id);

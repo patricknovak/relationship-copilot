@@ -231,13 +231,14 @@ describe("shiftDate / formatDay / dailyHeading", () => {
 
 describe("catchUpCopy", () => {
   it("names the other person and counts", () => {
-    expect(catchUpCopy(1, "Sam").headline).toBe("Sam answered an earlier question.");
-    expect(catchUpCopy(3, "Sam").headline).toBe("Sam answered 3 earlier questions.");
+    expect(catchUpCopy(1, "Sam").headline).toBe("Sam is waiting on your answer.");
+    expect(catchUpCopy(3, "Sam").headline).toBe("Sam is waiting on 3 of your answers.");
     expect(catchUpCopy(3, "Sam").body).toContain("What Sam wrote stays private");
   });
 
   it("falls back to they", () => {
-    expect(catchUpCopy(2, null).headline).toBe("They answered 2 earlier questions.");
+    expect(catchUpCopy(1, null).headline).toBe("They are waiting on your answer.");
+    expect(catchUpCopy(2, "  ").headline).toBe("They are waiting on 2 of your answers.");
     expect(catchUpCopy(2, "  ").body).toContain("What they wrote");
   });
 });
