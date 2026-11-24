@@ -29,10 +29,13 @@ async function lookupInviterDisplayName(code: string): Promise<string | null> {
     const admin = createAdminClient();
     const { data: conn } = await admin
       .from("connections")
-      .select("created_by, invite_expires_at")
+      .select("created_by, invite_expires_at, status")
       .eq("invite_code", code)
       .maybeSingle();
     if (!conn?.created_by) return null;
+    // Same rule as the invite page: a closed connection's link is dead, so
+    // don't greet with "<name> invited you" on the way to a dead-link page.
+    if (conn.status === "archived" || conn.status === "blocked") return null;
     if (
       conn.invite_expires_at &&
       new Date(conn.invite_expires_at) <= new Date()

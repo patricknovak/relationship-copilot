@@ -74,6 +74,29 @@ describe("classifyInviteLookup", () => {
   });
 });
 
+describe("classifyInviteLookup: closed connection", () => {
+  const base = {
+    code: "ABCD2345EFGH",
+    foundActive: true,
+    expired: false,
+    retiredAsUsed: false,
+  };
+
+  it("treats a still-matching code on an archived connection as not valid", () => {
+    // The inviter left before anyone joined. The page used to show the
+    // invite and auto-join, which accept_invite then refused on every retry.
+    expect(classifyInviteLookup({ ...base, closed: true })).toBe("invalid");
+    expect(classifyInviteLookup({ ...base, closed: true, expired: true })).toBe(
+      "invalid",
+    );
+  });
+
+  it("leaves open invites alone", () => {
+    expect(classifyInviteLookup({ ...base, closed: false })).toBe("ok");
+    expect(classifyInviteLookup(base)).toBe("ok");
+  });
+});
+
 describe("inviteCodeFromNext / loginIntentFromNext", () => {
   it("extracts a well-formed invite code from next", () => {
     expect(inviteCodeFromNext("/invite/ABC12345")).toBe("ABC12345");
