@@ -3,6 +3,8 @@
 // setup. Without RESEND_API_KEY nothing sends; lib/notifyConfig.ts is what
 // makes that loud in production.
 
+import { resendEmailsUrl } from "@/lib/e2eProviders";
+
 export interface OutgoingEmail {
   to: string;
   subject: string;
@@ -52,7 +54,9 @@ async function attempt(apiKey: string, mail: OutgoingEmail): Promise<Attempt> {
   if (mail.idempotencyKey) headers["Idempotency-Key"] = mail.idempotencyKey;
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    // Resend, except in the e2e suite, which points this at a loopback fake
+    // (lib/e2eProviders.ts refuses any non-loopback value).
+    const res = await fetch(resendEmailsUrl(), {
       method: "POST",
       headers,
       body: JSON.stringify({
