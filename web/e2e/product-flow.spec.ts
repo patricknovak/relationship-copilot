@@ -15,8 +15,9 @@ test.describe("Product shell (unsigned)", () => {
   });
 
   test("invite landing with bogus code stays public", async ({ page }) => {
-    await page.goto("/invite/NOTAREALCODE99");
+    const res = await page.goto("/invite/NOTAREALCODE99");
     // Either a friendly "not found" or invite chrome — never a 500.
+    expect(res?.status() ?? 0).toBeLessThan(500);
     const status = await page.evaluate(() => document.title);
     expect(status.length).toBeGreaterThan(0);
     await expect(page.locator("body")).not.toContainText(/Application error/i);

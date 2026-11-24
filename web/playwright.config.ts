@@ -17,6 +17,27 @@ const executablePath = existsSync(cloudChromium)
 // the browser client and was sending placeholder-key traffic to prod (~144/day).
 const supabaseEnv = e2ePublicSupabaseEnv(process.env);
 
+// Server-only placeholders. A non-empty service-role placeholder lets
+// createAdminClient construct (invite preview); real invites/cron are not
+// exercised without secrets. Rel activation drip / Resend stay unset → NO SEND.
+const serverSecrets = {
+  SUPABASE_SERVICE_ROLE_KEY:
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "e2e-placeholder-not-a-real-service-role-key",
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "sk_test_e2e_placeholder",
+  STRIPE_WEBHOOK_SECRET:
+    process.env.STRIPE_WEBHOOK_SECRET || "whsec_e2e_placeholder",
+  CRON_SECRET: process.env.CRON_SECRET || "e2e-cron-secret",
+};
+
+// `wrangler dev` does not pass the host environment to the Worker: secrets
+// come from .dev.vars or --var. Without these the invite page under the
+// Worker threw "supabaseKey is required" (vinext 1.4.0 hid it behind a
+// 200 fallback page; 1.4.5 returns the 500, which failed #171).
+const wranglerVars = Object.entries(serverSecrets)
+  .map(([k, v]) => `--var '${k}:${v.replace(/'/g, "'\\''")}'`)
+  .join(" ");
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -38,26 +59,16 @@ export default defineConfig({
     : {
         command:
           target === "vinext"
-            ? `npx wrangler dev --config dist/server/wrangler.json --port ${port} --ip 127.0.0.1`
+            ? `npx wrangler dev --config dist/server/wrangler.json --port ${port} --ip 127.0.0.1 ${wranglerVars}`
             : `npx next start --port ${port} --hostname 127.0.0.1`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
         // Local mock (or supabase start via E2E_SUPABASE_*) — never production.
-        // A non-empty service-role placeholder lets createAdminClient construct
-        // (invite preview); real invites/cron are not exercised without secrets.
         env: {
           ...process.env,
           ...supabaseEnv,
-          SUPABASE_SERVICE_ROLE_KEY:
-            process.env.SUPABASE_SERVICE_ROLE_KEY ||
-            "e2e-placeholder-not-a-real-service-role-key",
-          STRIPE_SECRET_KEY:
-            process.env.STRIPE_SECRET_KEY || "sk_test_e2e_placeholder",
-          STRIPE_WEBHOOK_SECRET:
-            process.env.STRIPE_WEBHOOK_SECRET || "whsec_e2e_placeholder",
-          CRON_SECRET: process.env.CRON_SECRET || "e2e-cron-secret",
-          // Rel activation drip / Resend: intentionally unset → NO SEND.
+          ...serverSecrets,
         },
       },
 });

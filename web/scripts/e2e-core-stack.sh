@@ -14,7 +14,18 @@ cd "$DIR"
 $CLI init --force >/dev/null
 rm -rf supabase/migrations
 cp -r "$ROOT/supabase/migrations" supabase/migrations
-$CLI start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,storage-api,mailpit
+EXCLUDE=studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,storage-api,mailpit
+# `supabase start` boots a temporary db container on 54322 and then the real
+# one on the same port; on GitHub runners the port is occasionally not yet
+# released ("failed to bind host port 0.0.0.0:54322: address already in use",
+# PR #165, 2026-11-08). Clean up and retry instead of failing the job.
+for attempt in 1 2 3; do
+  if $CLI start -x "$EXCLUDE"; then break; fi
+  if [ "$attempt" = 3 ]; then echo "supabase start failed 3 times" >&2; exit 1; fi
+  echo "supabase start failed (attempt $attempt); cleaning up and retrying" >&2
+  $CLI stop --no-backup >/dev/null 2>&1 || true
+  sleep $((attempt * 5))
+done
 
 eval "$($CLI status -o env 2>/dev/null | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=')"
 {
