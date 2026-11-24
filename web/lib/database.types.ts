@@ -495,6 +495,8 @@ export interface Database {
       has_premium: { Args: { uid: string }; Returns: boolean };
       // True when any joined member of the connection holds premium and the
       // caller is a member (migration 0022). Never says who pays.
+      // 0046: free-plan cap, used by the connections insert policy.
+      can_create_connection: { Args: Record<string, never>; Returns: boolean };
       connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
       connection_today: { Args: { p_conn: string }; Returns: string };
       others_have_answered: {
@@ -553,6 +555,23 @@ export interface Database {
           answered_by_id: string;
           answered_by_name: string | null;
           timezone: string;
+        }[];
+      };
+      // Migration 0048: service role only; ids, timezone and a first name.
+      missed_notification_candidates: {
+        Args: {
+          p_min_minutes?: number;
+          p_turn_max_hours?: number;
+          p_reveal_max_hours?: number;
+          p_limit?: number;
+        };
+        Returns: {
+          kind: string;
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          other_name: string | null;
+          timezone: string | null;
         }[];
       };
       ensure_daily_prompt: {

@@ -47,6 +47,14 @@ select count(*) as unsubscribed_all_30d
 from audit_log
 where action = 'notify.unsubscribe_all' and created_at > now() - interval '30 days';
 
+-- Notifications that could NOT go out because email wasn't configured on the
+-- Worker (RESEND_API_KEY / NOTIFY_SECRET). Should always be empty; any row
+-- here is a production misconfiguration (docs/RUNBOOK.md §2).
+select meta->>'kind' as kind, count(*) as skipped_config, max(created_at) as latest
+from audit_log
+where action = 'notify.skipped_config' and created_at > now() - interval '30 days'
+group by 1 order by 2 desc;
+
 -- 6. Reactions and discussion: how often a reveal turns into a conversation.
 select
   (select count(*) from prompt_instances where status = 'revealed') as reveals,

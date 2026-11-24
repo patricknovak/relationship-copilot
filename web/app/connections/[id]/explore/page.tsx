@@ -6,6 +6,7 @@ import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
 import { Icon } from "@/components/ui/Icon";
 import EmptyState from "@/components/ui/EmptyState";
+import { electiveCta } from "@/lib/electives";
 
 const KIND_LABEL: Record<string, string> = {
   quiz: "Quiz",
@@ -162,9 +163,9 @@ function Group({
               <form action={start} className="mt-4">
                 <PendingButton
                   className={st ? "btn-secondary btn-sm" : "btn-primary btn-sm"}
-                  pendingLabel="Starting…"
+                  pendingLabel={st === "open" ? "Opening…" : "Starting…"}
                 >
-                  {st === "revealed" ? "Do it again" : "Start"}
+                  {electiveCta(st)}
                   <Icon name="arrow-right" className="h-3.5 w-3.5" />
                 </PendingButton>
               </form>

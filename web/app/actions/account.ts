@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { logAudit } from "@/lib/audit";
+import { cancelFailureKind } from "@/lib/stripeErrors";
+
+// Subscription statuses with nothing left to cancel.
+const ENDED_STATUSES = new Set(["canceled", "incomplete_expired"]);
 
 // Account deletion, "redact, partner keeps theirs" model:
 //   - the user's own content (profile, answers, discussion posts, memberships,
@@ -12,9 +16,14 @@ import { logAudit } from "@/lib/audit";
 //   - shared AI insights are removed (they were derived from the user's answers);
 //   - connections with a remaining member are archived for them, with their
 //     own answers intact; connections with no one left are deleted outright.
-export async function deleteAccount(formData: FormData) {
+// Returns a message instead of throwing for failures the person can act on:
+// in production a thrown server-action error reaches the browser with its
+// message stripped, so the form could only say "something went wrong".
+export async function deleteAccount(
+  formData: FormData,
+): Promise<{ error: string } | never> {
   if (String(formData.get("confirm") || "") !== "DELETE") {
-    throw new Error('Type DELETE to confirm account deletion.');
+    return { error: "Type DELETE to confirm account deletion." };
   }
 
   const supabase = await createClient();
@@ -24,6 +33,30 @@ export async function deleteAccount(formData: FormData) {
   if (!user) redirect("/login");
 
   const admin = createAdminClient();
+
+  // Stop billing first, before anything is deleted. If Stripe will not
+  // confirm the cancellation, deleting anyway would leave a subscription
+  // charging someone who no longer has an account to cancel it from, so stop
+  // here with nothing removed and let them retry or cancel in the portal.
+  // A subscription Stripe no longer knows, or one already ended, is fine.
+  const { data: sub } = await admin
+    .from("subscriptions")
+    .select("stripe_subscription_id, status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (sub?.stripe_subscription_id && !ENDED_STATUSES.has(sub.status)) {
+    try {
+      await getStripe().subscriptions.cancel(sub.stripe_subscription_id);
+    } catch (err) {
+      if (cancelFailureKind(err) === "failed") {
+        console.error("account deletion: stripe cancel failed", err);
+        return {
+          error:
+            "We couldn't cancel your Premium subscription just now, so nothing was deleted. Try again in a minute, or cancel it under Manage billing first and then delete your account.",
+        };
+      }
+    }
+  }
 
   const { data: memberships } = await admin
     .from("connection_members")
@@ -61,20 +94,6 @@ export async function deleteAccount(formData: FormData) {
     }
   }
 
-  // Best-effort: stop billing. Failure here must not strand the deletion.
-  const { data: sub } = await admin
-    .from("subscriptions")
-    .select("stripe_subscription_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (sub?.stripe_subscription_id) {
-    try {
-      await getStripe().subscriptions.cancel(sub.stripe_subscription_id);
-    } catch {
-      /* subscription may already be canceled or Stripe unreachable */
-    }
-  }
-
   // Logged before deletion; the FK sets user_id to null so the trail survives.
   await logAudit(user.id, "account.delete");
 
@@ -82,7 +101,11 @@ export async function deleteAccount(formData: FormData) {
   // memberships, safety events, subscription.
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) {
-    throw new Error(`Could not delete the account: ${error.message}`);
+    console.error("account deletion: deleteUser failed", error.message);
+    return {
+      error:
+        "We couldn't finish deleting your account. Try again in a minute, or email privacy@relationshipcopilot.com and we'll complete it.",
+    };
   }
 
   await supabase.auth.signOut();

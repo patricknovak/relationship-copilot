@@ -139,3 +139,94 @@ export function todayIn(tz: string | null | undefined, now: Date = new Date()): 
     return todayUtc(now);
   }
 }
+
+// ---- Catching up on earlier days ----
+//
+// A new daily question opens every local day, so a pair who answer on
+// different days never meet on the same one: the first person's answer sits
+// on yesterday's instance while the hub shows the second person a fresh
+// question. These helpers pick out the earlier days that are waiting on the
+// viewer, from booleans the caller already read through RLS (their own
+// response rows and the boolean-only others_have_answered signal).
+
+/** How far back the hub looks for earlier questions waiting on the viewer. */
+export const CATCH_UP_WINDOW_DAYS = 30;
+/** How many of them the hub lists at once (newest first). */
+export const CATCH_UP_LIMIT = 5;
+
+/** YYYY-MM-DD shifted by whole days (calendar arithmetic, no time zone). */
+export function shiftDate(dateStr: string, deltaDays: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Earlier daily questions the other person has answered and the viewer has
+ * not: still open, dated before the connection's local today. Newest first.
+ */
+export function catchUpDailies<
+  T extends { id: string; scheduled_for: string | null; status?: string | null },
+>(input: {
+  instances: T[];
+  today: string;
+  answeredByMe: ReadonlySet<string>;
+  answeredByThem: ReadonlySet<string>;
+  limit?: number;
+}): T[] {
+  return input.instances
+    .filter(
+      (i) =>
+        !!i.scheduled_for &&
+        i.scheduled_for < input.today &&
+        (i.status ?? "open") === "open" &&
+        !input.answeredByMe.has(i.id) &&
+        input.answeredByThem.has(i.id),
+    )
+    .sort((a, b) => (a.scheduled_for! < b.scheduled_for! ? 1 : -1))
+    .slice(0, input.limit ?? CATCH_UP_LIMIT);
+}
+
+/** "November 19" for a YYYY-MM-DD calendar date, independent of server zone. */
+export function formatDay(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/**
+ * Heading for a daily instance. Only the connection's current local day is
+ * "Today's question"; an earlier one opened from the catch-up card, the
+ * history, or an old link is named by its date.
+ */
+export function dailyHeading(
+  scheduledFor: string | null | undefined,
+  today: string,
+): string {
+  if (!scheduledFor || scheduledFor === today) return "Today's question";
+  return `Question from ${formatDay(scheduledFor)}`;
+}
+
+/**
+ * Copy for the hub's catch-up card: earlier daily questions, quizzes and
+ * challenges the other person has answered. `them` is a first name or null.
+ */
+export function catchUpCopy(
+  count: number,
+  them: string | null,
+): { headline: string; body: string } {
+  const Who = them?.trim() || "They";
+  const who = them?.trim() || "they";
+  const verb = them?.trim() ? "is" : "are";
+  return {
+    headline:
+      count === 1
+        ? `${Who} ${verb} waiting on your answer.`
+        : `${Who} ${verb} waiting on ${count} of your answers.`,
+    body: `What ${who} wrote stays private until you answer too. Each one reveals as soon as you do.`,
+  };
+}

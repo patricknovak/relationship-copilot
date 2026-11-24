@@ -1,7 +1,7 @@
 "use server";
 
 import { randomBytes } from "crypto";
-import { INVITE_CODE_LENGTH } from "@/lib/invite";
+import { INVITE_CODE_LENGTH, inviteExpired } from "@/lib/invite";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -317,21 +317,30 @@ export async function sendEmailInvite(
   // simply finds nothing. The invite must still be open (code unburned).
   const { data: conn } = await supabase
     .from("connections")
-    .select("id, invite_code")
+    .select("id, invite_code, invite_expires_at, status")
     .eq("id", connectionId)
     .maybeSingle();
-  if (!conn?.invite_code) {
+  if (!conn?.invite_code || conn.status === "archived" || conn.status === "blocked") {
     return { error: "This connection is no longer accepting invites." };
+  }
+  // An expired code still sits on the row; emailing it would send a link
+  // the join would refuse.
+  if (inviteExpired(conn.invite_expires_at)) {
+    return {
+      error: "This invite link has expired. Tap \"Get a new link\" first, then send it.",
+    };
   }
 
   // Rate limit invite email (creates accounts via admin API). Users can read
-  // their own audit_log; count recent sends and stop before spam volume.
+  // their own audit_log; count recent attempts and stop before spam volume.
+  // "Already has an account" answers count too: uncounted, they were a free,
+  // unlimited way to test whether any address is registered here.
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count: recentInvites } = await supabase
     .from("audit_log")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .eq("action", "connection.invite_email")
+    .in("action", ["connection.invite_email", "connection.invite_email_existing"])
     .gte("created_at", since);
   if ((recentInvites ?? 0) >= 10) {
     return {
@@ -361,6 +370,8 @@ export async function sendEmailInvite(
 
   if (error) {
     if (/already.*(registered|exists)/i.test(error.message)) {
+      // Counted toward the hourly limit above; no address or domain logged.
+      await logAudit(user.id, "connection.invite_email_existing", connectionId);
       return { status: "existing" };
     }
     return { error: "Couldn't send the invite email — try sharing the link instead." };

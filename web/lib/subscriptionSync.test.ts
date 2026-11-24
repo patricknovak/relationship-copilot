@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  checkoutEntitlementUserId,
   isEntitled,
+  metadataUserId,
   resolveSubscriptionPeriodEnd,
   shouldApplySubscriptionEvent,
 } from "./subscriptionSync";
@@ -58,5 +60,45 @@ describe("resolveSubscriptionPeriodEnd", () => {
     expect(resolveSubscriptionPeriodEnd({ current_period_end: 100 })).toBe(100);
     expect(resolveSubscriptionPeriodEnd({ items: { data: [] } })).toBe(null);
     expect(resolveSubscriptionPeriodEnd({})).toBe(null);
+  });
+});
+
+describe("checkoutEntitlementUserId", () => {
+  const uid = "3f2b8a1e-6c1d-4e0a-9b7f-2d5c8e4a1b90";
+  const ours = {
+    mode: "subscription",
+    payment_status: "paid",
+    subscription: "sub_123",
+    metadata: { user_id: uid },
+  };
+
+  it("accepts a paid subscription session carrying our metadata", () => {
+    expect(checkoutEntitlementUserId(ours)).toBe(uid);
+    expect(
+      checkoutEntitlementUserId({ ...ours, payment_status: "no_payment_required" }),
+    ).toBe(uid);
+  });
+
+  it("never trusts client_reference_id (buyer-controlled on Payment Links)", () => {
+    const session = { ...ours, metadata: {}, client_reference_id: uid };
+    expect(checkoutEntitlementUserId(session)).toBeNull();
+    expect(checkoutEntitlementUserId({ ...session, metadata: null })).toBeNull();
+  });
+
+  it("ignores one-off payments and sessions without a subscription", () => {
+    expect(checkoutEntitlementUserId({ ...ours, mode: "payment" })).toBeNull();
+    expect(checkoutEntitlementUserId({ ...ours, mode: "setup" })).toBeNull();
+    expect(checkoutEntitlementUserId({ ...ours, subscription: null })).toBeNull();
+  });
+
+  it("waits for payment on delayed methods", () => {
+    expect(checkoutEntitlementUserId({ ...ours, payment_status: "unpaid" })).toBeNull();
+  });
+
+  it("rejects metadata that is not a user id", () => {
+    expect(metadataUserId({ user_id: "not-a-uuid" })).toBeNull();
+    expect(metadataUserId({ user_id: 42 })).toBeNull();
+    expect(metadataUserId(null)).toBeNull();
+    expect(checkoutEntitlementUserId({ ...ours, metadata: { user_id: "x" } })).toBeNull();
   });
 });

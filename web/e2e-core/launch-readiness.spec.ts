@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { admin, answerAll, makeUser, signedInPage } from "./helpers";
+import { admin, answerAll, makeUser, pinDailyToFreeText, signedInPage } from "./helpers";
 
 // The 2026-10-28 launch-readiness changes, end to end against a local
 // Supabase with every migration applied (0042: daily from join).
@@ -43,6 +43,9 @@ test("today's question opens the day both join; the invitee names themselves in 
   await expect(a.getByText(/Thanks, Alex/)).toBeVisible();
 
   // The first set is still open, and today's question is already there.
+  // Pinned to a free-text question so the typed answers below can be read
+  // back after the reveal whichever template the random draw would pick.
+  await pinDailyToFreeText(connectionId);
   await a.goto(`/connections/${connectionId}`);
   const todayA = a.locator("#today");
   await expect(todayA).toBeVisible();

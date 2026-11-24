@@ -14,7 +14,13 @@ export default function DeleteAccount() {
     setBusy(true);
     setError(null);
     try {
-      await deleteAccount(formData);
+      // Success redirects (and never returns); a returned value is a
+      // failure the person can act on.
+      const result = await deleteAccount(formData);
+      if (result?.error) {
+        setError(result.error);
+        setBusy(false);
+      }
     } catch (e) {
       // Next.js redirect() throws by design — let it through.
       if (e && typeof e === "object" && "digest" in e) throw e;

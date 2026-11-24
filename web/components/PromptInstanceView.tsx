@@ -25,6 +25,7 @@ import {
   WAITING_ON_YOU,
 } from "@/lib/firstRevealCopy";
 import type { PromptQuestion } from "@/lib/database.types";
+import { dailyHeading, todayIn } from "@/lib/dailyState";
 
 type AnswerMap = Record<string, string>;
 
@@ -81,6 +82,17 @@ export default async function PromptInstanceView({
     // always "Today's question" to the people answering it.
     if (tmpl?.title && instance.kind !== "daily") heading = tmpl.title;
     scored = isDimensionScored(tmpl?.config);
+  }
+  // Only the connection's current local day is "Today's question". An
+  // earlier daily (opened from the hub's catch-up card, the history, or an
+  // old link) is named by its date so nobody mistakes it for today's.
+  if (instance.kind === "daily") {
+    const { data: zone } = await supabase
+      .from("connections")
+      .select("timezone")
+      .eq("id", connectionId)
+      .maybeSingle();
+    heading = dailyHeading(instance.scheduled_for, todayIn(zone?.timezone));
   }
 
   const questions = instance.questions as PromptQuestion[];

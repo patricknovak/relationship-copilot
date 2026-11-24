@@ -12,25 +12,44 @@ export type PostAuthConnection = {
   id: string;
   /** True when someone else has already joined this connection. */
   hasPartner: boolean;
+  /**
+   * connections.status. Archived (someone left, or the other account was
+   * deleted) and blocked connections are closed: nothing can be started or
+   * shared there, so they never decide where sign-in lands.
+   */
+  status?: string | null;
 };
+
+const CLOSED_STATUSES = new Set(["archived", "blocked"]);
 
 /**
  * Resolve the post-auth path.
- * - Incomplete profile → /onboarding (optionally carrying next toward invite)
  * - No partner yet → existing solo connection invite, else /connections/new
  * - Otherwise → /connections
+ * - Incomplete profile → /onboarding first, then on to the path above
+ *
+ * Only live connections count. Someone whose only connection is archived is
+ * starting over, not waiting on an invite.
  */
 export function postAuthPath(input: {
   profile: PostAuthProfile | null;
   connections: PostAuthConnection[];
 }): string {
-  if (!input.profile?.display_name?.trim()) {
-    // After name setup, land on the invite step — not /account.
-    return "/onboarding?next=%2Fconnections%2Fnew";
-  }
+  const live = input.connections.filter(
+    (c) => !CLOSED_STATUSES.has(c.status ?? ""),
+  );
+  const solo = live.find((c) => !c.hasPartner);
+  const dest = solo
+    ? `/connections/${solo.id}#invite`
+    : live.length === 0
+      ? "/connections/new"
+      : "/connections";
 
-  const solo = input.connections.find((c) => !c.hasPartner);
-  if (solo) return `/connections/${solo.id}#invite`;
-  if (input.connections.length === 0) return "/connections/new";
-  return "/connections";
+  if (!input.profile?.display_name?.trim()) {
+    // Name first, then where they were headed anyway. An invitee who joined
+    // before naming themselves goes back to their connection afterwards,
+    // not to "create a new connection".
+    return `/onboarding?next=${encodeURIComponent(dest)}`;
+  }
+  return dest;
 }

@@ -3,6 +3,8 @@
 // Lookup outcomes (after format check + DB reads):
 //   invalid  — malformed code, or well-formed code never issued / regenerated
 //   used     — code was burned on accept (retired_invite_codes.reason = 'used')
+//   invalid  — also a code whose connection was archived/blocked (the
+//              inviter left before anyone joined): nothing can be joined
 //   expired  — row still has the code but invite_expires_at is past
 //   ok       — open invite
 //
@@ -20,13 +22,23 @@ export type InviteLookupInput = {
   expired: boolean;
   /** True when retired_invite_codes has this code with reason 'used'. */
   retiredAsUsed: boolean;
+  /**
+   * When foundActive, whether the connection is archived or blocked. Leaving
+   * archives a connection without burning its code, and accept_invite
+   * refuses a closed connection, so the link is dead even though the code
+   * still matches.
+   */
+  closed?: boolean;
 };
 
 export function classifyInviteLookup(
   input: InviteLookupInput,
 ): InviteFailureStatus | "ok" {
   if (!isInviteCodeFormat(input.code)) return "invalid";
-  if (input.foundActive) return input.expired ? "expired" : "ok";
+  if (input.foundActive) {
+    if (input.closed) return "invalid";
+    return input.expired ? "expired" : "ok";
+  }
   if (input.retiredAsUsed) return "used";
   return "invalid";
 }
@@ -76,7 +88,14 @@ export function inviteCodeFromNext(
   if (!next) return null;
   const match = /^\/invite\/([^/?#]+)/i.exec(next);
   if (!match) return null;
-  const code = decodeURIComponent(match[1] ?? "");
+  // `next` is attacker-influenceable; a stray "%" must not throw (this runs
+  // while rendering /login, where a throw is a 500 instead of a sign-in form).
+  let code: string;
+  try {
+    code = decodeURIComponent(match[1] ?? "");
+  } catch {
+    return null;
+  }
   return isInviteCodeFormat(code) ? code.toUpperCase() : null;
 }
 

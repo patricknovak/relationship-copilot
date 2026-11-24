@@ -45,4 +45,34 @@ describe("buildRedactor", () => {
     expect(map).toEqual([{ name: "Sam", placeholder: "P2" }]);
     expect(redact("I love how Sam listens")).toBe("I love how P2 listens");
   });
+
+  it("redacts names with accents and non-Latin letters", () => {
+    const { redact } = buildRedactor(["José", "Zoë"]);
+    expect(redact("José told Zoë that josé's plan works")).toBe(
+      "P1 told P2 that P1's plan works",
+    );
+    const other = buildRedactor(["Łukasz", "Анна"]);
+    expect(other.redact("Łukasz and Анна talked")).toBe("P1 and P2 talked");
+  });
+
+  it("does not redact a name inside a longer word", () => {
+    const { redact } = buildRedactor(["Ann", "René"]);
+    expect(redact("Annual plans with Renée and Ann")).toBe(
+      "Annual plans with Renée and P1",
+    );
+  });
+
+  it("redacts the first name and surname of a full display name", () => {
+    const { redact, map } = buildRedactor(["Anna Lee", "Sam de la Cruz"]);
+    expect(redact("Anna wishes Sam would call. Ms. Lee and Mr. Cruz agree.")).toBe(
+      "P1 wishes P2 would call. Ms. P1 and Mr. P2 agree.",
+    );
+    // Short particles stay ordinary words.
+    expect(redact("de la soul")).toBe("de la soul");
+    // The exposed map still lists display names only.
+    expect(map).toEqual([
+      { name: "Anna Lee", placeholder: "P1" },
+      { name: "Sam de la Cruz", placeholder: "P2" },
+    ]);
+  });
 });

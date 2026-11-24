@@ -86,4 +86,55 @@ describe("normalizeAuthNextParam", () => {
       normalizeAuthNextParam("https://evil.example/invite/ABC12345", origin),
     ).toBe("");
   });
+
+  it("unwraps a RedirectTo that points at our own auth callback", () => {
+    // The login form sends emailRedirectTo = /auth/callback?next=<dest>, so a
+    // template forwarding {{ .RedirectTo }} hands /auth/confirm this value.
+    expect(
+      normalizeAuthNextParam(
+        "https://app.example.com/auth/callback?next=%2Finvite%2FABC12345",
+        origin,
+      ),
+    ).toBe("/invite/ABC12345");
+    expect(
+      normalizeAuthNextParam(
+        "/auth/confirm?next=%2Fconnections%2Fnew%3Ftype%3Dsibling",
+        origin,
+      ),
+    ).toBe("/connections/new?type=sibling");
+  });
+
+  it("treats a bare auth route as no destination", () => {
+    // No inner next: fall through to the new-user routing instead of
+    // bouncing a signed-in user through /auth/callback as a failed link.
+    expect(
+      normalizeAuthNextParam("https://app.example.com/auth/callback?next=", origin),
+    ).toBe("");
+    expect(normalizeAuthNextParam("/auth/callback", origin)).toBe("");
+    expect(normalizeAuthNextParam("/auth/confirm?token_hash=x", origin)).toBe("");
+  });
+
+  it("keeps the open-redirect guard on the unwrapped destination", () => {
+    expect(
+      normalizeAuthNextParam(
+        "/auth/callback?next=https%3A%2F%2Fevil.example%2Fphish",
+        origin,
+      ),
+    ).toBe("");
+    expect(
+      normalizeAuthNextParam("/auth/callback?next=%2F%2Fevil.example", origin),
+    ).toBe("");
+    // Endless self-wrapping resolves to nothing rather than looping.
+    const wrap = (inner: string) => `/auth/callback?next=${encodeURIComponent(inner)}`;
+    expect(normalizeAuthNextParam(wrap(wrap(wrap(wrap("/x")))), origin)).toBe("");
+  });
+
+  it("does not unwrap ordinary pages that merely carry a next param", () => {
+    expect(normalizeAuthNextParam("/onboarding?next=%2Fconnections", origin)).toBe(
+      "/onboarding?next=%2Fconnections",
+    );
+    expect(normalizeAuthNextParam("/auth/callbacks?next=%2Fx", origin)).toBe(
+      "/auth/callbacks?next=%2Fx",
+    );
+  });
 });

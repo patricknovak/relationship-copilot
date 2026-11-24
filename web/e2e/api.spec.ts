@@ -6,6 +6,10 @@ test.describe("API negative paths (no secrets spent)", () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
+    // Which notification channels can send: booleans only, never a secret.
+    expect(typeof body.notifications?.email).toBe("boolean");
+    expect(typeof body.notifications?.push).toBe("boolean");
+    expect(JSON.stringify(body)).not.toMatch(/re_|secret/i);
   });
 
   test("cron daily-reminder rejects missing auth", async ({ request }) => {

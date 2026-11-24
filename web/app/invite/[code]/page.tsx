@@ -86,6 +86,9 @@ async function loadInvitePreview(code: string): Promise<InvitePreview> {
     foundActive: !!conn,
     expired,
     retiredAsUsed,
+    // The inviter left (archive keeps the code): accept_invite would refuse,
+    // so show the dead-link page instead of auto-joining into an error.
+    closed: conn?.status === "archived" || conn?.status === "blocked",
   });
 
   if (status !== "ok") return { status };

@@ -143,10 +143,36 @@ function firstName(name: string | null | undefined): string | null {
   return n.split(/\s+/)[0].slice(0, 40);
 }
 
+// Kinds sent while at least one answer is still private.
+const SEALED_KINDS: ReadonlySet<NotificationKind> = new Set([
+  "your_turn",
+  "turn_reminder",
+  "partner_joined",
+  "daily_ready",
+]);
+
+// Inbox preview text: the first sentence of the lead, so the list view shows
+// the point instead of repeating the subject or leaking the footer.
+function preheader(lead: string): string {
+  const first = /^.*?[.!?](?=\s|$)/.exec(lead)?.[0] ?? lead;
+  return first.length > 140 ? `${first.slice(0, 139)}…` : first;
+}
+
+// Account → Notifications on the same site as the action link.
+function accountUrl(instanceUrl: string): string | null {
+  try {
+    return new URL("/account", instanceUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
 export function buildNotificationEmail(
   input: NotificationEmailInput,
 ): NotificationEmail {
   const who = firstName(input.themName) ?? "Your person";
+  // Mid-sentence the fallback is lower case ("You and your person").
+  const whoMid = firstName(input.themName) ?? "your person";
   let subject: string;
   let lead: string;
   let cta: string;
@@ -157,7 +183,7 @@ export function buildNotificationEmail(
       cta = "Answer now";
       break;
     case "revealed":
-      subject = `You and ${who} both answered`;
+      subject = `You and ${whoMid} both answered`;
       lead = `You've both shared, so the reveal is open. Read the answers side by side and pick up the thread in the discussion.`;
       cta = "See the reveal";
       break;
@@ -178,7 +204,7 @@ export function buildNotificationEmail(
       break;
     case "daily_ready":
       subject = "Today's question is ready";
-      lead = `A new question is waiting for you and ${who}. Answer in private; it reveals when you both have.`;
+      lead = `A new question is waiting for you and ${whoMid}. Answer in private; it reveals when you both have.`;
       cta = "Answer today's question";
       break;
     default: {
@@ -193,12 +219,22 @@ export function buildNotificationEmail(
       ? input.questionText.trim()
       : null;
 
+  // The privacy promise belongs on emails about something still sealed. On a
+  // reveal or a discussion reply both answers are already open, and the line
+  // would contradict the email it sits in.
+  const sealed = SEALED_KINDS.has(input.kind);
+  const promise = "No peeking either way: nobody's answer is shown until you've both shared.";
+  const settingsUrl = accountUrl(input.instanceUrl);
+
   const text = [
     lead,
     question ? `\n“${question}”` : null,
     `\n${cta}: ${input.instanceUrl}`,
-    "\nNo peeking either way: nobody's answer is shown until you've both shared.",
-    `\nStop these emails: ${input.unsubscribeUrl}`,
+    sealed ? `\n${promise}` : null,
+    "\n--",
+    "You get these because you have a connection on Relationship Copilot.",
+    settingsUrl ? `Choose which ones you get: ${settingsUrl}` : null,
+    `Stop all of them: ${input.unsubscribeUrl}`,
   ]
     .filter((x): x is string => !!x)
     .join("\n");
@@ -208,9 +244,12 @@ export function buildNotificationEmail(
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
     <title>${escapeHtml(subject)}</title>
   </head>
   <body style="margin:0;padding:0;background:#fbf8f4;color:#221a22;font-family:Georgia,'Times New Roman',serif;line-height:1.55">
+    <div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;color:#fbf8f4">${escapeHtml(preheader(lead))}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fbf8f4;padding:32px 16px">
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e8ddd8;border-radius:16px;padding:32px 28px">
@@ -224,8 +263,15 @@ export function buildNotificationEmail(
             <p style="margin:0 0 24px;text-align:center">
               <a href="${escapeHtml(input.instanceUrl)}" style="display:inline-block;background:#74386f;color:#ffffff;text-decoration:none;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:600;padding:12px 22px;border-radius:999px">${escapeHtml(cta)}</a>
             </p>
-            <p style="margin:0 0 8px;font-size:13px;color:#6b5a66">No peeking either way: nobody&rsquo;s answer is shown until you&rsquo;ve both shared.</p>
-            <p style="margin:0;font-size:12px;color:#8a7a85"><a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#8a7a85">Stop these emails</a> &middot; Relationship Copilot</p>
+${
+              sealed
+                ? `            <p style="margin:0 0 16px;font-size:13px;color:#6b5a66">${escapeHtml(promise)}</p>\n`
+                : ""
+            }            <p style="margin:0;padding-top:14px;border-top:1px solid #e8ddd8;font-size:12px;line-height:1.6;color:#6b5a66">You get these because you have a connection on Relationship Copilot.${
+              settingsUrl
+                ? ` <a href="${escapeHtml(settingsUrl)}" style="color:#6b5a66">Choose which ones you get</a> or`
+                : ""
+            } <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#6b5a66">stop these emails</a>.</p>
           </td></tr>
         </table>
       </td></tr>

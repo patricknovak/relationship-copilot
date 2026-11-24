@@ -36,3 +36,15 @@ export function smsHref(message: string): string {
 export function whatsappHref(message: string): string {
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }
+
+// Invites expire (14 days, stamped by the database). An expired code still
+// sits on the connection row until a new link is minted, so "has a code" is
+// not "can be joined": accept_invite refuses it.
+export function inviteExpired(
+  expiresAt: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!expiresAt) return false;
+  const t = new Date(expiresAt).getTime();
+  return !Number.isNaN(t) && t <= now.getTime();
+}
