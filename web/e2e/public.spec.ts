@@ -56,4 +56,25 @@ test.describe("Public marketing surfaces", () => {
     expect(sitemap.ok()).toBeTruthy();
     expect(await sitemap.text()).toContain("relationshipcopilot.com");
   });
+
+  test("crisis numbers on Safety are tappable", async ({ page }) => {
+    await page.goto("/safety");
+    await expect(
+      page.getByRole("link", { name: "Call or text 988" }),
+    ).toHaveAttribute("href", "tel:988");
+    await expect(
+      page.getByRole("link", { name: "Text HOME to 741741" }),
+    ).toHaveAttribute("href", "sms:741741?&body=HOME");
+  });
+
+  test("public pages keep the share image when they set their own title", async ({
+    request,
+  }) => {
+    for (const path of ["/pricing", "/safety", "/about", "/for/partners"]) {
+      const html = await (await request.get(path)).text();
+      expect(html, path).toMatch(/property="og:image" content="[^"]*\/opengraph-image/);
+      expect(html, path).toMatch(/name="twitter:image" content="[^"]*\/opengraph-image/);
+      expect(html, path).toContain('property="og:site_name" content="Relationship Copilot"');
+    }
+  });
 });

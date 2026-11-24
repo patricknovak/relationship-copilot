@@ -9,7 +9,7 @@ import {
   QUESTIONS_SHARED_FAQS,
   QUESTIONS_SIGN_IN_HINT,
 } from "@/lib/questionPages";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import SharePublic from "@/components/SharePublic";
 import { Icon } from "@/components/ui/Icon";
 import { TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
@@ -21,11 +21,11 @@ export const metadata: Metadata = {
   title: QUESTIONS_HUB.metaTitle,
   description: QUESTIONS_HUB.metaDescription,
   alternates: { canonical: url },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: QUESTIONS_HUB.metaTitle,
     description: QUESTIONS_HUB.metaDescription,
     url,
-  },
+  }),
 };
 
 export default function QuestionsHubPage() {

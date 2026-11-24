@@ -6,7 +6,7 @@ import { AuthLink } from "@/components/AuthHint";
 import { FOR_PAGES, forPageBySlug, forPageFaqs } from "@/lib/forPages";
 import { faqPageJsonLdScriptContent } from "@/lib/jsonLd";
 import { questionPageBySlug } from "@/lib/questionPages";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import SharePublic from "@/components/SharePublic";
 import { Icon, TYPE_ICON, TYPE_TINT } from "@/components/ui/Icon";
 
@@ -27,7 +27,7 @@ export async function generateMetadata({
     title: page.title,
     description: page.description,
     alternates: { canonical: url },
-    openGraph: { title: page.title, description: page.description, url },
+    openGraph: pageOpenGraph({ title: page.title, description: page.description, url }),
   };
 }
 

@@ -3,7 +3,7 @@ import { signInVia } from "@/lib/signInCopy";
 import Link from "next/link";
 import { AuthLink } from "@/components/AuthHint";
 import { createClient } from "@/lib/supabase/server";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import { FOR_PAGES } from "@/lib/forPages";
 import { Icon } from "@/components/ui/Icon";
 
@@ -12,12 +12,12 @@ export const metadata: Metadata = {
   description:
     "Short, research-grounded reads for partners, friends, family and coworkers, each rated for how strong the science is.",
   alternates: { canonical: canonicalUrl("/library") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "Relationship reads from research — Relationship Copilot",
     description:
       "Short, research-grounded reads for partners, friends, family and coworkers, each rated for how strong the science is.",
     url: canonicalUrl("/library"),
-  },
+  }),
 };
 
 // Evidence-based education. RLS returns free articles to everyone and premium

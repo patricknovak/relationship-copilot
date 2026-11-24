@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
     "The terms for using Relationship Copilot, including what the service is and is not.",
   alternates: { canonical: canonicalUrl("/terms") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "Terms of Service — Relationship Copilot",
     url: canonicalUrl("/terms"),
-  },
+  }),
 };
 
 export default function TermsPage() {

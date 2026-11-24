@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ConsentPreferences from "@/components/ConsentPreferences";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "What Relationship Copilot stores, who can see it, how AI features handle your words, and how to export or delete everything.",
   alternates: { canonical: canonicalUrl("/privacy") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "Privacy Policy — Relationship Copilot",
     url: canonicalUrl("/privacy"),
-  },
+  }),
 };
 
 // Keep this page in sync with what the code really does; it is a description,
