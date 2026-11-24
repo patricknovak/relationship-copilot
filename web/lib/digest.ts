@@ -1,6 +1,21 @@
 import type { GrokMessage } from "@/lib/grok";
 import { connectionLabel } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
+import {
+  capitalizeSentenceStarts,
+  fenceAnswer,
+  MAX_ITEM_CHARS,
+  MAX_PARAGRAPH_CHARS,
+  NAMING_RULE,
+  OUTPUT_FORMAT_RULE,
+  outputViolations,
+  relationshipFraming,
+  restoreNames,
+  sanitizeModelList,
+  sanitizeModelText,
+  UNTRUSTED_TEXT_RULE,
+  type OutputViolation,
+} from "@/lib/aiGuard";
 
 // The weekly digest looks back at the last week of revealed answers and
 // reflects them back: what shone, what to appreciate, one gentle suggestion.
@@ -21,6 +36,11 @@ Hard rules:
 - No predictions, scores, or percentages. Frame everything as gentle observation.
 - If anything suggests abuse, coercive control, violence, or self-harm, do NOT analyze it as an ordinary issue — gently encourage seeking support from trained professionals.
 - Keep it short and specific to what they actually wrote; never invent details.
+- Never name a condition, disorder, or label for either person, even if they used the word themselves.
+- ${UNTRUSTED_TEXT_RULE}
+- ${NAMING_RULE}
+- ${OUTPUT_FORMAT_RULE}
+- The reflection is at most 70 words. If one of them did not answer something, do not point it out or guess why.
 
 Return ONLY JSON matching:
 {
@@ -50,19 +70,19 @@ export function digestUserPrompt(
   const lines = items
     .map(
       (x, i) =>
-        `${i + 1}. [${x.title}] ${x.question}\n- P1: ${x.p1 || "(no answer)"}\n- P2: ${x.p2 || "(no answer)"}`,
+        `${i + 1}. [${x.title}] ${x.question}\n- P1: ${fenceAnswer(x.p1)}\n- P2: ${fenceAnswer(x.p2)}`,
     )
     .join("\n\n");
   const goalBlock =
     goals.length > 0
       ? `\n\nThings they have said they are trying together (their shared list, redacted the same way):\n${goals
           .slice(0, 10)
-          .map((g) => `- ${g}`)
+          .map((g) => `- ${fenceAnswer(g, 200)}`)
           .join("\n")}\nIf the week's answers touch on any of these, say so gently; never scold about ones they didn't get to.`
       : "";
   return {
     role: "user",
-    content: `Relationship type: ${connectionLabel(type)}.\nHere is what they answered together this week (names redacted as P1/P2):\n\n${lines}${goalBlock}\n\nProduce the JSON weekly digest.`,
+    content: `Relationship type: ${connectionLabel(type)}. ${relationshipFraming(type)}\nHere is what they answered together this week (names redacted as P1/P2):\n\n${lines}${goalBlock}\n\nProduce the JSON weekly digest.`,
   };
 }
 
@@ -89,6 +109,47 @@ export function parseDigest(raw: string): Digest {
     gentle_suggestion:
       typeof obj.gentle_suggestion === "string" ? obj.gentle_suggestion : "",
     reflection: typeof obj.reflection === "string" ? obj.reflection : "",
+  };
+}
+
+export type DigestResult =
+  | { ok: true; digest: Digest }
+  | { ok: false; reason: "malformed" | "thin" | OutputViolation };
+
+/** Parse, clean, bound, check and name a digest. See finalizeBlueprint. */
+export function finalizeDigest(
+  raw: string,
+  names: (string | null | undefined)[] = [],
+): DigestResult {
+  const parsed = parseDigest(raw);
+  const clean: Digest = {
+    highlights: sanitizeModelList(parsed.highlights, 3),
+    appreciations: sanitizeModelList(parsed.appreciations, 3),
+    gentle_suggestion: sanitizeModelText(parsed.gentle_suggestion, MAX_ITEM_CHARS),
+    reflection: sanitizeModelText(parsed.reflection, MAX_PARAGRAPH_CHARS),
+  };
+  const all = [
+    ...clean.highlights,
+    ...clean.appreciations,
+    clean.gentle_suggestion,
+    clean.reflection,
+  ].filter(Boolean);
+  if (all.length === 0) return { ok: false, reason: "malformed" };
+  // The card needs something to open with and something to close with.
+  if (clean.highlights.length === 0 || !clean.reflection) return { ok: false, reason: "thin" };
+
+  const violations = outputViolations(all);
+  if (violations.length > 0) return { ok: false, reason: violations[0] };
+
+  const name = (t: string) => capitalizeSentenceStarts(restoreNames(t, names));
+  return {
+    ok: true,
+    digest: {
+      highlights: clean.highlights.map(name),
+      appreciations: clean.appreciations.map(name),
+      gentle_suggestion: name(clean.gentle_suggestion),
+      reflection: name(clean.reflection),
+    },
   };
 }
 

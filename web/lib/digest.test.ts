@@ -42,7 +42,7 @@ describe("digestUserPrompt", () => {
       { title: "Daily question", question: "High of the day?", p1: "the park", p2: "" },
     ]);
     expect(msg.content).toContain("[Daily question] High of the day?");
-    expect(msg.content).toContain("P1: the park");
+    expect(msg.content).toContain("P1: <answer>the park</answer>");
     expect(msg.content).toContain("P2: (no answer)");
   });
 });
@@ -54,8 +54,8 @@ describe("digestUserPrompt goals", () => {
     const goals = Array.from({ length: 12 }, (_, i) => `goal ${i}`);
     const c = digestUserPrompt("friend", items, goals).content;
     expect(c).toContain("trying together");
-    expect(c).toContain("- goal 9");
-    expect(c).not.toContain("- goal 10");
+    expect(c).toContain("- <answer>goal 9</answer>");
+    expect(c).not.toContain("goal 10");
   });
 });
 

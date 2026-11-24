@@ -53,6 +53,15 @@ export function claimBlockedBy(
   });
 }
 
+/**
+ * Pure: has this connection already had `max` finished generations in the
+ * rows given (the caller passes the last 24 hours)? In-flight claims are not
+ * counted; a failed generation deletes its row, so it is not counted either.
+ */
+export function overDailyInsightCap(rows: { payload: unknown }[], max: number): boolean {
+  return rows.filter((r) => !isPendingInsightPayload(r.payload)).length >= max;
+}
+
 /** @deprecated use claimBlockedBy — kept for narrow unit tests of count>1. */
 export function claimLostRace(recentCount: number): boolean {
   return recentCount > 1;

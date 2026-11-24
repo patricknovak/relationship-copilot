@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  overDailyInsightCap,
   CLAIM_TTL_MS,
   claimBlockedBy,
   claimLostRace,
@@ -59,5 +60,15 @@ describe("claimLostRace", () => {
   it("flags count > 1", () => {
     expect(claimLostRace(1)).toBe(false);
     expect(claimLostRace(2)).toBe(true);
+  });
+});
+
+describe("overDailyInsightCap", () => {
+  it("counts finished generations, not in-flight claims", () => {
+    const done = { payload: { reflection: "x" } };
+    const pending = { payload: { status: "generating" } };
+    expect(overDailyInsightCap([done, done, pending], 3)).toBe(false);
+    expect(overDailyInsightCap([done, done, done, pending], 3)).toBe(true);
+    expect(overDailyInsightCap([], 5)).toBe(false);
   });
 });

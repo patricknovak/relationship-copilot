@@ -13,7 +13,7 @@ import { buildRedactor } from "@/lib/redact";
 import { assessSafety } from "@/lib/safetyClassifier";
 import { logAudit } from "@/lib/audit";
 import { grokChat, grokModel } from "@/lib/grok";
-import { digestSystemPrompt, digestUserPrompt, parseDigest, type DigestItem } from "@/lib/digest";
+import { digestSystemPrompt, digestUserPrompt, finalizeDigest, type DigestItem } from "@/lib/digest";
 import {
   claimInsightSlot,
   finalizeInsightClaim,
@@ -162,7 +162,12 @@ export async function runWeeklyDigest(
       [digestSystemPrompt(), digestUserPrompt(conn.type, trimmed, goals)],
       { json: true },
     );
-    digest = parseDigest(content);
+    const result = finalizeDigest(content, [nameFor(m1), nameFor(m2)]);
+    if (!result.ok) {
+      await logAudit(userId, "digest.output_rejected", connectionId, { mode, reason: result.reason });
+      throw new Error("digest output rejected");
+    }
+    digest = result.digest;
   } catch {
     await releaseInsightClaim(admin, claimId);
     return "ai";

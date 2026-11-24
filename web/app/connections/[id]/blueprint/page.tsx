@@ -18,6 +18,8 @@ const ERRORS: Record<string, string> = {
     "AI reflections aren't switched on yet. Nothing you've written has been sent anywhere.",
   ratelimit:
     "A Blueprint was generated just now. Give it a few minutes before regenerating.",
+  daily:
+    "That's today's limit for regenerating this Blueprint. It will be available again tomorrow.",
   notready: "Finish your first questions together first — then the Blueprint unlocks.",
   ai: "The AI couldn't finish just now. Nothing was lost — try again in a moment.",
   consent: "Couldn't save that choice just now. Try again in a moment.",
@@ -90,7 +92,11 @@ export default async function BlueprintPage({
     isPendingInsightPayload(rawPayload) ? null : rawPayload
   ) as Payload | null;
   const aiOn = aiEnabled();
-  const free = isPremium ? "used" : await freeBlueprintState(supabase, id);
+  const claimState = isPremium ? "used" : await freeBlueprintState(supabase, id);
+  // A used claim with no Blueprint to show for it was left behind by a
+  // generation that died part-way; the action lets the pair try again on it
+  // (generateBlueprint, "free_claim_recovered"), so the page offers that.
+  const free = claimState === "used" && !isPremium && !payload ? "available" : claimState;
   const offer = blueprintOffer({ isPremium: !!isPremium, aiOn, revealed, free });
   // A Blueprint that exists on a non-Premium connection is its free one.
   const showsFreeNote = !!payload && !payload.safety && !isPremium;
@@ -145,7 +151,9 @@ export default async function BlueprintPage({
       {payload?.safety ? (
         <>
           <SafetyCard />
-          {isPremium && aiOn && (
+          {/* The free Blueprint is given back when support is shown instead,
+              so a free pair can try again too, e.g. after later answers. */}
+          {(isPremium || offer === "free") && aiOn && (
             <form action={generate} className="mt-4">
               <PendingButton
                 className="btn-secondary !px-4 !py-2 text-sm"

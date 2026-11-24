@@ -1,6 +1,21 @@
 import type { GrokMessage } from "@/lib/grok";
 import { connectionLabel } from "@/lib/relationships";
 import type { ConnectionType } from "@/lib/database.types";
+import {
+  capitalizeSentenceStarts,
+  fenceAnswer,
+  MAX_LIST_ITEMS,
+  MAX_PARAGRAPH_CHARS,
+  NAMING_RULE,
+  OUTPUT_FORMAT_RULE,
+  outputViolations,
+  relationshipFraming,
+  restoreNames,
+  sanitizeModelList,
+  sanitizeModelText,
+  UNTRUSTED_TEXT_RULE,
+  type OutputViolation,
+} from "@/lib/aiGuard";
 
 export interface Blueprint {
   strengths: string[];
@@ -21,6 +36,11 @@ Hard rules:
 - Ground suggestions in well-established relationship science (e.g. building fondness, turning toward bids, repair, shared meaning) when relevant, but keep language plain.
 - If anything suggests abuse, coercive control, violence, or self-harm, do NOT analyze it as an ordinary issue — gently encourage seeking support from trained professionals. Do not diagnose.
 - Astrology, if mentioned, is entertainment only and must never inform your guidance.
+- Never name a condition, disorder, or label for either person (for example "narcissist", "codependent", "anxious-attached"), even if they used the word themselves.
+- ${UNTRUSTED_TEXT_RULE}
+- ${NAMING_RULE}
+- ${OUTPUT_FORMAT_RULE}
+- The reflection is at most 110 words. If their answers are too thin to say something specific, say less rather than padding with general advice.
 
 Return ONLY JSON matching:
 {
@@ -51,7 +71,7 @@ function qaLines(qa: BlueprintQa[], prefix: string): string {
   return qa
     .map(
       (x, i) =>
-        `${prefix}${i + 1}${x.date ? ` (${x.date})` : ""}: ${x.question}\n- P1: ${x.p1 || "(no answer)"}\n- P2: ${x.p2 || "(no answer)"}`,
+        `${prefix}${i + 1}${x.date ? ` (${x.date})` : ""}: ${x.question}\n- P1: ${fenceAnswer(x.p1)}\n- P2: ${fenceAnswer(x.p2)}`,
     )
     .join("\n\n");
 }
@@ -88,8 +108,8 @@ export function intakeFromProfile(raw: unknown): BlueprintIntake | null {
 function intakeLines(label: string, x: BlueprintIntake): string {
   return [
     `${label} chose to share their private profile reflections:`,
-    x.goals ? `- What they hope for: ${x.goals}` : null,
-    x.values ? `- What matters to them: ${x.values}` : null,
+    x.goals ? `- What they hope for: ${fenceAnswer(x.goals, MAX_INTAKE_FIELD)}` : null,
+    x.values ? `- What matters to them: ${fenceAnswer(x.values, MAX_INTAKE_FIELD)}` : null,
     x.attachmentStyle
       ? `- A short self-reflection quiz suggested "${x.attachmentStyle}" (self-reported, not a diagnosis)`
       : null,
@@ -125,7 +145,7 @@ export function blueprintUserPrompt(
       : "";
   return {
     role: "user",
-    content: `Relationship type: ${connectionLabel(type)}.\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${qaLines(qa, "Q")}${recentBlock}${intakeBlock}\n\nProduce the JSON blueprint.`,
+    content: `Relationship type: ${connectionLabel(type)}. ${relationshipFraming(type)}\nHere are their answers to the onboarding questions (names redacted as P1/P2):\n\n${qaLines(qa, "Q")}${recentBlock}${intakeBlock}\n\nProduce the JSON blueprint.`,
   };
 }
 
@@ -152,5 +172,47 @@ export function parseBlueprint(raw: string): Blueprint {
     shared_goals: arr(obj.shared_goals),
     focus_areas: arr(obj.focus_areas),
     reflection: typeof obj.reflection === "string" ? obj.reflection : "",
+  };
+}
+
+export type BlueprintResult =
+  | { ok: true; blueprint: Blueprint }
+  | { ok: false; reason: "malformed" | "thin" | OutputViolation };
+
+/**
+ * Everything between the model's raw text and a Blueprint we are willing to
+ * save: parse, clean, bound, check it kept the product's promises, then put
+ * names back. Malformed or empty output is a failure, not a blank Blueprint:
+ * saving one would spend the pair's free Blueprint on an empty page.
+ */
+export function finalizeBlueprint(
+  raw: string,
+  names: (string | null | undefined)[] = [],
+): BlueprintResult {
+  const parsed = parseBlueprint(raw);
+  const clean: Blueprint = {
+    strengths: sanitizeModelList(parsed.strengths, MAX_LIST_ITEMS),
+    shared_goals: sanitizeModelList(parsed.shared_goals, MAX_LIST_ITEMS),
+    focus_areas: sanitizeModelList(parsed.focus_areas, MAX_LIST_ITEMS),
+    reflection: sanitizeModelText(parsed.reflection, MAX_PARAGRAPH_CHARS),
+  };
+  const lists = [clean.strengths, clean.shared_goals, clean.focus_areas];
+  const filled = lists.filter((l) => l.length > 0).length + (clean.reflection ? 1 : 0);
+  if (filled === 0) return { ok: false, reason: "malformed" };
+  // A Blueprint is three lists and a reflection; half of one is not one.
+  if (filled < 3 || !clean.reflection) return { ok: false, reason: "thin" };
+
+  const violations = outputViolations([...lists.flat(), clean.reflection]);
+  if (violations.length > 0) return { ok: false, reason: violations[0] };
+
+  const name = (t: string) => capitalizeSentenceStarts(restoreNames(t, names));
+  return {
+    ok: true,
+    blueprint: {
+      strengths: clean.strengths.map(name),
+      shared_goals: clean.shared_goals.map(name),
+      focus_areas: clean.focus_areas.map(name),
+      reflection: name(clean.reflection),
+    },
   };
 }
