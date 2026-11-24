@@ -4,6 +4,7 @@ import {
   normalizeAuthNextParam,
   parseConfirmOtpType,
 } from "@/lib/authConfirm";
+import { readRequestAnalyticsConsent } from "@/lib/analyticsConsent.server";
 import { SIGN_UP_COMPLETED } from "@/lib/ga4";
 import { claimAndTrackUserFunnelStep } from "@/lib/funnelTrack";
 import { resolvePostAuthDestination } from "@/lib/resolvePostAuthDestination";
@@ -41,14 +42,24 @@ export async function GET(request: Request) {
   });
   if (error) return fail();
 
-  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
-  await claimAndTrackUserFunnelStep(supabase, SIGN_UP_COMPLETED);
-
-  if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Once-only anonymous GA4 sign_up_completed (0041). Failures never block redirect.
+  // MP only when this request's analytics consent cookie is granted.
+  if (user) {
+    const analyticsConsent = await readRequestAnalyticsConsent();
+    await claimAndTrackUserFunnelStep(
+      supabase,
+      SIGN_UP_COMPLETED,
+      user.id,
+      analyticsConsent,
+    );
+  }
+
+  if (explicitNext) return NextResponse.redirect(`${origin}${explicitNext}`);
+
   if (user) {
     const dest = await resolvePostAuthDestination(supabase, user.id);
     return NextResponse.redirect(`${origin}${dest}`);

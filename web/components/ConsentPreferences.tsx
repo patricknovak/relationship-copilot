@@ -6,6 +6,7 @@ import {
   notifyConsentChange,
   readStoredConsent,
   storeConsent,
+  writeConsentCookie,
   type ConsentChoice,
 } from "@/lib/analytics";
 
@@ -36,7 +37,9 @@ export default function ConsentPreferences() {
   );
 
   useEffect(() => {
-    setChoice(readStoredConsent());
+    const existing = readStoredConsent();
+    setChoice(existing);
+    if (existing) writeConsentCookie(existing);
   }, []);
 
   if (!GTM_ID) return null;
