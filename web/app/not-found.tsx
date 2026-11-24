@@ -3,8 +3,8 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="hero-glow relative overflow-hidden">
-      <div className="blob -left-20 top-10 h-72 w-72 bg-brand-200/50 dark:bg-brand-900/25" />
-      <div className="blob -right-16 bottom-0 h-72 w-72 bg-accent-200/50 dark:bg-accent-900/20" />
+      <div aria-hidden className="blob -left-20 top-10 h-72 w-72 bg-brand-200/50 dark:bg-brand-900/25" />
+      <div aria-hidden className="blob -right-16 bottom-0 h-72 w-72 bg-accent-200/50 dark:bg-accent-900/20" />
       <div className="relative mx-auto max-w-md px-4 py-24 text-center">
         <svg
           viewBox="0 0 40 20"
@@ -22,16 +22,22 @@ export default function NotFound() {
           The page you&apos;re looking for doesn&apos;t exist — or it was never
           revealed. Let&apos;s get you back to the people who matter.
         </p>
-        <div className="mt-8 flex items-center justify-center gap-3">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link href="/" className="btn-primary">
             Go home
           </Link>
-          <Link href="/connections" className="btn-secondary auth-in">
-            Your connections
-          </Link>
-          <Link href="/library" className="btn-secondary auth-out">
-            Browse the library
-          </Link>
+          {/* The auth wrappers are display: contents, so they go around the
+              button rather than on it (on the link they erase its box). */}
+          <span className="auth-in">
+            <Link href="/connections" className="btn-secondary">
+              Your connections
+            </Link>
+          </span>
+          <span className="auth-out">
+            <Link href="/library" className="btn-secondary">
+              Browse the library
+            </Link>
+          </span>
         </div>
       </div>
     </div>

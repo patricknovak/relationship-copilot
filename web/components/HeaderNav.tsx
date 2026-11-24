@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
@@ -30,11 +30,24 @@ const SIGNED_OUT_LINKS = [
 export default function HeaderNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Close the panel on navigation.
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  // Escape closes the panel and hands focus back to the menu button.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   // Signing out on a shared browser stops this device's notifications.
   const forgetPush = () => {
@@ -50,7 +63,12 @@ export default function HeaderNav() {
 
   const desktop = (links: typeof SIGNED_IN_LINKS) =>
     links.map((l) => (
-      <Link key={l.href} href={l.href} className={linkCls(l.href)}>
+      <Link
+        key={l.href}
+        href={l.href}
+        aria-current={pathname.startsWith(l.href) ? "page" : undefined}
+        className={linkCls(l.href)}
+      >
         {l.label}
       </Link>
     ));
@@ -61,6 +79,7 @@ export default function HeaderNav() {
         key={l.href}
         href={l.href}
         onClick={() => setOpen(false)}
+        aria-current={pathname.startsWith(l.href) ? "page" : undefined}
         className={`flex items-center justify-between rounded-xl px-3 py-3 text-base ${
           pathname.startsWith(l.href)
             ? "bg-brand-100 font-semibold text-brand-900 dark:bg-brand-900/50 dark:text-brand-100"
@@ -77,7 +96,7 @@ export default function HeaderNav() {
       {/* Safety must be reachable from every screen, at every width. */}
       <Link
         href="/safety"
-        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-2.5 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 sm:px-3 dark:text-rose-300 dark:hover:bg-rose-950/40"
       >
         <Icon name="lifebuoy" className="h-4 w-4" />
         Safety
@@ -112,8 +131,11 @@ export default function HeaderNav() {
       {/* Mobile: hamburger only — Sign in lives in the panel so the sticky
           bar never forces horizontal page scroll at ~360–390px. */}
       <button
+        ref={menuButtonRef}
+        type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-controls="mobile-menu"
         aria-label={open ? "Close menu" : "Open menu"}
         className="btn-icon sm:hidden"
       >
@@ -122,7 +144,7 @@ export default function HeaderNav() {
 
       {/* Mobile panel */}
       {open && (
-        <div className="absolute inset-x-0 top-16 z-50 border-b border-surface-line bg-paper/95 shadow-float backdrop-blur-xl sm:hidden">
+        <div id="mobile-menu" className="absolute inset-x-0 top-16 z-50 max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-surface-line bg-paper/95 shadow-float backdrop-blur-xl sm:hidden">
           <div className="mx-auto max-w-5xl space-y-1 px-4 py-4">
             <AuthSwitch
               signedIn={

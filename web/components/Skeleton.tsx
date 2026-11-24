@@ -2,6 +2,7 @@
 function Bone({ className = "" }: { className?: string }) {
   return (
     <div
+      aria-hidden
       className={`animate-shimmer rounded-full bg-[linear-gradient(90deg,rgb(var(--surface-line))_0%,rgb(var(--paper-warm))_50%,rgb(var(--surface-line))_100%)] bg-[length:200%_100%] ${className}`}
     />
   );
@@ -29,7 +30,8 @@ export function SkeletonPage({
   title?: boolean;
 }) {
   return (
-    <div className="page">
+    <div className="page" role="status" aria-busy="true">
+      <span className="sr-only">Loading…</span>
       {title && (
         <div>
           <Bone className="h-3 w-24" />

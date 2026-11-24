@@ -137,12 +137,23 @@ export default function AnswerForm({
                 <Icon name="check" className="h-3 w-3" strokeWidth={3} />
               </span>
             </div>
-            <label
-              className="mt-1.5 block font-display text-xl leading-snug text-ink"
-              htmlFor={`q_${q.id}`}
-            >
-              {q.text}
-            </label>
+            {/* A <label for> only works for the free-text field; scale and
+                choice questions are radio groups named by this text instead. */}
+            {isGroup(q) ? (
+              <p
+                id={`q_${q.id}_label`}
+                className="mt-1.5 block font-display text-xl leading-snug text-ink"
+              >
+                {q.text}
+              </p>
+            ) : (
+              <label
+                className="mt-1.5 block font-display text-xl leading-snug text-ink"
+                htmlFor={`q_${q.id}`}
+              >
+                {q.text}
+              </label>
+            )}
             <Field
               question={q}
               value={answers[q.id] ?? ""}
@@ -156,17 +167,19 @@ export default function AnswerForm({
         );
       })}
 
-      <div className="sticky bottom-3 z-10 rounded-2xl border border-surface-line bg-surface/95 p-3 shadow-float backdrop-blur sm:bottom-4">
-        {error && <p className="mb-2 text-sm text-rose-600">{error}</p>}
+      {/* On phones the app tab bar is fixed to the bottom of the screen, so
+          the bar has to stick above it or it sits hidden underneath. */}
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)] z-10 rounded-2xl border border-surface-line bg-surface/95 p-3 shadow-float backdrop-blur sm:bottom-4">
+        {error && <p role="alert" className="mb-2 text-sm text-rose-700 dark:text-rose-300">{error}</p>}
         {saved && !error && (
-          <p className="mb-2 flex items-center gap-1.5 text-sm text-brand-700 dark:text-brand-300">
+          <p role="status" className="mb-2 flex items-center gap-1.5 text-sm text-brand-700 dark:text-brand-300">
             <Icon name="check" className="h-4 w-4" strokeWidth={2.4} />
             {MICROCOPY.confirmOnSubmit}
           </p>
         )}
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-ink-soft" aria-live="polite">
+            <p id="answer-progress" className="text-sm text-ink-soft" aria-live="polite">
               <span className="font-semibold text-ink">{answeredCount}</span> of {questions.length} answered
             </p>
             <div className="progress-track mt-1.5" aria-hidden>
@@ -177,6 +190,7 @@ export default function AnswerForm({
             type="submit"
             disabled={pending || !complete}
             className="btn-primary !px-6 !py-2.5 disabled:opacity-50"
+            aria-describedby="answer-progress"
             title={complete ? undefined : "Answer every question to submit"}
           >
             {pending
@@ -190,6 +204,10 @@ export default function AnswerForm({
       </div>
     </form>
   );
+}
+
+function isGroup(q: PromptQuestion) {
+  return q.format === "scale" || (q.format === "choice" && !!q.options);
 }
 
 function Field({
@@ -207,11 +225,11 @@ function Field({
     const max = question.max ?? 10;
     const values = Array.from({ length: max - min + 1 }, (_, i) => min + i);
     return (
-      <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label={question.text}>
+      <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-labelledby={`${name}_label`}>
         {values.map((n) => (
           <label
             key={n}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-surface-line bg-surface text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:font-semibold has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
           >
             <input
               type="radio"
@@ -229,11 +247,11 @@ function Field({
   }
   if (question.format === "choice" && question.options) {
     return (
-      <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label={question.text}>
+      <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-labelledby={`${name}_label`}>
         {question.options.map((opt) => (
           <label
             key={opt}
-            className="cursor-pointer rounded-full border border-surface-line bg-surface px-4 py-2.5 text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500/60 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
+            className="cursor-pointer rounded-full border border-surface-line bg-surface px-4 py-2.5 text-sm font-medium text-ink-soft shadow-soft transition hover:-translate-y-0.5 hover:border-brand-400 has-[:checked]:border-brand-700 has-[:checked]:bg-brand-700 has-[:checked]:text-white has-[:checked]:shadow-brand-glow has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-500 has-[:focus-visible]:ring-offset-2 dark:has-[:checked]:bg-brand-500"
           >
             <input
               type="radio"
