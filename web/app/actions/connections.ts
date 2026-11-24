@@ -325,13 +325,15 @@ export async function sendEmailInvite(
   }
 
   // Rate limit invite email (creates accounts via admin API). Users can read
-  // their own audit_log; count recent sends and stop before spam volume.
+  // their own audit_log; count recent attempts and stop before spam volume.
+  // "Already has an account" answers count too: uncounted, they were a free,
+  // unlimited way to test whether any address is registered here.
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count: recentInvites } = await supabase
     .from("audit_log")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .eq("action", "connection.invite_email")
+    .in("action", ["connection.invite_email", "connection.invite_email_existing"])
     .gte("created_at", since);
   if ((recentInvites ?? 0) >= 10) {
     return {
@@ -361,6 +363,8 @@ export async function sendEmailInvite(
 
   if (error) {
     if (/already.*(registered|exists)/i.test(error.message)) {
+      // Counted toward the hourly limit above; no address or domain logged.
+      await logAudit(user.id, "connection.invite_email_existing", connectionId);
       return { status: "existing" };
     }
     return { error: "Couldn't send the invite email — try sharing the link instead." };
