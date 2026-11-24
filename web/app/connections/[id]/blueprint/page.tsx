@@ -3,7 +3,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBlueprint, setBlueprintIntakeConsent } from "@/app/actions/blueprint";
 import { intakeFromProfile } from "@/lib/blueprint";
-import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
+import {
+  INLINE_RESOURCES,
+  isElevatedFlag,
+  SAFETY_GENTLE_POINTER,
+  SAFETY_NOTE,
+  SAFETY_PRIVACY_LINE,
+} from "@/lib/safety";
 import { isPendingInsightPayload } from "@/lib/insightRateLimit";
 import { aiEnabled } from "@/lib/grok";
 import { blueprintOffer, freeBlueprintState } from "@/lib/freeBlueprint";
@@ -179,6 +185,14 @@ export default async function BlueprintPage({
                 {payload.reflection}
               </p>
             </div>
+          )}
+          {isElevatedFlag(insight?.safety_flags) && (
+            <p className="text-sm text-ink-soft">
+              {SAFETY_GENTLE_POINTER}{" "}
+              <Link href="/safety" className="link">
+                Safety resources
+              </Link>
+            </p>
           )}
           {showsFreeNote && (
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">

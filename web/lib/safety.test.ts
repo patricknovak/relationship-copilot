@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectSafetySignals, normalizeForSafety } from "@/lib/safety";
+import { detectSafetySignals, isElevatedFlag, normalizeForSafety } from "@/lib/safety";
 
 describe("detectSafetySignals", () => {
   it("returns none for ordinary content", () => {
@@ -64,5 +64,30 @@ describe("normalizeForSafety", () => {
   it("catches disclosures typed with curly apostrophes", () => {
     expect(detectSafetySignals("I don’t want to live like this").severity).toBe("high");
     expect(detectSafetySignals("He won’t let me leave the house").severity).toBe("high");
+  });
+});
+
+describe("ambiguous verbs (decision 1b)", () => {
+  it("are elevated on their own, so the regex alone never withholds for them", () => {
+    for (const t of ["It hurt me when she laughed.", "He pushed me to be braver.", "She grabbed me a coffee."]) {
+      expect(detectSafetySignals(t)).toEqual({ severity: "elevated", categories: ["violence"] });
+    }
+  });
+
+  it("stay high when the sentence is plainly physical", () => {
+    for (const t of ["He badly hurt me.", "She pushed me against the wall.", "He grabs me by the arm."]) {
+      expect(detectSafetySignals(t).severity).toBe("high");
+    }
+  });
+});
+
+describe("isElevatedFlag", () => {
+  it("is true only for a stored elevated screen", () => {
+    expect(isElevatedFlag({ severity: "elevated", categories: ["abuse"] })).toBe(true);
+    expect(isElevatedFlag({ severity: "high" })).toBe(false);
+    expect(isElevatedFlag({ severity: "none" })).toBe(false);
+    expect(isElevatedFlag(null)).toBe(false);
+    expect(isElevatedFlag(["elevated"])).toBe(false);
+    expect(isElevatedFlag("elevated")).toBe(false);
   });
 });

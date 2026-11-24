@@ -43,7 +43,7 @@ const PATTERNS: { category: SafetyCategory; severity: SafetySeverity; rx: RegExp
     category: "violence",
     severity: "high",
     rx: new RegExp(
-      "\\b(hit me|hits me|hitting me|beat me|beats me|beating me|beat me up|threaten(?:ed|s)? me|hurt me|strangl|chok(?:ed|es|ing) me|punch(?:ed|es|ing)? me|slap(?:ped|s|ping)? me|kick(?:ed|s|ing) me(?! out)|push(?:ed|es)? me|shov(?:ed|es)? me|grab(?:bed|s)? me|thr(?:ew|ows) things at me" +
+      "\\b(hit me|hits me|hitting me|beat me|beats me|beating me|beat me up|threaten(?:ed|s)? me|(?:physically|badly) hurt me|hurt me (?:physically|badly|on purpose)|strangl|chok(?:ed|es|ing) me|punch(?:ed|es|ing)? me|slap(?:ped|s|ping)? me|kick(?:ed|s|ing) me(?! out)|push(?:ed|es)? me (?:down|over|against|into (?:a|the) (?:wall|door|table)|to the (?:ground|floor))|shov(?:ed|es)? me|grab(?:bed|s)? me by (?:the|my)|thr(?:ew|ows) things at me" +
         "|(?:(?:he|she|they)(?:'s|'re| is| are| was| were) going|threaten(?:ed|s)?|wants?|tried|trying) to kill (?:me|him|her|us|them|you|the kids)|kill (?:him|her|them) (?:if|when)|pulled a (?:knife|gun) on" +
         "|rap(?:ed|es|ing) me|sexually (?:assault|abus)|molest|forc(?:ed|es|ing) (?:himself|herself|themselves) on me|forc(?:ed|es|ing) me to have sex|made me have sex|touch(?:ed|es|ing) me (?:where|when i (?:said|say) no|inappropriately|down there|in (?:a way|ways|places))" +
         "|(?:i|he|she|they) (?:hit|hits|beat|beats|slap(?:s|ped)?|punch(?:es|ed)?|chok(?:es|ed)) (?:him|her|them|the kids|the baby|my (?:kid|kids|son|daughter|child|children|wife|husband|girlfriend|boyfriend|partner)))\\b",
@@ -55,6 +55,16 @@ const PATTERNS: { category: SafetyCategory; severity: SafetySeverity; rx: RegExp
     rx: new RegExp(
       `\\b((?:afraid|scared|terrified|frightened) of ${PERSON}|(?:afraid|scared|terrified) to (?:go|come|be) home|controls? (?:me|everything|who i)|(?:won'?t|will not|doesn'?t|does not) let me (?:see|leave|have|go|talk to|work)|isolat(?:e|es|ed|ing) me|threatens? to (?:kill|hurt|leave me|take (?:the|my) kids)|stalk(?:s|ing|ed) me|abus(?:es|ed|ing) me|(?:is|was|being) abusive|lock(?:s|ed) me (?:in|out)|(?:takes?|took|controls?) (?:all )?my (?:money|paycheck|passport|phone)|not allowed to (?:see|leave|talk to|have)|(?:told|tells) me (?:not to tell|to keep it (?:a )?secret))\\b`,
     ),
+  },
+  // "It hurt me when he forgot" and "she pushed me to apply" are ordinary
+  // relationship talk; "he hurt me" may not be. On their own these verbs are
+  // only a reason to look closer: the model classifier, which reads the
+  // sentence, decides whether it is high (Patrick, 2026-11-24, decision 1b).
+  // The unambiguous physical forms stay high in the pattern above.
+  {
+    category: "violence",
+    severity: "elevated",
+    rx: /\b(hurts? me|push(?:ed|es)? me|grab(?:bed|s)? me)\b/,
   },
   {
     category: "abuse",
@@ -92,6 +102,22 @@ export const INLINE_RESOURCES: SafetyResource[] = [
   { name: "National Domestic Violence Hotline", contact: "1-800-799-7233 · text START to 88788" },
   { name: "Crisis Text Line", contact: "Text HOME to 741741" },
 ];
+
+// Shown quietly under a Blueprint or digest when the screen was "elevated":
+// concerning, not urgent. It names nobody and nothing either person wrote,
+// because both people read the same page.
+export const SAFETY_GENTLE_POINTER =
+  "If anything between you ever feels heavy or unsafe, free and confidential support is always here.";
+
+/** Whether a saved insight's screen was "elevated". Pure; tolerates any stored shape. */
+export function isElevatedFlag(flags: unknown): boolean {
+  return (
+    !!flags &&
+    typeof flags === "object" &&
+    !Array.isArray(flags) &&
+    (flags as { severity?: unknown }).severity === "elevated"
+  );
+}
 
 export const SAFETY_NOTE =
   "It sounds like things may be really hard right now. You deserve support from people trained to help — please consider reaching out.";
