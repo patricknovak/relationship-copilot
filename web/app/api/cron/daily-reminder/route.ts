@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { authorizeCronBearer } from "@/lib/cronAuth";
 import { notificationsConfigured, notifyUser } from "@/lib/notify";
+import { emailConfigProblem, notificationConfigReport } from "@/lib/notifyConfig";
+import { reportRequestError } from "@/lib/errorReporting";
 import { cronBatchSummary } from "@/lib/cronBatch";
 
 export const runtime = "nodejs";
@@ -48,8 +50,20 @@ async function run(req: Request) {
   }
   counts.created = created ?? 0;
 
+  // A production Worker without email is a misconfiguration: say so every
+  // tick (Sentry issue + the cron log line) instead of skipping quietly.
+  const config = notificationConfigReport();
+  const problem = emailConfigProblem();
+  if (problem) {
+    console.error(JSON.stringify({ event: "notify_misconfigured", missing: config.missing }));
+    reportRequestError(problem, {
+      method: "POST",
+      routePath: "/api/cron/daily-reminder",
+      routeType: "route",
+    });
+  }
   if (!notificationsConfigured()) {
-    return NextResponse.json({ ...counts, skipped: "notifications not configured" });
+    return NextResponse.json({ ...counts, skipped: "notifications not configured", config });
   }
 
   // Ask for one more than the batch so the response can say whether a
@@ -75,13 +89,14 @@ async function run(req: Request) {
       kind: "daily_ready",
       themName: pick.other_name ?? null,
       questionText: pick.question_text ?? null,
+      recordConfigSkip: false,
     });
     if (outcome === "sent") counts.sent += 1;
     else if (outcome === "failed") counts.failed += 1;
     else counts.skipped += 1;
   }
 
-  return NextResponse.json({ at: now.toISOString(), ...counts, more });
+  return NextResponse.json({ at: now.toISOString(), ...counts, more, config });
 }
 
 export async function GET(req: Request) {

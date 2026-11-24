@@ -557,6 +557,23 @@ export interface Database {
           timezone: string;
         }[];
       };
+      // Migration 0048: service role only; ids, timezone and a first name.
+      missed_notification_candidates: {
+        Args: {
+          p_min_minutes?: number;
+          p_turn_max_hours?: number;
+          p_reveal_max_hours?: number;
+          p_limit?: number;
+        };
+        Returns: {
+          kind: string;
+          instance_id: string;
+          connection_id: string;
+          recipient_id: string;
+          other_name: string | null;
+          timezone: string | null;
+        }[];
+      };
       ensure_daily_prompt: {
         Args: { p_conn: string; p_date?: string };
         Returns: string;

@@ -57,7 +57,7 @@ export async function GET(req: Request) {
   const escapedAction = `${action.pathname}${action.search}`.replace(/"/g, "&quot;");
   return page(
     "Stop notification emails?",
-    "This turns off every notification email for your account. Sign-in links and invites you request still arrive, and you can switch individual notifications back on from your account.",
+    "This turns off every notification for your account, by email and on your devices. Sign-in links and invites you request still arrive, and you can switch individual notifications back on from your account.",
     200,
     `<form method="post" action="${escapedAction}" style="margin:0 0 20px"><button type="submit" style="background:#74386f;color:#fff;border:0;border-radius:999px;padding:12px 22px;font-size:15px;font-weight:600;font-family:system-ui,-apple-system,sans-serif;cursor:pointer">Yes, stop these emails</button></form>`,
   );
@@ -68,11 +68,17 @@ export async function POST(req: Request) {
   if (!valid(userId, token)) return INVALID();
 
   const admin = createAdminClient();
-  const { data: profile } = await admin
+  const { data: profile, error: readError } = await admin
     .from("profiles")
     .select("preferences")
     .eq("id", userId)
     .maybeSingle();
+  // A failed read is not "no such account": answer 500 so the mail client's
+  // one-click unsubscribe (and the person) knows it didn't take.
+  if (readError) {
+    console.error("[unsubscribe] profile read failed", readError.code ?? "");
+    return page("Something went wrong", "Please try again in a moment, or change notifications from your account.", 500);
+  }
   if (!profile) {
     return page("Nothing to change", "We couldn't find an account for that link.", 404);
   }
@@ -83,11 +89,12 @@ export async function POST(req: Request) {
     })
     .eq("id", userId);
   if (error) {
+    console.error("[unsubscribe] update failed", error.code ?? "");
     return page("Something went wrong", "Please try again in a moment, or change notifications from your account.", 500);
   }
   await logAudit(userId, "notify.unsubscribe_all");
   return page(
     "You're unsubscribed",
-    "We won't send you notification emails anymore. Sign-in links and invites you request still arrive. You can switch individual notifications back on from your account.",
+    "We won't send you notifications anymore, by email or on your devices. Sign-in links and invites you request still arrive. You can switch individual notifications back on from your account.",
   );
 }

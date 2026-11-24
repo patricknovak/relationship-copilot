@@ -7,6 +7,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { emailConfigured, sendEmail } from "@/lib/email";
+import { reportRequestError } from "@/lib/errorReporting";
+import { emailConfigProblem, missingForEmail } from "@/lib/notifyConfig";
 import { parsePushSubscription, sendPush, vapidFromEnv, type VapidConfig } from "@/lib/webPush";
 import {
   buildNotificationEmail,
@@ -44,6 +46,29 @@ export function notificationChannels(): { email: boolean; push: boolean } {
 export function notificationsConfigured(): boolean {
   return emailReady() || !!vapidFromEnv();
 }
+
+// A notification that could not go out because no channel is set up for this
+// person (in practice: email is off). Never silent: one structured error
+// line for Workers Logs, and in production an audit_log row (ids and
+// variable names only, no user) plus an error report, so the gap shows up in
+// the database and in Sentry instead of nowhere. Cron callers pass
+// `record: false` and report once per tick themselves.
+export async function noteConfigSkip(input: {
+  kind: NotificationKind;
+  target: string;
+}): Promise<void> {
+  const missing = missingForEmail();
+  console.error(
+    JSON.stringify({ event: "notify_skipped_config", kind: input.kind, missing }),
+  );
+  const problem = emailConfigProblem();
+  if (!problem) return;
+  reportRequestError(problem, { method: "POST", routePath: "notify", routeType: "notification" });
+  await logAudit(null, "notify.skipped_config", input.target, { kind: input.kind, missing });
+}
+
+// Postgres unique_violation: the once-only claim already exists.
+const UNIQUE_VIOLATION = "23505";
 
 // Deliver one push to every device the user opted in on. Dead subscriptions
 // (404/410) are deleted. Returns how many devices accepted it.
@@ -106,6 +131,13 @@ async function recipientEmail(admin: Admin, userId: string): Promise<string | nu
 // every channel that is set up (email and/or web push). The once-only claim
 // covers the event, not the channel. Returns what happened so cron can
 // report counts; never throws.
+export type NotifyOutcome =
+  | "sent"
+  | "skipped_pref"
+  | "skipped_dup"
+  | "skipped_config"
+  | "failed";
+
 export async function notifyUser(input: {
   admin?: Admin;
   userId: string;
@@ -114,26 +146,41 @@ export async function notifyUser(input: {
   kind: NotificationKind;
   themName: string | null;
   questionText?: string | null;
-}): Promise<"sent" | "skipped_pref" | "skipped_dup" | "skipped_config" | "failed"> {
+  // false for cron callers: they retry every hour and report a missing
+  // channel once per tick, so a skip must not write a row per candidate.
+  recordConfigSkip?: boolean;
+}): Promise<NotifyOutcome> {
   const admin = input.admin ?? createAdminClient();
   const secret = notifySecret();
   const emailOn = emailReady();
   const vapid = vapidFromEnv();
-  if (!emailOn && !vapid) return "skipped_config";
+  const configSkip = async (): Promise<NotifyOutcome> => {
+    if (input.recordConfigSkip !== false) {
+      await noteConfigSkip({ kind: input.kind, target: input.instanceId });
+    }
+    return "skipped_config";
+  };
+  if (!emailOn && !vapid) return configSkip();
 
   try {
-    const { data: profile } = await admin
+    const { data: profile, error: profileError } = await admin
       .from("profiles")
       .select("preferences")
       .eq("id", input.userId)
       .maybeSingle();
+    // A failed read must not be mistaken for "no preferences set": that
+    // would email someone who switched this notification off.
+    if (profileError) {
+      console.error("[notify] preferences read failed", profileError.code ?? "");
+      return "failed";
+    }
     const prefs = parseNotificationPrefs(profile?.preferences);
     if (!prefs[PREF_FOR_KIND[input.kind]]) return "skipped_pref";
 
     // Push-only setup and this person has no device: nothing to send, and
     // no claim, so a later device or email setup still gets the next event.
     const pushOn = !!vapid && (await hasPushDevice(admin, input.userId));
-    if (!emailOn && !pushOn) return "skipped_config";
+    if (!emailOn && !pushOn) return configSkip();
 
     // Claim first; a conflict means this exact notification already went out.
     const { data: claimed, error: claimError } = await admin
@@ -144,7 +191,16 @@ export async function notifyUser(input: {
         kind: input.kind,
       })
       .select("instance_id");
-    if (claimError || !claimed || claimed.length === 0) return "skipped_dup";
+    if (claimError) {
+      if (claimError.code === UNIQUE_VIOLATION) return "skipped_dup";
+      // Anything else (a kind the table's check constraint doesn't know yet,
+      // a deleted instance, the database being unreachable) is a failure,
+      // not a duplicate. Reporting it as one would hide a notification that
+      // never went out.
+      console.error("[notify] claim failed", input.kind, claimError.code ?? "");
+      return "failed";
+    }
+    if (!claimed || claimed.length === 0) return "skipped_dup";
 
     // From here on, if no channel confirms delivery the claim is released so
     // a later trigger can retry. A send that times out after the provider
@@ -178,8 +234,15 @@ export async function notifyUser(input: {
             instanceUrl: `${site}${path}`,
             unsubscribeUrl: unsub,
           });
-          const result = await sendEmail({ to, ...email, unsubscribeUrl: unsub });
+          const result = await sendEmail({
+            to,
+            ...email,
+            unsubscribeUrl: unsub,
+            idempotencyKey: `notify/${input.kind}/${input.instanceId}/${input.userId}`,
+          });
           emailed = result.sent;
+        } else {
+          console.error("[notify] no address for recipient", input.kind);
         }
       }
       if (pushOn && vapid) {
@@ -192,6 +255,7 @@ export async function notifyUser(input: {
     }
     if (!emailed && pushed === 0) {
       await release();
+      console.error("[notify] no channel delivered", input.kind);
       return "failed";
     }
     // PII-minimal audit: kind, instance and channels only.
@@ -220,7 +284,13 @@ export async function notifyOtherMembersAfterSubmit(input: {
   connectionId: string;
   revealed: boolean;
 }): Promise<void> {
-  if (!notificationsConfigured()) return;
+  if (!notificationsConfigured()) {
+    await noteConfigSkip({
+      kind: input.revealed ? "revealed" : "your_turn",
+      target: input.instanceId,
+    });
+    return;
+  }
   const admin = createAdminClient();
   try {
     const { data: members } = await admin
@@ -262,7 +332,10 @@ export async function notifyPartnerJoined(input: {
   joinerUserId: string;
   connectionId: string;
 }): Promise<void> {
-  if (!notificationsConfigured()) return;
+  if (!notificationsConfigured()) {
+    await noteConfigSkip({ kind: "partner_joined", target: input.connectionId });
+    return;
+  }
   const admin = createAdminClient();
   try {
     const { data: onboarding } = await admin
@@ -312,7 +385,10 @@ export async function notifyDiscussionReply(input: {
   instanceId: string;
   connectionId: string;
 }): Promise<void> {
-  if (!notificationsConfigured()) return;
+  if (!notificationsConfigured()) {
+    await noteConfigSkip({ kind: "discussion_reply", target: input.instanceId });
+    return;
+  }
   const admin = createAdminClient();
   try {
     const { data: members } = await admin

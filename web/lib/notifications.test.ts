@@ -64,7 +64,10 @@ describe("buildNotificationEmail", () => {
 
   it("falls back to 'your person'", () => {
     const e = buildNotificationEmail({ ...base, kind: "revealed", themName: "  " });
-    expect(e.subject).toBe("You and Your person both answered");
+    expect(e.subject).toBe("You and your person both answered");
+    // Sentence-initial stays capitalised.
+    const turn = buildNotificationEmail({ ...base, kind: "your_turn", themName: null });
+    expect(turn.subject).toBe("Your person answered — your turn");
   });
 
   it("includes the question text only for daily_ready and escapes HTML", () => {
@@ -97,7 +100,40 @@ describe("buildNotificationEmail", () => {
       expect(e.text).toContain(base.instanceUrl);
       expect(e.text).toContain(base.unsubscribeUrl);
       expect(e.html).toContain(base.instanceUrl);
-      expect(e.html).toContain("Stop these emails");
+      expect(e.html).toContain(base.unsubscribeUrl.replace(/&/g, "&amp;"));
+      expect(e.html).toContain("stop these emails");
+      // And a way to pick individual notifications instead of all-or-nothing.
+      expect(e.text).toContain("https://relationshipcopilot.com/account");
+      expect(e.html).toContain('href="https://relationshipcopilot.com/account"');
+    }
+  });
+
+  it("promises no peeking only while an answer is still sealed", () => {
+    const line = "No peeking either way";
+    for (const kind of ["your_turn", "turn_reminder", "partner_joined", "daily_ready"] as const) {
+      const e = buildNotificationEmail({ ...base, kind, themName: "Sam" });
+      expect(e.text).toContain(line);
+      expect(e.html).toContain(line);
+    }
+    // Both answers are already open: the line would contradict the email.
+    for (const kind of ["revealed", "discussion_reply"] as const) {
+      const e = buildNotificationEmail({ ...base, kind, themName: "Sam" });
+      expect(e.text).not.toContain(line);
+      expect(e.html).not.toContain(line);
+    }
+  });
+
+  it("leads the inbox preview with the first sentence, escaped", () => {
+    const e = buildNotificationEmail({ ...base, kind: "your_turn", themName: "<b>Sam" });
+    expect(e.html).toContain("display:none");
+    expect(e.html).toContain("&lt;b&gt;Sam has answered a question on Relationship Copilot.</div>");
+    expect(e.html).not.toContain("<b>Sam");
+  });
+
+  it("never puts raw markup from a name into the HTML", () => {
+    for (const kind of ["your_turn", "revealed", "daily_ready", "partner_joined", "discussion_reply", "turn_reminder"] as const) {
+      const e = buildNotificationEmail({ ...base, kind, themName: '"><script>x</script>' });
+      expect(e.html).not.toContain("<script>");
     }
   });
 });

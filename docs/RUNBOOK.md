@@ -25,7 +25,7 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 | `SUPABASE_SERVICE_ROLE_KEY` | Invites, crons, webhooks, AI insights, export and deletion fail. Required. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Checkout, billing portal and the webhook fail. Required for Premium. |
 | `XAI_API_KEY`, `XAI_NO_TRAINING_DPA=true` | AI is off. The product then says so honestly: pricing shows "Opening soon" and checkout refuses, the Blueprint and digest say "switching on soon", the safety screen runs regex-only. |
-| `RESEND_API_KEY` **and** `NOTIFY_SECRET` | No notification email. Both are needed: there is no fallback for `NOTIFY_SECRET` (it signs unsubscribe links). Account → Notifications says which channels are live. |
+| `RESEND_API_KEY` **and** `NOTIFY_SECRET` | No notification email. Both are needed: there is no fallback for `NOTIFY_SECRET` (it signs unsubscribe links). This is treated as a misconfiguration, not a quiet mode: `/api/health` shows `"notifications":{"email":false}`, every hourly cron tick raises a `NotificationConfigError` (Sentry and Workers Logs, `notify_misconfigured`), and each notification that could not go out is counted in `audit_log` (`notify.skipped_config`). |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | No web push; the Account toggle is hidden. Generate once with `node scripts/vapid-keys.mjs --wrangler`. A new pair retires every existing subscription. |
 | `CRON_SECRET` | Cron routes return 401; today's question is still created on visit, but no reminders and no pre-creation. |
 | `SENTRY_DSN` | No error alerts. Workers Logs still record errors. |
@@ -34,7 +34,7 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 ## 3. Verify a deploy
 
 1. GitHub → Actions → the CI run for the merge commit: `web`, `database`, `e2e-core`, `e2e-vinext` green, then `deploy-cloudflare`.
-2. `curl -s https://relationshipcopilot.com/api/health` returns `{"ok":true,"commit":"<sha>"}`. The sha must be the tip of `main`. If it is older, a deploy was skipped or failed: re-run the `deploy-cloudflare` job on the tip commit.
+2. `curl -s https://relationshipcopilot.com/api/health` returns `{"ok":true,"commit":"<sha>","notifications":{"email":true,"push":true}}`. `email` must be `true` (if not, `RESEND_API_KEY` or `NOTIFY_SECRET` is missing; secrets take effect without a redeploy). The sha must be the tip of `main`. If it is older, a deploy was skipped or failed: re-run the `deploy-cloudflare` job on the tip commit.
 3. Spot-check `/`, `/pricing`, `/login`, `/safety` return 200.
 
 ## 4. Roll back
@@ -61,7 +61,8 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 
 ## 7. Daily checks (two minutes)
 
-- Sentry: any new issue, or a failed cron monitor (`daily-reminder`, `turn-reminder`).
+- Sentry: any new issue, or a failed cron monitor (`daily-reminder`, `turn-reminder`). A `NotificationConfigError` issue means email is off.
+- Notifications are going out: `docs/metrics.sql` §5. `skipped_config` must be 0 for the day.
 - Workers Logs: a `cron_tick` line at `:20` and `:40` each hour; `cron_tick_failed` means the route returned non-2xx.
 - Stripe → Developers → Webhooks: no failing deliveries.
 - `docs/metrics.sql` for the funnel and habit numbers (no answer text is read).
@@ -75,7 +76,8 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 | "Couldn't open billing" on Account | Stripe Customer Portal config | Save a live-mode portal configuration with cancel and update-payment enabled. |
 | Paid but not Premium | Stripe webhook deliveries; `subscriptions` row | Re-send the event from Stripe; the handler is idempotent. |
 | Blueprint "couldn't finish" | Sentry; xAI status | Provider outage or bad model id (`XAI_MODEL`). Nothing is lost; the free Blueprint is given back on failure. |
-| No notification email | Resend dashboard; Account → Notifications channel note | `RESEND_API_KEY` and `NOTIFY_SECRET` both set? Domain verified? |
+| No notification email | `/api/health` → `notifications.email`; `docs/metrics.sql` §5; Resend dashboard | `email:false`: set `RESEND_API_KEY` and `NOTIFY_SECRET` (`npx wrangler secret put NAME --name relationship-copilot`). `email:true` but nothing in `notification_log`: Workers Logs for `[email] provider rejected send <status> <code>` (unverified domain, bad key). A send that fails is retried once on the spot, and a missed "your turn" or reveal is retried by the hourly `turn-reminder` job (the `sweep` block in its `cron_tick` log line; needs migration 0048). |
+| Email was off for a while; who gets what when it comes back? | `turn-reminder` `cron_tick` → `sweep` | Each person still being waited on gets one "your turn" email for their latest unanswered set (not one per set), at the next `:40` inside 9am–8pm their time, for answers up to 14 days old. Reveals older than a day, joins and discussion replies are not re-sent. |
 | No daily question | Workers Logs for `/api/cron/daily-reminder` | Today's question is also created when either person opens the connection. |
 | Safety | `safety_events` (metadata only) | Review new rows weekly. Never contact a user about one, and never tell the other person. |
 
