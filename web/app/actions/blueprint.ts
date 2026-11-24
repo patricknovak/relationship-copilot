@@ -12,20 +12,26 @@ import { claimFreeBlueprint, releaseFreeBlueprint } from "@/lib/freeBlueprint";
 import {
   blueprintSystemPrompt,
   blueprintUserPrompt,
+  finalizeBlueprint,
   intakeFromProfile,
   MAX_RECENT_FOR_BLUEPRINT,
-  parseBlueprint,
   type BlueprintIntake,
   type BlueprintQa,
 } from "@/lib/blueprint";
 import {
   claimInsightSlot,
   finalizeInsightClaim,
+  isPendingInsightPayload,
+  overDailyInsightCap,
   releaseInsightClaim,
 } from "@/lib/insightRateLimit";
 import type { PromptQuestion, Json } from "@/lib/database.types";
 
 const BLUEPRINT_GAP_MS = 10 * 60 * 1000; // one generation per connection per 10 minutes
+// Each generation is up to four model calls over as much as the pair has
+// written, so regenerating is also bounded per day, not only per 10 minutes.
+const BLUEPRINT_DAILY_MAX = 5;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Generate the AI Relationship Blueprint. Premium connections generate and
 // regenerate; every other connection gets one free Blueprint, ever (0043),
@@ -79,6 +85,17 @@ export async function generateBlueprint(connectionId: string) {
     .eq("instance_id", instance!.id);
   if (!responses || responses.length < 2) back("notready");
 
+  // Daily ceiling per connection, read under the member's own session
+  // (members can read their connection's insights). Checked before anything
+  // is claimed or sent.
+  const { data: todays } = await supabase
+    .from("relationship_insights")
+    .select("payload, generated_at")
+    .eq("connection_id", connectionId)
+    .eq("kind", "blueprint")
+    .gte("generated_at", new Date(Date.now() - DAY_MS).toISOString());
+  if (overDailyInsightCap(todays ?? [], BLUEPRINT_DAILY_MAX)) back("daily");
+
   // Membership is proven (RLS read of the connection and both responses)
   // and the first set is revealed, so the service role may now claim the
   // connection's one free Blueprint. The primary key makes it once-only.
@@ -86,9 +103,26 @@ export async function generateBlueprint(connectionId: string) {
   let usedFree = false;
   if (!isPremium) {
     const claim = await claimFreeBlueprint(admin, connectionId, user.id);
-    if (claim !== "claimed") back("premium");
-    usedFree = true;
-    await logAudit(user.id, "blueprint.free_claim", connectionId);
+    if (claim === "claimed") {
+      usedFree = true;
+      await logAudit(user.id, "blueprint.free_claim", connectionId);
+    } else if (claim === "used") {
+      // A claim with no Blueprint behind it is left over from a request that
+      // died mid-generation (the platform killed it before it could give the
+      // claim back). The pair never got their free Blueprint, so let this
+      // attempt through on the existing claim. usedFree stays false: this
+      // attempt neither owns the claim nor may release it (another request
+      // may be generating on it right now; the slot claim below settles that).
+      const { data: existing } = await supabase
+        .from("relationship_insights")
+        .select("payload")
+        .eq("connection_id", connectionId)
+        .eq("kind", "blueprint");
+      if (hasRealBlueprint(existing ?? [])) back("premium");
+      await logAudit(user.id, "blueprint.free_claim_recovered", connectionId);
+    } else {
+      back("premium");
+    }
   }
   // Every exit below that does not produce a Blueprint gives the free one back.
   const giveBackFree = async () => {
@@ -183,15 +217,29 @@ export async function generateBlueprint(connectionId: string) {
       members: Object.values(intakeRaw).filter(Boolean).length,
     });
   }
+  // Safety assessment: regex fast path runs on the RAW text; the model-backed
+  // classifier (which catches paraphrase) sees only redacted text and can
+  // raise severity but never lower it. Model failure degrades to regex-only.
+  const rawAll = [
+    ...questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`),
+    ...recentRaw,
+  ].join("\n");
+
   // Each person's reflections are screened on their own. A high-severity
   // signal drops that person's reflections from the prompt and is logged for
   // review under its author, but never withholds the shared Blueprint: that
   // would let the other member learn that something written in private was
   // flagged. (Shared answers keep the existing withhold-and-support path.)
-  for (const uid of Object.keys(intakeRaw)) {
-    const x = intakeRaw[uid];
-    if (!x) continue;
-    const own = await assessSafety(`${x.goals ?? ""}\n${x.values ?? ""}`, redactor.redact);
+  // All screens run together, so the wait is one classifier call, not three.
+  const intakeIds = Object.keys(intakeRaw).filter((uid) => intakeRaw[uid]);
+  const [signal, ...intakeSignals] = await Promise.all([
+    assessSafety(rawAll, redactor.redact),
+    ...intakeIds.map((uid) =>
+      assessSafety(`${intakeRaw[uid]?.goals ?? ""}\n${intakeRaw[uid]?.values ?? ""}`, redactor.redact),
+    ),
+  ]);
+  for (const [i, uid] of intakeIds.entries()) {
+    const own = intakeSignals[i];
     if (own.severity === "high") {
       intakeRaw[uid] = null;
       await admin.from("safety_events").insert({
@@ -213,15 +261,6 @@ export async function generateBlueprint(connectionId: string) {
           attachmentStyle: x.attachmentStyle,
         }
       : null;
-
-  // Safety assessment: regex fast path runs on the RAW text; the model-backed
-  // classifier (which catches paraphrase) sees only redacted text and can
-  // raise severity but never lower it. Model failure degrades to regex-only.
-  const rawAll = [
-    ...questions.map((q) => `${a1[q.id] ?? ""} ${a2[q.id] ?? ""}`),
-    ...recentRaw,
-  ].join("\n");
-  const signal = await assessSafety(rawAll, redactor.redact);
 
   // High severity → withhold AI analysis, surface support, log for review.
   if (signal.severity === "high") {
@@ -264,7 +303,15 @@ export async function generateBlueprint(connectionId: string) {
       ],
       { json: true },
     );
-    bp = parseBlueprint(content);
+    // Names go back in only here, after the output checks, and only into
+    // our own database.
+    const result = finalizeBlueprint(content, [nameFor(m1), nameFor(m2)]);
+    if (!result.ok) {
+      // The reason is a fixed label, never model or user text.
+      await logAudit(user.id, "blueprint.output_rejected", connectionId, { reason: result.reason });
+      throw new Error("blueprint output rejected");
+    }
+    bp = result.blueprint;
   } catch {
     await releaseInsightClaim(admin, claimId);
     await giveBackFree();
@@ -287,6 +334,15 @@ export async function generateBlueprint(connectionId: string) {
   revalidatePath(`/connections/${connectionId}`);
   // Land on a clean URL (drops any stale ?error= from a previous attempt).
   redirect(`/connections/${connectionId}/blueprint`);
+}
+
+/** A finished Blueprint (not an in-flight claim, not a support card). */
+function hasRealBlueprint(rows: { payload: unknown }[]): boolean {
+  return rows.some((r) => {
+    if (isPendingInsightPayload(r.payload)) return false;
+    const p = r.payload as { safety?: unknown } | null;
+    return !!p && typeof p === "object" && !p.safety;
+  });
 }
 
 // Include (or stop including) your own private profile reflections in this

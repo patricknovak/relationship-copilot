@@ -56,5 +56,10 @@ Environment template: `web/.env.example` (Supabase, Stripe, xAI keys).
   user's session client (RLS scopes everything).
 - New schema changes = a new numbered migration in `supabase/migrations/`; keep
   `web/lib/database.types.ts` (hand-maintained) in sync.
+- Every model call goes in fenced and comes out checked: people's text is
+  wrapped with `fenceAnswer` (`web/lib/aiGuard.ts`), and model output is saved
+  only through `finalizeBlueprint` / `finalizeDigest`, which refuse empty,
+  diagnosing, side-taking or scored output. After changing a prompt or the
+  model, run `npm run eval:ai` (synthetic data only, `web/lib/aiEvalCases.ts`).
 - Pure, safety-critical logic (redaction, safety, parsing, streaks) lives in
   `web/lib/` with vitest coverage — keep it framework-free and tested.

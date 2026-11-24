@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { detectSafetySignals } from "@/lib/safety";
+import { detectSafetySignals, normalizeForSafety } from "@/lib/safety";
 
 describe("detectSafetySignals", () => {
   it("returns none for ordinary content", () => {
@@ -53,5 +53,16 @@ describe("detectSafetySignals", () => {
   it("does not flag the word controller or benign mentions", () => {
     const s = detectSafetySignals("We argued about the game controller and made up.");
     expect(s.severity).toBe("none");
+  });
+});
+
+describe("normalizeForSafety", () => {
+  it("straightens phone punctuation and collapses spacing and case", () => {
+    expect(normalizeForSafety("I DON’T  want\u200B to\nbe here")).toBe("i don't want to be here");
+  });
+
+  it("catches disclosures typed with curly apostrophes", () => {
+    expect(detectSafetySignals("I don’t want to live like this").severity).toBe("high");
+    expect(detectSafetySignals("He won’t let me leave the house").severity).toBe("high");
   });
 });
