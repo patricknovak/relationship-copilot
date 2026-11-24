@@ -70,9 +70,13 @@ jobs:
           retention-days: 7
 
   e2e-core:
-    # Signed-in core loop (invite, join, private answers, reveal) against a
-    # local Supabase stack with every migration applied. Local demo keys
-    # only; never touches production.
+    # The launch smoke test, automated (docs/RUNBOOK.md section 9): invite,
+    # join, private answers, reveal, catch-up, notification emails,
+    # unsubscribe, the hourly job, checkout, billing portal, export and
+    # deletion, against a local Supabase stack with every migration applied.
+    # Local demo keys only; never touches production. Email and Stripe calls
+    # go to web/e2e-core/fake-providers.mjs on loopback, so nothing is ever
+    # sent or charged.
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -92,6 +96,9 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: http://localhost:3100
+          # Not the production price id from .env.production: the billing
+          # tests only ever talk to the fake Stripe.
+          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: price_e2e_monthly
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Core loop (Playwright)
