@@ -17,6 +17,7 @@ import type { PromptQuestion, Json } from "@/lib/database.types";
 import { ensureOnboardingInstance } from "@/lib/onboarding";
 import { after } from "next/server";
 import { isReactionEmoji } from "@/lib/reactions";
+import { openElectiveRun } from "@/lib/electives";
 import { notifyDiscussionReply, notifyOtherMembersAfterSubmit } from "@/lib/notify";
 
 // Always-free, plan-independent: log a safety event when free-text content
@@ -98,6 +99,31 @@ export async function startElective(connectionId: string, templateId: string) {
     .not("joined_at", "is", null);
   if ((joined ?? 0) < 2) {
     redirect(`/connections/${connectionId}/explore?notice=waiting`);
+  }
+
+  // A connection someone left (archived) or blocked never starts anything
+  // new. Leaving keeps both membership rows, so the count above still passes.
+  const { data: conn } = await supabase
+    .from("connections")
+    .select("status")
+    .eq("id", connectionId)
+    .maybeSingle();
+  if (!conn || conn.status === "archived" || conn.status === "blocked") {
+    redirect(`/connections/${connectionId}`);
+  }
+
+  // Already in progress (typically: the other person started it)? Rejoin
+  // that run. Creating a second copy would leave each person answering their
+  // own, and neither could ever reveal.
+  const { data: runs } = await supabase
+    .from("prompt_instances")
+    .select("id, template_id, status, created_at")
+    .eq("connection_id", connectionId)
+    .eq("template_id", templateId)
+    .eq("status", "open");
+  const inProgress = openElectiveRun(runs, templateId);
+  if (inProgress) {
+    redirect(`/connections/${connectionId}/prompts/${inProgress.id}`);
   }
 
   const { data: tmpl } = await supabase

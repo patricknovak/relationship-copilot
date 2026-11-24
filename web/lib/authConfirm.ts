@@ -20,17 +20,41 @@ export function parseConfirmOtpType(
     : null;
 }
 
+// Routes that only establish a session. They are never a destination: sent
+// there without a fresh code or token they fail to /login?error=auth.
+const AUTH_ROUTES = new Set(["/auth/callback", "/auth/confirm"]);
+
 // Email templates may hand an absolute {{ .RedirectTo }} / next URL. Strip a
 // same-origin prefix so safeNextPath can validate the remaining path. Returns
 // "" when missing or unsafe — callers treat that as "no explicit next".
+//
+// {{ .RedirectTo }} is whatever the login form passed as emailRedirectTo,
+// which is our own /auth/callback?next=<destination>. A template that
+// forwards it (…/auth/confirm?token_hash=…&next={{ .RedirectTo }}) therefore
+// hands us the callback route wrapped around the real destination. Unwrap it
+// here; otherwise a signed-in user is bounced through the callback with no
+// code, shown as a failed link, and loses the new-user onboarding step.
 export function normalizeAuthNextParam(
   rawNext: string | null | undefined,
   origin: string,
 ): string {
-  if (!rawNext) return "";
   let next = rawNext;
-  if (origin && next.startsWith(`${origin}/`)) {
-    next = next.slice(origin.length);
+  // Bounded: a destination is at most a couple of wrappers deep.
+  for (let depth = 0; depth < 3; depth++) {
+    if (!next) return "";
+    if (origin && next.startsWith(`${origin}/`)) {
+      next = next.slice(origin.length);
+    }
+    const safe = safeNextPath(next, "");
+    if (!safe) return "";
+    const queryAt = safe.search(/[?#]/);
+    const path = queryAt === -1 ? safe : safe.slice(0, queryAt);
+    if (!AUTH_ROUTES.has(path)) return safe;
+    const query =
+      queryAt !== -1 && safe[queryAt] === "?"
+        ? safe.slice(queryAt + 1).split("#", 1)[0]
+        : "";
+    next = new URLSearchParams(query).get("next");
   }
-  return safeNextPath(next, "");
+  return "";
 }

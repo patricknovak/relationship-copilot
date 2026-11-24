@@ -106,7 +106,14 @@ export default async function AccountPage({
             </span>
           </div>
           <dd className="mt-2 text-sm text-ink-soft">
-            {isPremium && renews && <span>Renews {renews}.</span>}
+            {/* The row does not record a pending cancellation, so this must
+                not promise a renewal that the person has already cancelled. */}
+            {isPremium && renews && (
+              <span>
+                Your current billing period ends {renews}. It renews then
+                unless you&apos;ve cancelled.
+              </span>
+            )}
             {!isPremium && (
               <span>
                 The core experience is free.{" "}
