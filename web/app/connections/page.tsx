@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { signInVia } from "@/lib/signInCopy";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { connectionLabel } from "@/lib/relationships";
 import { dailyBadge, dailyState, firstSetBadge, todayIn, todayUtc } from "@/lib/dailyState";
 import { fetchOthersHaveAnswered } from "@/lib/othersHaveAnswered";
@@ -84,22 +84,26 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default async function ConnectionsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   // RLS scopes this to the signed-in user's connections.
-  const { data: connections } = await supabase
-    .from("connections")
-    .select("id, type, status, created_at, timezone")
-    .order("created_at", { ascending: false });
+  const [user, { data: connections }] = await Promise.all([
+    getUser(),
+    supabase
+      .from("connections")
+      .select("id, type, status, created_at, timezone")
+      .order("created_at", { ascending: false }),
+  ]);
 
   const ids = (connections ?? []).map((c) => c.id);
 
   // The other person in each connection, by display name only.
+  //
+  // The three groups of reads below (names, today's question, the first
+  // set) are independent, so each runs as its own async block and the page
+  // waits for them together. The merging that follows is unchanged.
   const themByConnection = new Map<string, string | null>();
   // Members rows exist only once someone has joined (accept_invite).
   const partnerJoined = new Set<string>();
+  const namesP = (async () => {
   if (ids.length && user) {
     const { data: members } = await supabase
       .from("connection_members")
@@ -119,6 +123,7 @@ export default async function ConnectionsPage() {
       themByConnection.set(m.connection_id, name?.trim() || null);
     }
   }
+  })();
 
   // Today's daily state per joined connection (0042: the daily starts the
   // day both people join, alongside the first set), so the list says whose
@@ -128,6 +133,7 @@ export default async function ConnectionsPage() {
   const activeIds = (connections ?? [])
     .filter((c) => c.status === "active" || c.status === "onboarding")
     .map((c) => c.id);
+  const dailiesP = (async () => {
   if (activeIds.length && user) {
     // Each connection has its own local "today"; fetch a three-day window
     // and keep the instance matching that connection's date.
@@ -178,6 +184,7 @@ export default async function ConnectionsPage() {
       );
     }
   }
+  })();
 
   // The first set (pending / onboarding): whose turn it is, including an
   // inviter who answered before their person joined. Same RLS reads and
@@ -185,7 +192,9 @@ export default async function ConnectionsPage() {
   const firstSetIds = (connections ?? [])
     .filter((c) => c.status === "pending" || c.status === "onboarding")
     .map((c) => c.id);
-  if (firstSetIds.length && user) {
+  const firstSetsP = (async () => {
+  if (!(firstSetIds.length && user)) return null;
+  {
     const { data: firstSets } = await supabase
       .from("prompt_instances")
       .select("id, connection_id, status")
@@ -204,6 +213,14 @@ export default async function ConnectionsPage() {
       supabase,
       (firstSets ?? []).filter((i) => !answeredFirst.has(i.id) && i.status !== "revealed").map((i) => i.id),
     );
+    return { firstSets, answeredFirst, othersFirst };
+  }
+  })();
+  // The first-set badge reads who has joined (names) and must not hide a
+  // "your turn" from today's question (dailies), so it is merged after both.
+  const [, , firstSetReads] = await Promise.all([namesP, dailiesP, firstSetsP]);
+  if (firstSetReads) {
+    const { firstSets, answeredFirst, othersFirst } = firstSetReads;
     const byConn = new Map((firstSets ?? []).map((i) => [i.connection_id, i] as const));
     for (const connId of firstSetIds) {
       const inst = byConn.get(connId);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { generateBlueprint, setBlueprintIntakeConsent } from "@/app/actions/blueprint";
 import { intakeFromProfile } from "@/lib/blueprint";
 import { INLINE_RESOURCES, SAFETY_NOTE, SAFETY_PRIVACY_LINE } from "@/lib/safety";
@@ -47,9 +47,7 @@ export default async function BlueprintPage({
   const { id } = await params;
   const { error, notice } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   const { data: conn } = await supabase
     .from("connections")

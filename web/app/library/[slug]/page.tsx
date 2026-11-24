@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,20 @@ import { canonicalUrl } from "@/lib/site";
 import { Icon } from "@/components/ui/Icon";
 import SharePublic from "@/components/SharePublic";
 
+// One read per request for both the metadata and the page (React cache());
+// it used to be two queries for the same row on every article view.
+// RLS hides premium articles from non-entitled users (they 404 here; the
+// list page only links to what they can read).
+const getArticle = cache(async (slug: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("education_articles")
+    .select("title, summary, body, framework, evidence_rating, created_at")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data;
+});
+
 // Per-article title + description so sharing a specific library link unfurls
 // with that article's own title and summary (falls back to the OG card).
 export async function generateMetadata({
@@ -16,12 +31,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
-  const { data: article } = await supabase
-    .from("education_articles")
-    .select("title, summary")
-    .eq("slug", slug)
-    .maybeSingle();
+  const article = await getArticle(slug);
   if (!article) return { title: "Library" };
   const description = article.summary ?? undefined;
   const url = canonicalUrl(`/library/${slug}`);
@@ -39,14 +49,7 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = await createClient();
-  // RLS hides premium articles from non-entitled users (they 404 here; the
-  // list page only links to what they can read).
-  const { data: article } = await supabase
-    .from("education_articles")
-    .select("title, summary, body, framework, evidence_rating, created_at")
-    .eq("slug", slug)
-    .maybeSingle();
+  const article = await getArticle(slug);
   if (!article) notFound();
 
   const blocks = renderArticleBlocks(article.body);
