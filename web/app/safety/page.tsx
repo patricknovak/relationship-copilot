@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import QuickExit from "@/components/QuickExit";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import { Icon } from "@/components/ui/Icon";
 import { contactParts } from "@/lib/contactLinks";
 
@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   description:
     "Immediate, free support resources. If you are in danger, call your local emergency number.",
   alternates: { canonical: canonicalUrl("/safety") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "Safety & Support — Relationship Copilot",
     description:
       "Immediate, free support resources. If you are in danger, call your local emergency number.",
     url: canonicalUrl("/safety"),
-  },
+  }),
 };
 
 type Resource = {

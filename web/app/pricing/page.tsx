@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createCheckout } from "@/app/actions/billing";
 import PendingButton from "@/components/PendingButton";
 import NoticeBanner from "@/components/NoticeBanner";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import { FREE_CONNECTION_CAP } from "@/lib/relationships";
 import { PREMIUM_MONTHLY_DISPLAY } from "@/lib/pricing";
 import { pricingJsonLdScriptContent } from "@/lib/jsonLd";
@@ -23,11 +23,11 @@ export const metadata: Metadata = {
   // (no shared display-price constant in the codebase).
   description: `Free: up to ${FREE_CONNECTION_CAP} connections, onboarding and mutual reveal, daily questions, the core library and Safety. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and more.`,
   alternates: { canonical: canonicalUrl("/pricing") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "Pricing — Relationship Copilot",
     description: `Free for the core experience. Premium (${PREMIUM_MONTHLY_DISPLAY}) adds the AI Blueprint and weekly digests, and covers both people.`,
     url: canonicalUrl("/pricing"),
-  },
+  }),
 };
 
 const FREE = [

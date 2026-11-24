@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { renderArticleBlocks, type Span } from "@/lib/markdown";
 import { articleJsonLdScriptContent } from "@/lib/jsonLd";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import { Icon } from "@/components/ui/Icon";
 import SharePublic from "@/components/SharePublic";
 
@@ -29,7 +29,7 @@ export async function generateMetadata({
     title: article.title,
     description,
     alternates: { canonical: url },
-    openGraph: { title: article.title, description, url },
+    openGraph: pageOpenGraph({ title: article.title, description, url }),
   };
 }
 

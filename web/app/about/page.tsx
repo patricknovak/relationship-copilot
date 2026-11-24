@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthLink } from "@/components/AuthHint";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   description:
     "Closer, on purpose. Relationship Copilot helps people stay close with prompts you answer privately and only share together.",
   alternates: { canonical: canonicalUrl("/about") },
-  openGraph: {
+  openGraph: pageOpenGraph({
     title: "About — Relationship Copilot",
     description:
       "Closer, on purpose. Relationship Copilot helps people stay close with prompts you answer privately and only share together.",
     url: canonicalUrl("/about"),
-  },
+  }),
 };
 
 // Static (prerendered); CTAs follow the auth hint, see components/AuthHint.tsx.

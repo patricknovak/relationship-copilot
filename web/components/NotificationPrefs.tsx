@@ -28,7 +28,7 @@ export default function NotificationPrefs({
         : "on any device where you turn notifications on";
   return (
     <form action={updateNotificationPrefs} className="card">
-      <h2 className="text-sm font-semibold text-ink">What to tell you about</h2>
+      <h3 className="font-display text-sm font-semibold tracking-tight text-ink">What to tell you about</h3>
       <p className="mt-1 text-sm text-ink-soft">
         Short nudges with a link, {how}. Never the answers themselves. We never notify you
         about safety resources or about someone leaving a connection.

@@ -9,7 +9,7 @@ import {
   QUESTIONS_SIGN_IN_HINT,
   questionPageBySlug,
 } from "@/lib/questionPages";
-import { canonicalUrl } from "@/lib/site";
+import { canonicalUrl, pageOpenGraph } from "@/lib/site";
 import SharePublic from "@/components/SharePublic";
 import { Icon } from "@/components/ui/Icon";
 
@@ -30,11 +30,11 @@ export async function generateMetadata({
     title: page.metaTitle,
     description: page.metaDescription,
     alternates: { canonical: url },
-    openGraph: {
+    openGraph: pageOpenGraph({
       title: page.metaTitle,
       description: page.metaDescription,
       url,
-    },
+    }),
   };
 }
 
