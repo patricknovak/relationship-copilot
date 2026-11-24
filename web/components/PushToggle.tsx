@@ -111,7 +111,7 @@ export default function PushToggle({ vapidPublicKey }: { vapidPublicKey: string 
 
   return (
     <div className="card">
-      <h2 className="text-sm font-semibold text-ink">Notifications on this device</h2>
+      <h3 className="font-display text-sm font-semibold tracking-tight text-ink">Notifications on this device</h3>
       <p className="mt-1 text-sm text-ink-soft">
         A short alert when it&apos;s your turn, with the same switches as email.
         Never the answers themselves.

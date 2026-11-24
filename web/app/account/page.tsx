@@ -93,19 +93,19 @@ export default async function AccountPage({
         }
       />
 
-      <dl className="mt-8 space-y-4">
+      <div className="mt-8 space-y-4">
         <div className={isPremium ? "card-hero" : "card"}>
           <div className="flex items-center justify-between gap-3">
-            <dt className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <h2 className="font-sans tracking-normal flex items-center gap-2 text-sm font-semibold text-ink">
               <Icon name="sparkles" className="h-4 w-4 text-brand-600 dark:text-brand-300" />
               Plan
-            </dt>
+            </h2>
             <span className={isPremium ? "pill-action" : "pill-quiet"}>
               {isPremium ? "Premium" : "Free"}
               {isPremium && sub?.status === "trialing" && " · trial"}
             </span>
           </div>
-          <dd className="mt-2 text-sm text-ink-soft">
+          <p className="mt-2 text-sm text-ink-soft">
             {isPremium && renews && <span>Renews {renews}.</span>}
             {!isPremium && (
               <span>
@@ -115,7 +115,7 @@ export default async function AccountPage({
                 </Link>
               </span>
             )}
-          </dd>
+          </p>
           {hasBilling && (
             <form action={createBillingPortal} className="mt-3">
               <PendingButton
@@ -134,44 +134,44 @@ export default async function AccountPage({
 
         {intake.attachment?.style && (
           <div className="card">
-            <dt className="text-sm font-semibold text-ink">Your relating style</dt>
-            <dd className="mt-1 text-sm text-ink-soft">
+            <h2 className="font-sans tracking-normal text-sm font-semibold text-ink">Your relating style</h2>
+            <p className="mt-1 text-sm text-ink-soft">
               <span className="font-medium">{intake.attachment.style}</span> —{" "}
               {ATTACHMENT_BLURB[intake.attachment.style]}
-            </dd>
+            </p>
           </div>
         )}
 
         {sign && (
           <div className="card-warm">
-            <dt className="text-sm font-semibold text-accent-800 dark:text-accent-200">
+            <h2 className="font-sans tracking-normal text-sm font-semibold text-accent-800 dark:text-accent-200">
               Your sign <span aria-hidden>{sign.symbol}</span>
-            </dt>
-            <dd className="mt-1 text-sm text-ink-soft">
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">
               {sign.name} ({sign.element}) — {sign.blurb}
-            </dd>
+            </p>
             <p className="mt-2 text-xs text-ink-faint">{ZODIAC_DISCLAIMER}</p>
           </div>
         )}
 
         {intake.goals && (
           <div className="card">
-            <dt className="text-sm font-semibold text-ink">What you want right now</dt>
-            <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
+            <h2 className="font-sans tracking-normal text-sm font-semibold text-ink">What you want right now</h2>
+            <p className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.goals}
-            </dd>
+            </p>
           </div>
         )}
 
         {intake.values && (
           <div className="card">
-            <dt className="text-sm font-semibold text-ink">What matters to you</dt>
-            <dd className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
+            <h2 className="font-sans tracking-normal text-sm font-semibold text-ink">What matters to you</h2>
+            <p className="mt-1 text-sm text-ink-soft whitespace-pre-wrap">
               {intake.values}
-            </dd>
+            </p>
           </div>
         )}
-      </dl>
+      </div>
 
       <Link href="/connections" className="card card-hover mt-6 flex items-center gap-3 !p-4">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-200">
@@ -199,12 +199,12 @@ export default async function AccountPage({
           <Icon name="shield" className="h-5 w-5 text-brand-600 dark:text-brand-300" />
           Your data
         </h2>
-        <dl className="card">
-          <dt className="text-sm font-semibold text-ink">Download your data</dt>
-          <dd className="mt-1 text-sm text-ink-soft">
+        <section className="card">
+          <h3 className="text-sm font-semibold text-ink">Download your data</h3>
+          <p className="mt-1 text-sm text-ink-soft">
             Everything your account contains — profile, answers, discussions,
             insights — as a JSON file.
-          </dd>
+          </p>
           <a
             href="/api/account/export"
             className="btn-secondary btn-sm mt-3 inline-flex"
@@ -213,7 +213,7 @@ export default async function AccountPage({
             <Icon name="download" className="h-4 w-4" />
             Export now
           </a>
-        </dl>
+        </section>
         <DeleteAccount />
       </div>
     </div>
