@@ -18,6 +18,13 @@ updates:
         patterns:
           - "vinext"
           - "@vinext/*"
+    # Hold stripe at 23.1.0 until after launch (Patrick, 2026-11-24). Each
+    # stripe minor expects a newer STRIPE_API_VERSION (web/lib/stripe.ts), so
+    # every bump fails typecheck until the pin moves. Patch releases still
+    # come through. Remove this block after launch.
+    ignore:
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
