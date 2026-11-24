@@ -83,12 +83,34 @@ Worker secrets are set with `npx wrangler secret put NAME --name relationship-co
 
 ## 9. Smoke test (before launch and after risky deploys)
 
-Two real accounts on the production domain:
+Most of the old two-account walkthrough now runs on every PR and every push to `main`, in the `e2e-core` CI job (`web/e2e-core/`), against a local Supabase with every migration applied. Email and Stripe go to a fake on the CI machine (`web/e2e-core/fake-providers.mjs`); nothing is sent or charged. If `e2e-core` is green on the commit that is live (§3), these are already checked and do not need repeating by hand:
 
-1. A: sign in with Google, name only, create a **friend** connection, answer the first question set, share the link.
-2. B: open the invite (and once via the emailed invite), sign in, name in place on the questions page, join.
-3. Both: today's question appears straight away; both answer it; the reveal arrives live.
-4. Both: finish the first set; reveal; react; reply in the discussion.
-5. Either: generate the free Blueprint; confirm the second attempt asks for Premium.
-6. A: Premium checkout with a live card; Blueprint regenerate works; Manage billing → cancel; Premium ends at period end.
-7. A: data export downloads; delete A; B keeps their own answers and sees the connection archived.
+| Flow | Spec |
+| --- | --- |
+| Create a connection, invite, join, answer in private, mutual reveal; an outsider is shut out | `core-loop.spec.ts` |
+| Today's question from the day both join; the invitee names themselves in place; nothing AI is sold while AI is off | `launch-readiness.spec.ts` |
+| An earlier day comes back as "waiting on your answer" | `catch-up.spec.ts` |
+| Emails for joined, your turn, reveal and discussion reply: right person, right link, unsubscribe headers, never any answer text; the unsubscribe link; the hourly job re-sends a missed "your turn" once | `notifications.spec.ts` |
+| Upgrade opens Checkout for the right person, the signed webhook unlocks Premium (a forged or repeated one does not), Manage billing opens the portal, cancellation returns to Free | `billing.spec.ts` |
+| Data export; account deletion ("redact, partner keeps theirs", connection archived, Stripe subscription cancelled first) | `account.spec.ts` |
+
+What CI cannot see is the production wiring: real sign-in, real delivery, real money, and the real AI provider. That is all that is left to do by hand, with two real accounts (A and B) on https://relationshipcopilot.com:
+
+1. **Sign-in.** A signs in with Google. B asks for an email link on a different device and it arrives within a minute and signs B in. (Checks Google OAuth, Turnstile and the Supabase auth email setup.)
+2. **A notification email really arrives.** A creates a connection and shares the invite; B joins. A receives "B joined" in a real inbox, not in spam, and the button opens the connection on the production domain. Then open the "stop these emails" link from that email and confirm the page loads (do not press the button unless you want them off). (Checks `RESEND_API_KEY`, `NOTIFY_SECRET`, the sending domain and `NEXT_PUBLIC_SITE_URL`.)
+3. **The reveal arrives live.** Both open today's question. A answers, then B answers while A's page is still open: A's page shows the reveal without a reload. (Checks Supabase Realtime in production; CI reloads the page.)
+4. **Push, if you use it.** Turn on notifications on one phone from Account and confirm one arrives on the next "your turn". (Checks the VAPID keys and the service worker.)
+5. **AI, once it is switched on.** Generate the free Blueprint; confirm a second attempt asks for Premium. Skip while pricing says "Opening soon".
+6. **Real money, once Premium is open.** A buys Premium with a live card. The account page shows Premium within a few seconds (this is the production webhook endpoint and its signing secret). Manage billing opens the Stripe portal; cancel there, and Stripe shows the subscription ending at period end. Refund the charge in the Stripe dashboard afterwards.
+7. **The scheduled jobs are firing.** An hour later, the Worker's logs show `cron_tick` lines for the daily and turn reminders with no `notify_misconfigured` (§7).
+
+Deleting a test account and downloading an export no longer need a production check; if you created throwaway accounts for the steps above, delete them from Account when you are done.
+
+To run the automated part yourself (needs Docker):
+
+```bash
+cd web
+./scripts/e2e-core-stack.sh ./e2e-core.env && set -a && . ./e2e-core.env && set +a
+NEXT_PUBLIC_SITE_URL=http://localhost:3100 npm run build
+npm run test:e2e:core
+```
