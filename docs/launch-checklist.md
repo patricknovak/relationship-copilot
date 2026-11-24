@@ -51,7 +51,10 @@ What only Patrick can do, in this order (each is a few minutes):
    before real users arrive (`docs/RUNBOOK.md` §6).
 8. **Legal review** of `/privacy` and `/terms`, and the safety-resource
    review (sign-offs below).
-9. **Run the smoke test** in `docs/RUNBOOK.md` §9 with two real accounts.
+9. **Run the production smoke test** in `docs/RUNBOOK.md` §9 with two real
+   accounts. Most of the old walkthrough now runs in CI (`e2e-core`); §9
+   lists only what still needs a person: real sign-in, a real email
+   arriving, the live reveal, and real money.
 10. Housekeeping, any time: retire Vercel, delete stale branches. (pg_cron
     `assign-daily-prompts` was unscheduled 2026-11-05.)
 
@@ -330,13 +333,11 @@ a sanitised first line of the message, stack frames, the route pattern
 
 ## Final smoke test (after the above)
 
-- [ ] Two fresh accounts → create connection → invite link → accept.
-- [ ] Repeat once with a **sibling** or **mentor** connection to confirm the
-      new 0013 onboarding pack loads (this was the broken path).
-- [ ] 20-question onboarding both sides → mutual reveal fires live
-      (Realtime) → discussion thread.
-- [ ] Daily prompt appears; the Worker cron creates and reminds inside the
-      connection's 9am–8pm local window (`cron_tick` at :20 in Workers Logs).
-- [ ] Premium checkout → Blueprint generates → weekly digest.
-- [ ] Data export downloads; account deletion redacts while the partner
-      keeps their content.
+The connection, reveal, daily question, notification email, billing, export
+and deletion flows are checked automatically by the `e2e-core` CI job on
+every push. What is left to do by hand in production is the short list in
+`docs/RUNBOOK.md` §9.
+
+- [ ] `e2e-core` is green on the commit that is live (`/api/health` sha).
+- [ ] RUNBOOK §9 steps 1–4 and 7 done with two real accounts.
+- [ ] RUNBOOK §9 steps 5–6 done once AI and Premium are switched on.
