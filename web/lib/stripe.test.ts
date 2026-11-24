@@ -10,7 +10,7 @@ describe("getStripe", () => {
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_pin_api_version");
     const { getStripe, STRIPE_API_VERSION } = await import("./stripe");
     const stripe = getStripe();
-    expect(STRIPE_API_VERSION).toBe("2026-09-30.endive");
+    expect(STRIPE_API_VERSION).toBe("2026-10-28.endive");
     expect(stripe.getApiField("version")).toBe(STRIPE_API_VERSION);
   });
 
