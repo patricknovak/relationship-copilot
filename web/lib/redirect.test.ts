@@ -31,4 +31,12 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/ok\\..\\etc")).toBe("/connections");
     expect(safeNextPath("/ok\r\nSet-Cookie: x")).toBe("/connections");
   });
+
+  it("rejects tabs and other control characters browsers strip from URLs", () => {
+    // A browser resolves "/\t/evil.example" as "//evil.example".
+    expect(safeNextPath("/\t/evil.example")).toBe("/connections");
+    expect(safeNextPath("/\n/evil.example")).toBe("/connections");
+    expect(safeNextPath("/\u0000/evil.example")).toBe("/connections");
+    expect(safeNextPath("/ok\u007f")).toBe("/connections");
+  });
 });

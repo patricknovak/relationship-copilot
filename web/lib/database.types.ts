@@ -495,6 +495,8 @@ export interface Database {
       has_premium: { Args: { uid: string }; Returns: boolean };
       // True when any joined member of the connection holds premium and the
       // caller is a member (migration 0022). Never says who pays.
+      // 0046: free-plan cap, used by the connections insert policy.
+      can_create_connection: { Args: Record<string, never>; Returns: boolean };
       connection_has_premium: { Args: { p_conn: string }; Returns: boolean };
       connection_today: { Args: { p_conn: string }; Returns: string };
       others_have_answered: {
