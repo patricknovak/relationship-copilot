@@ -74,8 +74,8 @@ test("each step of the loop emails the other person, and never their words", asy
   expect(dailyReveal.text).not.toContain(ALEX_DAILY);
 
   // Sam writes under the reveal: Alex gets one email, without the message.
-  await s.getByLabel("Message").fill(SAM_REPLY);
-  await s.getByRole("button", { name: "Send" }).click();
+  await s.getByLabel("Message", { exact: true }).fill(SAM_REPLY);
+  await s.getByRole("button", { name: "Send", exact: true }).click();
   const reply = await waitForEmail(alex.email, /^Sam wrote something under your reveal/);
   expect(reply.text).not.toContain(SAM_REPLY);
   expect(reply.html).not.toContain(SAM_REPLY);
@@ -130,8 +130,8 @@ test("the unsubscribe link in an email stops notifications, but only once confir
   await answerAll(a, `Alex first set ${stamp}`);
   await expect(a.getByRole("heading", { name: "You revealed together." })).toBeVisible();
   await s.goto(`/connections/${connectionId}/onboarding`);
-  await s.getByLabel("Message").fill(`Sam reply ${stamp}`);
-  await s.getByRole("button", { name: "Send" }).click();
+  await s.getByLabel("Message", { exact: true }).fill(`Sam reply ${stamp}`);
+  await s.getByRole("button", { name: "Send", exact: true }).click();
   await waitForEmail(alex.email, /^Sam wrote something under your reveal/);
   expect(await emailsTo(sam.email, /both answered/)).toHaveLength(0);
 
@@ -188,6 +188,16 @@ test("the hourly job re-sends a missed 'your turn' once, in the recipient's dayt
         .eq("connection_id", connectionId)
     ).error,
   ).toBeNull();
+  // The job nudges about each person's latest waiting set only, so Sam's
+  // first-set answer has to be older than the missed daily one.
+  const { data: backdated, error: backdateError } = await admin
+    .from("prompt_responses")
+    .update({ submitted_at: new Date(Date.now() - 90 * 60_000).toISOString() })
+    .eq("user_id", sam.id)
+    .select("submitted_at");
+  expect(backdateError).toBeNull();
+  expect(backdated).toHaveLength(1);
+  expect(Date.now() - new Date(backdated![0]!.submitted_at).getTime()).toBeGreaterThan(80 * 60_000);
   const { data: instanceId, error: dailyError } = await admin.rpc("ensure_daily_prompt", {
     p_conn: connectionId,
   });

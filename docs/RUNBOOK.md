@@ -103,6 +103,7 @@ What CI cannot see is the production wiring: real sign-in, real delivery, real m
 5. **AI, once it is switched on.** Generate the free Blueprint; confirm a second attempt asks for Premium. Skip while pricing says "Opening soon".
 6. **Real money, once Premium is open.** A buys Premium with a live card. The account page shows Premium within a few seconds (this is the production webhook endpoint and its signing secret). Manage billing opens the Stripe portal; cancel there, and Stripe shows the subscription ending at period end. Refund the charge in the Stripe dashboard afterwards.
 7. **The scheduled jobs are firing.** An hour later, the Worker's logs show `cron_tick` lines for the daily and turn reminders with no `notify_misconfigured` (§7).
+8. **Analytics reports.** In a private window, press Accept on the cookie banner on the home page; GA4 → Realtime shows the visit within a minute. (CI checks that nothing loads before Accept and that the Google tag is requested after it, with Google's servers stubbed; that the container then reports is only visible in GA4.)
 
 Deleting a test account and downloading an export no longer need a production check; if you created throwaway accounts for the steps above, delete them from Account when you are done.
 
