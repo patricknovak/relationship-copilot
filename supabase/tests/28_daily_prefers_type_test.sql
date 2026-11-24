@@ -1,4 +1,4 @@
--- 0046: ensure_daily_prompt prefers questions written for the connection's
+-- 0047: ensure_daily_prompt prefers questions written for the connection's
 -- relationship type, and falls back to generic ones only when those run out.
 
 insert into auth.users (id, email) values
