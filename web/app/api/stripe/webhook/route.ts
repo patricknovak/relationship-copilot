@@ -3,6 +3,8 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  checkoutEntitlementUserId,
+  metadataUserId,
   resolveSubscriptionPeriodEnd,
   shouldApplySubscriptionEvent,
 } from "@/lib/subscriptionSync";
@@ -78,12 +80,12 @@ async function handleEvent(
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
-      const userId = s.metadata?.user_id ?? s.client_reference_id ?? null;
-      // Delayed payment methods complete checkout before the money arrives
-      // ("unpaid"). Entitlement then comes from customer.subscription.updated
-      // once the subscription is actually active.
-      const paid = s.payment_status === "paid" || s.payment_status === "no_payment_required";
-      if (userId && paid && !(await accountGone(userId))) {
+      // Only a paid subscription session our own checkout action created
+      // (lib/subscriptionSync.ts); never the buyer-settable
+      // client_reference_id. Delayed payment methods get their entitlement
+      // from customer.subscription.updated once the subscription is active.
+      const userId = checkoutEntitlementUserId(s);
+      if (userId && !(await accountGone(userId))) {
         const { error } = await admin.from("subscriptions").upsert({
           user_id: userId,
           plan: "premium",
@@ -98,7 +100,7 @@ async function handleEvent(
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const sub = event.data.object as Stripe.Subscription;
-      const userId = sub.metadata?.user_id ?? null;
+      const userId = metadataUserId(sub.metadata);
       const active = sub.status === "active" || sub.status === "trialing";
       if (userId && !(await accountGone(userId))) {
         // Out-of-order / multi-subscription guard: a late event for an older

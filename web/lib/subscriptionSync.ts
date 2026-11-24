@@ -53,3 +53,44 @@ export function resolveSubscriptionPeriodEnd(sub: {
   if (typeof fromItem === "number") return fromItem;
   return typeof sub.current_period_end === "number" ? sub.current_period_end : null;
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A Stripe metadata value that is one of our user ids, else null. */
+export function metadataUserId(
+  metadata: Record<string, unknown> | null | undefined,
+): string | null {
+  const v = metadata?.user_id;
+  return typeof v === "string" && UUID_RE.test(v) ? v : null;
+}
+
+/**
+ * Whose Premium a completed Checkout Session unlocks, or null when it must
+ * not unlock anything.
+ *
+ * Only sessions our own createCheckout action made count: subscription mode,
+ * a subscription attached, paid, and `metadata.user_id` set. Metadata can
+ * only be written with the Stripe secret key. `client_reference_id` is NOT
+ * trusted: on a Payment Link or pricing table the buyer sets it in the URL,
+ * so any other product ever sold from the same Stripe account could be
+ * bought with someone's user id attached and would have granted Premium
+ * here (with no subscription to ever end it).
+ */
+export function checkoutEntitlementUserId(session: {
+  mode?: unknown;
+  payment_status?: unknown;
+  subscription?: unknown;
+  metadata?: Record<string, unknown> | null;
+}): string | null {
+  if (session.mode !== "subscription") return null;
+  if (typeof session.subscription !== "string" || !session.subscription) return null;
+  // Delayed payment methods complete checkout before the money arrives
+  // ("unpaid"); entitlement then comes from customer.subscription.updated.
+  if (
+    session.payment_status !== "paid" &&
+    session.payment_status !== "no_payment_required"
+  ) {
+    return null;
+  }
+  return metadataUserId(session.metadata);
+}
