@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { exportPrompts } from "@/lib/exportPrompts";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,20 @@ export async function GET() {
     .from("prompt_responses")
     .select("*")
     .eq("user_id", user.id);
+
+  // The questions those answers belong to (answers are keyed by question
+  // id only). Members can read their connections' instances under RLS; only
+  // the ones this user answered are exported, as id + text.
+  const answeredIds = Array.from(
+    new Set((responses ?? []).map((r) => r.instance_id)),
+  );
+  const { data: answeredInstances } = answeredIds.length
+    ? await supabase
+        .from("prompt_instances")
+        .select("id, connection_id, kind, status, scheduled_for, questions")
+        .in("id", answeredIds)
+    : { data: [] };
+  const prompts = exportPrompts(answeredInstances, answeredIds);
 
   const { data: discussions } = await supabase
     .from("prompt_discussions")
@@ -124,6 +139,7 @@ export async function GET() {
     connections,
     memberships,
     prompt_responses: responses,
+    prompts,
     discussions,
     reactions,
     shared_goals: goals,
